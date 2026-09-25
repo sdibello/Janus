@@ -1,0 +1,51 @@
+# Local secrets; keep sanitized examples versioned
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# OS and editor artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vs/
+*.suo
+*.user
+
+# Logs and temporary files
+*.log
+/tmp/
+/temp/
+.cache/
+
+# Common dependency, build, and test outputs (adjust when a stack is chosen)
+node_modules/
+/.next/
+/.nuxt/
+/dist/
+/build/
+/coverage/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+/target/
+
+# Local AI settings and scratch files; shared instructions stay tracked
+.claude/settings.local.json
+CLAUDE.local.md
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v*/
+
+# Keep lockfiles and shared editor/AI configuration versioned.
