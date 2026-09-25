@@ -7,6 +7,7 @@ A small project. Purpose, technology stack, and setup commands will be documente
 - [AGENTS.md](AGENTS.md): shared guidance for AI coding assistants.
 - [specs/](specs/README.md): requirements and acceptance criteria.
 - [decisions/](decisions/README.md): durable records of project decisions and their reasons.
+- [Outstanding questions](specs/OPEN-QUESTIONS.md): resume the requirements review here.
 
 ## Getting started
 
