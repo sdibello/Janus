@@ -17,7 +17,7 @@ A participant's turn is its individual opportunity to act. Each participant's Tu
 
 Included: starting an encounter, prompting for initiative, ordering participants, highlighting the active participant, advancing with Next or Skip, maintaining Round and individual Turn counters, and stopping with End encounter.
 
-Encounters run through Prepare and Fight phases, followed by a Finished state. Prepare records initiative and establishes the initial order. Fight uses manual ordering under [spec 005](005-manual-encounter-order.md), including adding PCs, NPCs, and mobs immediately before the active participant. Initiative does not control Fight ordering. Saved encounter progress is restored when Janus is reopened. Automatic initiative rolls, combat calculations, delays, readied actions, and undo are outside this draft. Removing participants during play remains an open question.
+Encounters run through Prepare and Fight phases, followed by a Finished state. Prepare records initiative and establishes the initial order. Fight uses manual ordering under [spec 005](005-manual-encounter-order.md), including adding PCs, NPCs, and mobs immediately before the active participant. Initiative does not control Fight ordering. Saved encounter progress is restored when Janus is reopened. Automatic initiative rolls, combat calculations, delays, readied actions, and undo are outside this draft. Participants cannot be removed during Fight under decision 0027.
 
 ## Requirements
 
@@ -25,7 +25,7 @@ Encounters run through Prepare and Fight phases, followed by a Finished state. P
 
 - R1: Starting an encounter opens its Prepare phase. The UI identifies the current phase. No participant is taking a turn during Prepare, and Next is unavailable.
 - R2: During Prepare, Janus records initiative for every PC, NPC, and individual mob entry. Entries with the same name remain separate participants. The dungeon master can enter and correct initiative, with the initial order updated accordingly.
-- R3: All participants present in Prepare must have valid initiative before entering Fight. Missing or invalid values are identified for correction; participants are not silently omitted or assigned defaults. This gate does not apply to mobs added after Fight begins.
+- R3: All participants present in Prepare must have valid initiative before entering Fight. Missing or invalid values are identified for correction; participants are not silently omitted or assigned defaults. This gate does not apply to any participants added after Fight begins.
 - R4: Initiative values are whole numbers with no application-defined upper or lower limit. Positive, negative, and zero values are allowed.
 - R5: The initial order sorts participants from highest initiative to lowest. During Prepare, the dungeon master manually orders participants whose initiative values tie. After entering Fight, use the current list order, including manual changes under spec 005; never re-sort by initiative at cycle boundaries.
 - R6: An empty encounter cannot begin a turn sequence. The user is prompted to add participants first; saving an empty encounter remains allowed under spec 003.
@@ -35,7 +35,7 @@ Encounters run through Prepare and Fight phases, followed by a Finished state. P
 ### Advance and repeat
 
 - R8: Exactly one participant is active while the encounter is running. The ordered list always shows participant names, categories, and their initiative values. For participants added during Fight, show no initiative value unless the DM entered one; initiative is not required for Fight additions. The active entry is highlighted and explicitly labeled so its state does not depend on color alone.
-- R9: The active participant remains unchanged until the user clicks Next, the participant list is reordered (which selects the former active participant's pre-reorder successor under spec 005), the dungeon master manually selects any participant under spec 005, or the encounter ends. Adding a participant does not change the highlight. No timer automatically advances the sequence.
+- R9: The active participant remains unchanged until the user clicks Next or Skip, the participant list is reordered (which selects the former active participant's pre-reorder successor under spec 005), the dungeon master manually selects any participant under spec 005, or the encounter ends. Adding a participant does not change the highlight. No timer automatically advances the sequence.
 - R10: Each Next action advances to the next participant in the current list order under [decision 0021](../decisions/0021-next-follows-current-order.md) and removes the previous participant's active highlight. Increment the individual Turn counter for the participant whose turn was active when Next was clicked.
 - R25: A Skip action advances from the active participant to the next participant in current order, or to the first participant when the active participant is last. Skip does not increment the skipped participant's individual Turn counter. It does not change Round; Round increments only when Next completes the last participant's turn and wraps to the first.
 - R26: Participants cannot be removed during Fight. Next, Skip, and participant reordering continue to operate on the complete current list.
@@ -73,7 +73,7 @@ HP tracking is defined in [spec 007](007-hit-point-tracking.md) and is part of t
 - [ ] Missing or invalid initiative prevents the sequence from beginning and identifies the entries needing correction.
 - [ ] Positive, negative, and zero whole-number initiative values are accepted without an application-defined range limit; fractional values are rejected.
 - [ ] An empty encounter cannot begin a sequence and offers guidance to add participants.
-- [ ] Under the proposed ordering, a PC at 18, NPC at 12, and mob at 5 appear in that order; the PC is initially active, Round displays 1, and each individual Turn counter displays 0.
+- [ ] Under the accepted ordering, a PC at 18, NPC at 12, and mob at 5 appear in that order; the PC is initially active, Round displays 1, and each individual Turn counter displays 0.
 - [ ] Clicking Next while the PC is active increments the PC's individual Turn counter by one, highlights the NPC, and leaves other participant counters unchanged.
 - [ ] Clicking Skip while the PC is active highlights the NPC without incrementing the PC's individual Turn counter or changing Round.
 - [ ] When Next wraps from the last participant to the first, Round increments by one and only the participant whose turn ended has its individual Turn counter incremented.
@@ -86,7 +86,7 @@ HP tracking is defined in [spec 007](007-hit-point-tracking.md) and is part of t
 - [ ] Ending preserves the saved encounter and all participants, including mobs.
 - [ ] Running or ending one encounter leaves campaign character records and other encounters unchanged.
 - [ ] Unauthorized start, advance, and end requests are denied.
-- [ ] During Prepare, adding a mob with initiative 15 to an initial order of 18, 12, 5 yields 18, 15, 12, 5 under the proposed descending order.
+- [ ] During Prepare, adding a mob with initiative 15 to an initial order of 18, 12, 5 yields 18, 15, 12, 5 under the accepted descending order.
 - [ ] During Fight, the dungeon master can add a PC or NPC from the campaign or create a mob at any time, without initiative entry.
 - [ ] A new participant is inserted immediately before the active participant; existing entries retain their relative order, the active highlight stays on the same participant, Round and existing individual Turn counters are unchanged, and the new individual Turn counter starts at 0.
 - [ ] The dungeon master can then drag and drop the new entry to another position; Next follows the resulting current order.
@@ -100,8 +100,8 @@ HP tracking is defined in [spec 007](007-hit-point-tracking.md) and is part of t
 
 When implementation exists, verify the sequence using the three-participant example above for at least two full cycles. Cover tied initiative, invalid and missing input, empty and single-participant encounters, and multiple mobs with the same name. Check that exactly one participant is active while running and none is active after ending.
 
-Exercise End encounter at the first, middle, and final participant, then attempt to advance through the UI and a direct request. Verify encounter isolation and authorization. Check reopening, refresh, and logout/login in Prepare, Fight, and Finished, including saved mob additions, reordered entries, a selected active participant, and a counter beyond 1. Verify consistent restoration around a pending active-move prompt. No application code or executable tests exist yet.
+Exercise End encounter at the first, middle, and final participant, then attempt to advance through the UI and a direct request. Verify encounter isolation and authorization. Check reopening, refresh, and logout/login in Prepare, Fight, and Finished, including saved mob additions, reordered entries, a selected active participant, and a counter beyond 1. Verify order and active selection are saved atomically after reordering; no active-move prompt is used. No application code or executable tests exist yet.
 
 ## Open questions
 
-- Removing participants during play remains undecided.
+None from the completed review; decision 0027 prohibits removal during Fight.

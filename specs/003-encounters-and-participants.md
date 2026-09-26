@@ -33,16 +33,16 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 
 ### Mobs
 
-- R8: The dungeon master can add mobs directly within an encounter during Prepare or Fight, without a separate campaign or global mob record. Each mob is an individual entry; when multiple of the same kind are needed, create multiple entries during Prepare. In Prepare, initiative determines initial order. In Fight, the dungeon master places the mob wherever desired without initiative entry, and can reposition it before advancing the turn, as specified in spec 004. "Monster" and "mob" refer to the same participant category here. Proposed minimum identifying information is a nonblank name. Optional current HP tracking is supported under spec 007; entering HP is not required. Other statistics remain unspecified. The finished-encounter UI does not offer mob addition or other modification controls.
+- R8: The dungeon master can add mobs directly within an encounter during Prepare or Fight, without a separate campaign or global mob record. Each mob is an individual entry; when multiple of the same kind are needed, create multiple entries during Prepare. In Prepare, initiative determines initial order. In Fight, insert the mob immediately before the active participant without initiative entry; the dungeon master can then reorder it before advancing, as specified in specs 004 and 005. "Monster" and "mob" refer to the same participant category here. Minimum identifying information is a nonblank name under decision 0033. Optional current HP tracking is supported under spec 007; entering HP is not required. Other statistics remain unspecified. The finished-encounter UI does not offer mob addition or other modification controls.
 - R9: Mobs persist with the encounter and remain available when the user reopens it, including after logout and login. Encounter-only storage does not mean temporary or session-only storage.
 - R10: Creating a mob does not add a PC or NPC to the campaign list and does not require creating a record in a reusable mob catalog.
 - R11: Each mob entry belongs to its encounter. Editing or removing a mob affects only that encounter and does not affect mobs or characters in another encounter.
-- R12: The user can remove individual mob entries from an unfinished encounter. Mob names cannot be changed in the current scope. Multiple mobs with the same name are allowed and addressed individually, so removing one does not remove the others.
+- R12: The user can remove individual mob entries during Prepare only; participants cannot be removed during Fight under decision 0027. Mob names cannot be changed in the current scope. Multiple mobs with the same name are allowed and addressed individually, so removing one does not remove the others.
 
 ### Participant view and access
 
 - R13: The encounter view clearly identifies each participant as a PC, NPC, or mob. Duplicate participant names are allowed; individual entries are distinguished by identity and position in the encounter. Participant maintenance controls apply only to unfinished encounters.
-- R14: Encounter management uses the shared Janus identity and access capability. The initial authenticated operator is the dungeon master; proposed management access is restricted to the creating dungeon master. Players watch the existing UI through external screen sharing as specified in spec 006; no direct player access is required in this phase.
+- R14: Encounter management uses the shared Janus identity and access capability. The initial authenticated operator is the dungeon master; management access is restricted to the dungeon master who created the campaign. Players watch the existing UI through external screen sharing as specified in spec 006; no direct player access is required in this phase.
 - R15: Direct requests enforce the same access rules as the UI. Users cannot access another user's encounters or add characters they are not authorized to access by supplying identifiers.
 
 ### Finished encounters
@@ -57,7 +57,7 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - [ ] A logged-in dungeon master creates a named encounter in a campaign, which initially has no participants, and can reopen it from that campaign.
 - [ ] Creation without a valid accessible campaign is rejected.
 - [ ] The PC/NPC selector offers only that campaign's characters during Prepare and Fight; a direct request to add a character from another campaign is rejected even when both campaigns have the same owner.
-- [ ] A blank or whitespace-only encounter name is rejected under the proposed naming requirement.
+- [ ] A blank or whitespace-only encounter name is rejected under the accepted naming requirement.
 - [ ] The user adds a PC, an NPC, and a mob and sees each participant's category.
 - [ ] An encounter can be saved with no participants, or with only one participant category.
 - [ ] Adding or removing a PC or NPC leaves its campaign record and membership in other encounters unchanged.
@@ -66,26 +66,21 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - [ ] Saved mobs and other participant memberships remain present after closing the encounter, logging out, logging in, and reopening it.
 - [ ] Removing a mob changes only the selected encounter entry.
 - [ ] Two mobs with the same name can coexist; removing one leaves the other intact.
-- [ ] A blank or whitespace-only mob name is rejected under the proposed naming requirement.
+- [ ] A blank or whitespace-only mob name is rejected under the accepted naming requirement.
 - [ ] Unauthorized encounter reads, changes, and additions of inaccessible characters are denied, including direct requests.
 - [ ] A mob can be added while the encounter is active, remains local to that encounter, and is saved with it without rebuilding the initial initiative order.
 - [ ] During Fight, the dungeon master can add a PC or NPC from the campaign as well as a mob at any time.
 - [ ] After ending an encounter and logging out and back in, the dungeon master can find it in its campaign and view its participants, including mobs.
 - [ ] Viewing a finished encounter leaves it ended and does not advance its sequence.
 - [ ] The finished-encounter view offers no participant, order, or encounter modification controls. Verification does not require the underlying record to be immutable.
-- [ ] Later removal of a campaign character does not make the finished encounter or its saved participant information unavailable.
+- [ ] Removing a campaign character referenced by a finished encounter is rejected; the character and encounter remain available.
 
 ## Validation
 
-When implementation exists, create two encounters and add the same PC and NPC to both, verifying that neither can be added twice to one encounter. Add multiple same-name mobs during Prepare and verify that each has its own turn and HP. Reopen both after logout and login to verify persistence. Remove participants to verify that campaign lists and the other encounter remain unchanged.
+When implementation exists, create two encounters and add the same PC and NPC to both, verifying that neither can be added twice to one encounter. Add multiple same-name mobs during Prepare and verify that each has its own turn and HP. Reopen both after logout and login to verify persistence. Remove participants during Prepare to verify that campaign lists and the other encounter remain unchanged.
 
-Use a second campaign owned by the same dungeon master to verify rejection of cross-campaign character selection, and a second user account to validate unauthorized access. Add a mob during play, finish the encounter, log out, and reopen it through its campaign. Verify retained participant information after source-character removal; add detailed edit-history cases once the display policy is agreed. No application code or executable tests exist yet.
+Use a second campaign owned by the same dungeon master to verify rejection of cross-campaign character selection, and a second user account to validate unauthorized access. Add a mob during play, finish the encounter, log out, and reopen it through its campaign. Verify that removing a referenced campaign character is rejected, including when referenced only by a finished encounter. Encounters display current campaign character values under decision 0032. No application code or executable tests exist yet.
 
 ## Open questions
 
-- Confirm the first opportunity to act for a mob inserted during Fight, as proposed in spec 004. Its position is chosen by the dungeon master.
-- Confirm the proposed final-order and final-counter display for finished encounters; is any additional history needed?
-- Is a name sufficient for encounter metadata? Mob current HP is optional under spec 007.
-- What should happen to a PC/NPC already included in encounters when that character is removed from its campaign?
-- Can the same PC/NPC be added more than once to a single encounter?
-- Confirm creator-only management access and individual entries for multiple mobs with the same name. Player viewing is addressed in spec 006.
+None from the completed review. Decisions 0022, 0026, 0030, 0033, and 0034 resolve insertion, history, ownership, removal, naming, and duplicate participation.

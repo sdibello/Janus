@@ -1,12 +1,15 @@
 # Requirements review: outstanding questions
 
-Last reviewed: 2026-09-25.
+Last reviewed: 2026-09-26.
 
-Resume the business-analysis conversation here. Continue with the next unchecked item, currently Q29b. Unchecked items are unresolved; suggested behaviors are proposals, not accepted decisions. When answered, update the related spec and decision record, then mark the item answered with a link to that record.
+The planned user-facing questionnaire is complete. A consistency review corrected stale contradictions and identified qualifications that must be resolved before affected behavior is finalized. See [REQUIREMENTS-REVIEW.md](REQUIREMENTS-REVIEW.md) and [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md). Technical items below remain open until implemented or validated; proposals are not accepted product decisions.
 
 ## Handoff
 
-Requirements are answered through Q29a1, with accepted decisions through [0056](../decisions/0056-remember-me-30-days-since-activity.md). Continue at Q29b: password-reset link expiry, which has been asked but not answered. The choices presented were 1 hour, 24 hours, the selected identity system's default, or another specified duration. Reset links remain single-use. The remaining questions are listed below; this file is the durable continuation point.
+Accepted decisions run through 0072. The next executable task is implementation-plan step 1: scaffold the local solution and frontend and pin compatible dependencies. The proposed baseline is .NET 10 LTS and Node.js 24 LTS, with Mailpit for captured email; these are technical proposals pending adoption and validation. The Windows environment currently has .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
+
+Before finalizing the relevant workflows, resolve the review qualifications: browser session restoration without Remember me, Damage/Heal sign validation, identifier collisions, and verification after invitation expiry. Do not reopen settled encounter rules. This handoff accompanies the requirements and implementation-planning checkpoint; resume with implementation-plan step 1.
+
 
 ## Confirmed context: do not ask again
 
@@ -85,18 +88,31 @@ Source: [001](001-shared-identity-and-access.md).
 - [x] **Q29 — Password/session behavior:** Resolved by decision [0054](../decisions/0054-password-changes-and-session-revocation.md). Password reset signs out all existing sessions across products and devices; authenticated password change renews the current session and signs out all others.
 - [x] **Q29a — Browser persistence:** Resolved by decision [0055](../decisions/0055-remember-me-for-persistent-login.md). Login persists after closing and reopening the browser only when the user selects Remember me.
 - [x] **Q29a1 — Remember me duration:** Resolved by decision [0056](../decisions/0056-remember-me-30-days-since-activity.md). Remembered login lasts 30 days since last user activity, renewed by activity while still valid. Other session expiry defaults remain under T02.
-- [ ] **Q29b — Reset-link expiry:** How long should a password-reset link remain valid, or should this use the chosen identity implementation's default?
+- [x] **Q29b — Reset-link expiry:** Resolved by decision [0057](../decisions/0057-password-reset-links-expire-after-one-hour.md). Password-reset links expire one hour after issuance and remain single-use.
 
 ## Release expectations and implementation follow-up
 
-These came from the broader review or remain implementation choices; they are not extra accepted product requirements.
+Answered items below record accepted release requirements. Unchecked technical follow-ups remain unresolved and do not establish additional requirements.
 
-- [ ] **Q30 — Devices and connectivity:** Desktop, tablet, or phone first? Must Janus work without internet? Reopening saved encounters is settled; offline use is not.
-- [ ] **Q31 — Release scope:** Are the documented features the first usable release, or is any subset the priority?
-- [ ] **T01 — Technical choices:** Select the stack, hosting/deployment model, identity provider/library, and integration protocol once product needs are clear. No specific technology has been selected.
-- [ ] **T02 — Security configuration:** Define password policy, session/reset expiry, and abuse controls using the chosen identity implementation. Separate technical defaults from user-facing decisions in Q29.
+- [x] **Q30 — Devices:** Resolved by decision [0058](../decisions/0058-desktop-and-laptop-initial-support.md). Desktop and laptop computers only for the first release.
+- [x] **Q30a — Connectivity:** Resolved by decision [0059](../decisions/0059-internet-required-for-first-release.md). An internet connection is required; offline operation is outside the first-release scope.
+- [x] **Q31 — Release scope:** Resolved by decision [0060](../decisions/0060-all-agreed-features-in-first-release.md). The first usable release includes all agreed features across specs 001 through 007; previously deferred features remain outside scope.
+- [x] **T01 — Deployment direction:** Resolved by decision [0061](../decisions/0061-local-setup-then-cloud-hosting.md). Run locally for initial setup and validation; cloud hosting is the long-term target.
+- [x] **T01a — Local environment and frontend/backend:** Windows and Fedora local support is accepted in decision [0062](../decisions/0062-windows-and-fedora-local-support.md). React with TypeScript and an ASP.NET Core C# API are accepted in decision [0063](../decisions/0063-react-typescript-and-aspnet-core.md).
+- [x] **T01a1 — Initial database:** Resolved by decision [0064](../decisions/0064-sqlite-for-initial-local-use.md). Use SQLite initially and revisit the database before cloud deployment.
+- [x] **T01a1a — Data across local machines:** Resolved by decision [0065](../decisions/0065-manual-local-database-transfer.md). Manual SQLite database transfer is sufficient; no sharing or synchronization feature is required.
+- [x] **T01a2 — Implementation tooling:** Resolved by decision [0066](../decisions/0066-entity-framework-core-and-vite.md). Use Entity Framework Core for data access and schema migrations and Vite for frontend development and builds.
+- [x] **T01b — Identity integration:** Resolved by decision [0067](../decisions/0067-self-hosted-identity-and-openiddict.md). Use ASP.NET Core Identity and OpenIddict with OpenID Connect, hosted locally initially and moved to the cloud later.
+- [x] **T01c — Cloud selection timing:** Resolved by decision [0068](../decisions/0068-defer-cloud-selection-until-local-app-works.md). Defer cloud provider and database selection until the local application is working; no provider or cloud database has been selected.
+- [ ] **T01d — Versions and setup:** Target Windows 11 and the latest stable Fedora, with Fedora as the primary test platform, under decisions [0069](../decisions/0069-windows-11-and-fedora-test-priority.md) and [0070](../decisions/0070-latest-stable-fedora-target.md). During implementation planning, verify the concrete Fedora release and select compatible runtime and dependency versions; no further user confirmation of the installed release is required.
+- [x] **T01e — Local email delivery:** Resolved by decision [0071](../decisions/0071-local-test-inbox-for-email.md). Capture verification and password-reset email in a local test inbox; do not send real email during local setup.
+- [ ] **T01e1 — Identity operations:** Define service layout, key management, and the local test-inbox tool during implementation planning. Configure real email delivery before cloud use.
+- [x] **T02 — Password policy:** Resolved by decision [0072](../decisions/0072-password-strength-without-periodic-expiry.md). Apply a NIST-based strength baseline: 15-character minimum, support at least 64 characters, blocklist checks, passphrases and password managers, no mandatory character mixtures, and no scheduled password expiration.
+- [ ] **T02a — Remaining security configuration:** Select the password blocklist mechanism, remaining session defaults, and abuse controls during implementation planning. Preserve the agreed Remember me duration, invitation expiry, and reset-link expiry.
 
 ## Review housekeeping
+
+Deferred cloud follow-up: once the local application is working, select the cloud provider and database and define deployment and local-data migration needs before cloud rollout.
 
 This consolidated list removes duplicates and does not reopen confirmed answers. HP is optional and encounter-specific; missing HP prevents arithmetic Damage and Heal actions, while zero HP leaves encounter membership and turn progression unchanged.
 

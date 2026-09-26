@@ -18,12 +18,12 @@ The dungeon master needs to track hit points (HP) for every PC, NPC, and mob, pr
 
 Included: optionally entering and saving a single current HP value per encounter participant, displaying it, directly editing it, and adjusting it with Damage and Heal controls. HP is entered afresh for each encounter, with no campaign default or carryover from another encounter. Maximum HP is not required for this phase.
 
-Included is automatic Unconscious status with a colored participant treatment for HP from -1 through -9, and alive adjacent at -10 or below. Other status conditions, spell effects, durations, other automatic combat rules, and temporary HP are not required by this draft.
+Included is automatic Unconscious status with a colored participant treatment for HP strictly between -10 and 0, and alive adjacent at -10 or below. Other status conditions, spell effects, durations, other automatic combat rules, and temporary HP are not required by this draft.
 
 ## Requirements
 
 - R1: Every PC, NPC, and individual mob supports one optional current HP value. There is no maximum HP field. Same-name mobs have independent values. Missing HP must not block character or mob creation, encounter preparation, entering Fight, or turn advancement.
-- R2: The dungeon master can enter starting HP during each new encounter's Prepare phase and for mobs added during Fight, and update a participant's HP during Fight even when it is not that participant's turn. Starting HP remains optional. Re-entering an existing encounter restores its saved current HP rather than requesting starting HP again.
+- R2: The dungeon master can enter starting HP during each new encounter's Prepare phase and for any participant added during Fight, and update a participant's HP during Fight even when it is not that participant's turn. Starting HP remains optional. Re-entering an existing encounter restores its saved current HP rather than requesting starting HP again.
 - R3: Show each participant's current HP alongside its encounter entry when supplied. Distinguish missing HP from an explicit zero; do not default missing HP to zero. HP changes must not move the participant, change the active highlight, or increment the Turn counter.
 - R4: Save HP changes with encounter progress and restore them when Janus reopens, consistent with spec 004. Preserve the final HP values for viewing in finished encounters, whose UI offers no modification controls.
 - R5: HP belongs to the encounter participant, not the campaign character. Each new encounter begins with HP unspecified until entered for that encounter. Do not copy HP or HP-derived status from another encounter or supply campaign HP defaults. Changes affect only this encounter. Leaving and returning to the same encounter restores its saved HP, including missing and negative values, and corresponding status.

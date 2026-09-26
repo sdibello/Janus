@@ -24,6 +24,8 @@ Multifactor authentication is not required for the initial release. Social login
 
 ## Requirements
 
+The shared identity capability uses ASP.NET Core Identity for accounts and passwords and OpenIddict for OpenID Connect sign-in across products. It runs locally initially and moves to the cloud later. Application-specific invitation, access approval, and session rules below remain required implementation work. See decision [0067](../decisions/0067-self-hosted-identity-and-openiddict.md).
+
 ### Account creation and login
 
 - R1: A new user can create an account with a valid invitation, username, email address, and password. Both username and email address must be nonblank. Email verification is required before the account can access Janus. Open self-registration is not supported.
@@ -41,9 +43,11 @@ Multifactor authentication is not required for the initial release. Social login
 
 - R6: A logged-in user can change their password after proving knowledge of the current password. A failed proof leaves the password unchanged.
 - R7: A user who has forgotten their password can request recovery from the login flow using their email address. Password reset requires a verified email address.
-- R8: Recovery requests give a neutral response regardless of whether an account exists. A reset requires valid recovery proof that expires and can be used only once. Invalid, expired, or previously used proof cannot change a password.
+- R8: Recovery requests give a neutral response regardless of whether an account exists. A reset requires valid recovery proof that expires one hour after issuance and can be used only once. Invalid, expired, or previously used proof cannot change a password. See decision [0057](../decisions/0057-password-reset-links-expire-after-one-hour.md).
 - R9: After a successful change or reset, the old password no longer works and the new one does. A forgotten-password reset revokes all existing sessions across products and devices. An authenticated password change revokes all other sessions across products and devices and renews the current session, keeping the user signed in there. Revocation covers shared identity and product sessions; a revoked shared login cannot automatically restore access. See decision [0054](../decisions/0054-password-changes-and-session-revocation.md).
-- R10: Passwords and recovery secrets must not appear in application responses, logs, or decision/spec documents. Passwords must not be stored as plaintext or in a recoverable form. Define password policy, recovery expiry, and abuse controls before implementation, using the selected identity implementation's supported security controls.
+- R10: Passwords and recovery secrets must not appear in application responses, logs, or decision/spec documents. Passwords must not be stored as plaintext or in a recoverable form. Apply R10a and define abuse controls before implementation, using the selected identity implementation's supported security controls, and configure the one-hour recovery expiry required by R8.
+
+- R10a: Require passwords of at least 15 characters and support at least 64 characters. Allow spaces and passphrases without mandatory character-type mixtures. Reject commonly used, expected, or compromised passwords through a blocklist during registration, password change, and reset. Allow password managers, autofill, and paste. Do not require scheduled password changes; evidence of compromise can still require a change. Existing session and link expiries remain unchanged. See decision [0072](../decisions/0072-password-strength-without-periodic-expiry.md).
 
 ### User information in the application flow
 
@@ -86,10 +90,11 @@ Multifactor authentication is not required for the initial release. Social login
 - [ ] Logging out of one application invalidates its session while leaving other applications signed in.
 - [ ] Returning to that application after logout automatically establishes a new session without a Sign in action when the shared login is still active and application access remains authorized; the invalidated session cannot be reused.
 - [ ] A password change with incorrect current credentials fails without changing the password.
+- [ ] Registration, password changes, and resets enforce R10a: reject passwords below 15 characters or on the blocklist, accept permitted long passphrases without character-mixture rules, and do not expire passwords solely because of age.
 - [ ] A successful password change makes the old password fail and the new password succeed, renews the current session without signing the user out there, and revokes all other sessions across products and devices.
 - [ ] Recovery requests for existing and nonexistent accounts return a neutral user-facing response.
 - [ ] Password reset instructions are sent to the account's verified email address.
-- [ ] Valid recovery proof allows a password reset; expired, invalid, and reused proof do not.
+- [ ] Valid, unused recovery proof allows a password reset before one hour from issuance; at or after that expiry, or if invalid or already used, it cannot reset a password.
 - [ ] A successful reset makes the old password fail and revokes all existing sessions across products and devices, including shared identity sessions that could otherwise automatically sign the user in again.
 - [ ] An application obtains the current user's permitted shared information and can attach its own onboarding data without creating another account.
 - [ ] The initial account profile contains only username and email address as profile fields.
@@ -109,11 +114,13 @@ Multifactor authentication is not required for the initial release. Social login
 
 ## Validation
 
+During local setup, capture verification and password-reset messages in a local test inbox without external delivery. Use the captured links to exercise the normal flows, including verification, expiry, single use, and session revocation. Real email delivery must be configured before cloud use. See decision [0071](../decisions/0071-local-test-inbox-for-email.md).
+
 When implementation exists, exercise the account and password lifecycle through integration tests and a manual walkthrough. Include negative cases for credential failures, expired/reused recovery proof, session invalidation, unauthorized profile access, and direct calls to protected operations.
 
 Use two minimal application integrations to validate identity reuse and permission isolation. Review credential handling and verify that logs and responses do not disclose secrets. No application code or executable tests exist yet.
 
 ## Open questions
 
-- What are the password, session expiry, reset expiry, and abuse-control policies?
-- Which identity provider/library, integration protocol, and deployment model will implement the shared capability? These remain unselected.
+- Select the password blocklist implementation, remaining session expiry defaults, and abuse-control settings. Password strength and no scheduled expiration are settled by decision [0072](../decisions/0072-password-strength-without-periodic-expiry.md); reset links expire after one hour under decision [0057](../decisions/0057-password-reset-links-expire-after-one-hour.md).
+- Define the identity service layout, key management, exact library versions, and local test-inbox tool. Select real email delivery before cloud use; local email capture is settled by decision [0071](../decisions/0071-local-test-inbox-for-email.md).

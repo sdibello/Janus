@@ -64,3 +64,19 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0054](0054-password-changes-and-session-revocation.md) | Accepted | Password reset signs out all sessions; authenticated password change renews the current session and signs out all others. |
 | [0055](0055-remember-me-for-persistent-login.md) | Accepted | Login persists after browser closure only when the user selects Remember me; duration remains open. |
 | [0056](0056-remember-me-30-days-since-activity.md) | Accepted | Remembered login expires after 30 days without user activity; activity renews the period. |
+| [0057](0057-password-reset-links-expire-after-one-hour.md) | Accepted | Single-use password-reset links expire one hour after issuance. |
+| [0058](0058-desktop-and-laptop-initial-support.md) | Accepted | The first release supports desktop and laptop computers only; tablet and phone support are outside scope. |
+| [0059](0059-internet-required-for-first-release.md) | Accepted | The first release requires an internet connection; offline operation is outside scope. |
+| [0060](0060-all-agreed-features-in-first-release.md) | Accepted | The first usable release includes all agreed features across specs 001 through 007. |
+| [0061](0061-local-setup-then-cloud-hosting.md) | Accepted | Run locally for initial setup and validation, with cloud hosting as the long-term target. |
+| [0062](0062-windows-and-fedora-local-support.md) | Accepted | Local setup and operation must support both Windows and Fedora Linux. |
+| [0063](0063-react-typescript-and-aspnet-core.md) | Accepted | Use React with TypeScript for the frontend and ASP.NET Core with C# for the backend API. |
+| [0064](0064-sqlite-for-initial-local-use.md) | Accepted | Use SQLite initially for local operation; revisit the database before cloud deployment. |
+| [0065](0065-manual-local-database-transfer.md) | Accepted | Manually transfer the SQLite database between Windows and Fedora; no sharing or synchronization feature is required. |
+| [0066](0066-entity-framework-core-and-vite.md) | Accepted | Use Entity Framework Core for database access and migrations, and Vite for frontend development and builds. |
+| [0067](0067-self-hosted-identity-and-openiddict.md) | Accepted | Host ASP.NET Core Identity and OpenIddict locally initially, using OpenID Connect across products; move to cloud hosting later. |
+| [0068](0068-defer-cloud-selection-until-local-app-works.md) | Accepted | Defer cloud provider and database selection until the local application is working. |
+| [0069](0069-windows-11-and-fedora-test-priority.md) | Accepted | Support Windows 11 and prioritize Fedora testing; the Fedora release remains unconfirmed. |
+| [0070](0070-latest-stable-fedora-target.md) | Accepted | Target the latest stable Fedora release and record the concrete version during setup and validation. |
+| [0071](0071-local-test-inbox-for-email.md) | Accepted | Capture verification and password-reset emails in a local test inbox during setup instead of sending real email. |
+| [0072](0072-password-strength-without-periodic-expiry.md) | Accepted | Use a NIST-based password-strength baseline without scheduled password expiration. |

@@ -8,7 +8,7 @@
 
 ## Problem and intended outcome
 
-During Fight, users need to see all PCs, NPCs, and mobs and rearrange their turn order by dragging and dropping entries. Initiative establishes the original order during Prepare. During Fight, new mobs are inserted wherever the dungeon master chooses and all participants follow the current list order.
+During Fight, users need to see all PCs, NPCs, and mobs and rearrange their turn order by dragging and dropping entries. Initiative establishes the original order during Prepare. During Fight, new participants are inserted immediately before the active participant and can then be reordered; all participants follow the current list order.
 
 ## Scope
 
@@ -38,16 +38,15 @@ Adding PCs, NPCs, and mobs while running is covered by specs 003 and 004. New en
 - [ ] Given A, B, C with A active, reordering sets B (A's pre-reorder successor) active and leaves both counters unchanged.
 - [ ] The next cycle still follows A, C, B without re-sorting by initiative.
 - [ ] Initiative values remain displayed after reordering and do not change the manually selected order.
-- [ ] Initiative values remain displayed after reordering and do not change the manually selected order.
 - [ ] Given A, B, C with B active, moving B to the end produces A, C, B while C, B's successor in the pre-move list, becomes active.
 - [ ] Given A, B, C with A active, moving C before A produces C, A, B while B, A's successor in the pre-move list, becomes active. Successor selection uses the original list, not the changed list.
 - [ ] Given A, B, C with C active, moving A to the end produces B, C, A while A, C's successor in the pre-move list, becomes active.
 - [ ] After any reorder, Next advances to the participant immediately following the current active participant in the resulting current list.
 - [ ] Given a single participant A, reordering/no-op behavior leaves A active.
 - [ ] The dungeon master can manually set any participant, including an unconscious participant, as active. The selected entry becomes the only active entry while Round and all individual Turn counters remain unchanged.
-- [ ] Adding a mob before or after the active participant leaves that participant highlighted.
-- [ ] Moving a non-active participant leaves the active highlight unchanged and does not prompt for active-participant selection.
-- [ ] Manually selecting any participant and inserting a mob at any position leave both counter types unchanged.
+- [ ] Adding a mob immediately before the active participant leaves that participant highlighted; a subsequent reorder follows the pre-reorder successor rule.
+- [ ] Moving a non-active participant selects the old active participant's pre-reorder successor, without a prompt, and leaves counters unchanged.
+- [ ] Manually selecting any participant and inserting a mob immediately before the active participant leave both counter types unchanged.
 - [ ] Round increments by exactly one only when Next wraps from the last participant to the first; the active participant individual Turn counter increments on every Next click.
 - [ ] Drag-and-drop reordering, whether moving the active or another participant, never resets or changes either counter type.
 - [ ] Two mobs with the same name can be reordered independently without losing, duplicating, or changing either participant.
@@ -65,5 +64,4 @@ No application code or executable tests exist yet.
 
 ## Open questions
 
-- Confirm proposed starting values Round 1 and individual Turns 0, and whether finished encounters should display final counts.
-- Reopening must restore completed order and active-participant changes together as specified in spec 004.
+None from the completed review. Decision 0025 confirms initial and final counters; spec 004 requires consistent restoration of completed changes.

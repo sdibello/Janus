@@ -19,13 +19,13 @@ A separate presentation view is a possible future enhancement, not a commitment 
 
 - R1: The dungeon master remains the authenticated operator of the encounter.
 - R2: The dungeon master shows the existing encounter UI using an external screen-sharing tool. Players do not access Janus directly or require accounts or logins.
-- R3: The shared image shows the same visible encounter UI that the dungeon master sees, including participant order, active highlighting, and the Turn counter from specs 004 and 005. No separate player content filter is required in this phase.
+- R3: The shared image shows the same visible encounter UI that the dungeon master sees, including participant order, active highlighting, and the Round and individual Turn counters from specs 004 and 005. No separate player content filter is required in this phase.
 - R4: Screen sharing does not introduce a Janus player role, editing permission, anonymous endpoint, or viewer-link access model.
 
 ## Acceptance criteria
 
 - [ ] The dungeon master can show the existing encounter UI through an external screen-sharing tool without player login to Janus.
-- [ ] Participant order, active highlighting, and the Turn counter remain readable in the shared encounter view as the dungeon master advances and reorders participants.
+- [ ] Participant order, active highlighting, and the Round and individual Turn counters remain readable in the shared encounter view as the dungeon master advances and reorders participants.
 - [ ] Ending an encounter is reflected in that same shared UI.
 - [ ] The workflow requires no separate presentation page or direct player access to Janus.
 
