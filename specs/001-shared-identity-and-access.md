@@ -22,16 +22,16 @@ Multifactor authentication is not required for the initial release. Social login
 
 ### Account creation and login
 
-- R1: A new user can create an account from the application flow with a login identifier and password. Required profile fields and identifier type remain to be decided.
+- R1: A new user can create an account with a valid invitation, username, email address, and password. Both username and email address must be nonblank. Email verification is required before the account can access Janus. Open self-registration is not supported.
 - R2: Each account has a stable internal user identifier that applications can reference independently of changeable profile or login information.
-- R3: Duplicate accounts for the same normalized login identifier are prevented. Account creation and login failures provide useful guidance without exposing sensitive account information.
-- R4: A registered user can log in with valid credentials and continue to an authorized application destination. Invalid credentials do not establish a session or grant access.
+- R3: Duplicate accounts for the same normalized username or email address are prevented. Account creation and login failures provide useful guidance without exposing sensitive account information.
+- R4: A user can log in with a username or email address and valid password, and continue to an authorized application destination. An unverified email address, invalid credentials, or an unauthorized destination does not establish access.
 - R5: A user can log out. The session used for logout can no longer access protected functionality. Session expiration and the scope of logout across applications must be defined before implementation.
 
 ### Password management
 
 - R6: A logged-in user can change their password after proving knowledge of the current password. A failed proof leaves the password unchanged.
-- R7: A user who has forgotten their password can request recovery from the login flow using a verified recovery channel. The initial proposed channel is email; this is an assumption pending confirmation.
+- R7: A user who has forgotten their password can request recovery from the login flow using their email address. Password reset requires a verified email address.
 - R8: Recovery requests give a neutral response regardless of whether an account exists. A reset requires valid recovery proof that expires and can be used only once. Invalid, expired, or previously used proof cannot change a password.
 - R9: After a successful change or reset, the old password no longer works and the new one does. Proposed session behavior: reset revokes all existing sessions; authenticated change revokes other sessions and renews the current session. Confirm this policy before implementation.
 - R10: Passwords and recovery secrets must not appear in application responses, logs, or decision/spec documents. Passwords must not be stored as plaintext or in a recoverable form. Define password policy, recovery expiry, and abuse controls before implementation, using the selected identity implementation's supported security controls.
@@ -55,12 +55,16 @@ Multifactor authentication is not required for the initial release. Social login
 ## Acceptance criteria
 
 - [ ] A new user completes registration through an application and can subsequently log in.
-- [ ] A repeated registration for the same normalized identifier does not create a duplicate identity.
+- [ ] Registration without a valid invitation is rejected.
+- [ ] An unverified account cannot access Janus; completing email verification enables access.
+- [ ] A user can log in with either their username or email address and password.
+- [ ] A repeated registration for the same normalized username or email address does not create a duplicate identity.
 - [ ] Invalid credentials fail, and an unauthenticated request cannot access a protected operation.
 - [ ] Login returns the user to an authorized application destination; logout prevents reuse of the logged-out session.
 - [ ] A password change with incorrect current credentials fails without changing the password.
 - [ ] A successful password change makes the old password fail and the new password succeed, with session handling matching the agreed policy.
 - [ ] Recovery requests for existing and nonexistent accounts return a neutral user-facing response.
+- [ ] Password reset instructions are sent to the account's verified email address.
 - [ ] Valid recovery proof allows a password reset; expired, invalid, and reused proof do not.
 - [ ] A successful reset makes the old password fail and handles existing sessions according to the agreed policy.
 - [ ] An application obtains the current user's permitted shared information and can attach its own onboarding data without creating another account.
@@ -78,9 +82,7 @@ Use two minimal application integrations to validate identity reuse and permissi
 
 ## Open questions
 
-- Should users sign in with email, username, or either? Is email verification required before first access?
-- Is email the recovery channel, and what shared profile fields are required?
-- Are new accounts allowed to join freely, or should registration require an invitation or approval?
+- What shared profile fields are required beyond the username and email address?
 - Should applications share a single sign-on session? What should logout do across applications?
 - How is application access granted initially, and are simple roles sufficient or are individual permissions needed?
 - What are the password, session expiry, reset expiry, and abuse-control policies? Confirm the proposed session revocation behavior in R9.

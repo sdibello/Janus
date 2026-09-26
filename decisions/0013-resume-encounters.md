@@ -12,7 +12,7 @@ The project owner confirmed that an encounter already started must be maintained
 
 ## Decision
 
-Persist encounter progress and restore the saved phase, participants, initiative values, current order, active highlight, and Turn counter when the dungeon master returns. Closing, refreshing, or logging out does not end or reset the encounter. Preserve completed changes through the normal workflow without requiring a separate save-before-exit step.
+Persist encounter progress and restore the saved phase, participants, initiative values, current order, active highlight, Round counter, and each participant's Turn counter when the dungeon master returns. Closing, refreshing, or logging out does not end or reset the encounter. Preserve completed changes through the normal workflow without requiring a separate save-before-exit step.
 
 ## Alternatives considered
 

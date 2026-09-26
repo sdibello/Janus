@@ -1,10 +1,10 @@
 # 0012: Choose the active participant when moving its entry
 
 - Date: 2026-09-25
-- Status: Accepted
+- Status: Superseded
 - Related specs: [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md)
 - Supersedes: None; resolves active-selection behavior left open by [0011](0011-prepare-and-fight.md)
-- Superseded by: None
+- Superseded by: [0019: Advance active selection using the pre-reorder list](0019-active-after-reorder.md)
 
 ## Context
 
@@ -12,7 +12,7 @@ The project owner confirmed that adding to the encounter order does not change t
 
 ## Decision
 
-Adding participants preserves the active highlight. Moving the active participant prompts the dungeon master to keep that participant active, activate its successor from before the move, or select another participant. Moving another entry leaves the active participant unchanged.
+This three-choice prompt was superseded by decision 0019. Additions still preserve the active highlight; reordering now selects the previously active participant's successor from the pre-reorder list, and the dungeon master can select any participant active directly.
 
 Counter behavior, cancellation, and the former-successor choice when moving the last entry have proposed defaults in spec 005 and are not settled by this decision.
 
@@ -23,4 +23,4 @@ Counter behavior, cancellation, and the former-successor choice when moving the 
 
 ## Consequences
 
-The application must remember the pre-move successor and distinguish same-name entries by identity. The active move must collect an explicit choice, and the resulting list must have exactly one highlighted participant.
+The application must capture the pre-reorder successor and distinguish same-name entries by identity. The resulting list must have exactly one highlighted participant.

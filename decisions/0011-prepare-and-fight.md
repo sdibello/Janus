@@ -23,4 +23,4 @@ Carry forward the finished-encounter behavior from decision 0010: retain finishe
 
 ## Consequences
 
-Validation and controls depend on the phase. Initiative is needed before entering Fight but is not required for later mob additions. Insertion preserves the existing entries' relative order. [Decision 0012](0012-active-participant-selection.md) resolves active-highlight preservation on insertion and the prompt when moving the active participant. First-turn timing remains proposed in spec 004.
+Validation and controls depend on the phase. Initiative is needed before entering Fight but is not required for later mob additions. Insertion preserves the existing entries' relative order. [Decision 0019](0019-active-after-reorder.md) defines active selection after reordering. [Decision 0027](0027-skip-and-no-removal-during-fight.md) adds Next and Skip controls and prohibits removal during Fight. First-turn timing follows the current list order under decisions 0021 and 0022.
