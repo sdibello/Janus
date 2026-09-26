@@ -2,11 +2,11 @@
 
 Last reviewed: 2026-09-25.
 
-Resume the business-analysis conversation here. Continue with the next unchecked item, currently Q25a. Unchecked items are unresolved; suggested behaviors are proposals, not accepted decisions. When answered, update the related spec and decision record, then mark the item answered with a link to that record.
+Resume the business-analysis conversation here. Continue with the next unchecked item, currently Q29b. Unchecked items are unresolved; suggested behaviors are proposals, not accepted decisions. When answered, update the related spec and decision record, then mark the item answered with a link to that record.
 
 ## Handoff
 
-Requirements and decisions through Q25 are committed and pushed to `origin/main` (commit `4ec64ab`). On another computer, pull the repository and continue at Q25a: whether the account needs profile fields beyond username and email. The next questions are listed below in order; this file is the durable continuation point.
+Requirements are answered through Q29a1, with accepted decisions through [0056](../decisions/0056-remember-me-30-days-since-activity.md). Continue at Q29b: password-reset link expiry, which has been asked but not answered. The choices presented were 1 hour, 24 hours, the selected identity system's default, or another specified duration. Reset links remain single-use. The remaining questions are listed below; this file is the durable continuation point.
 
 ## Confirmed context: do not ask again
 
@@ -66,11 +66,26 @@ Source: [001](001-shared-identity-and-access.md).
 
 - [x] **Q24 — Sign-in and recovery:** Resolved by decision [0036](../decisions/0036-username-email-and-verification.md). Sign in with username or email; password resets use email; email verification is required before access.
 - [x] **Q25 — Registration policy:** Resolved by decision [0037](../decisions/0037-invitation-only-registration.md). A new user must have an invitation to create an account.
-- [ ] **Q25a — Profile fields:** Are any profile fields needed beyond the required username and email address?
-- [ ] **Q26 — Application meaning:** Are future applications separate products sharing accounts, or additional features inside Janus? Give an example to guide the integration boundary.
-- [ ] **Q27 — Cross-application sessions:** Should one login carry across applications, and should logout affect just the current application or all applications?
-- [ ] **Q28 — Access grants:** Do users automatically receive access to new applications, or does someone grant it? What roles/permissions are needed, and who manages grants?
-- [ ] **Q29 — Password/session behavior:** Confirm password reset signs out all existing sessions, while password change signs out other sessions and renews the current one. Any user-facing preferences for session duration or reset-link expiry?
+- [x] **Q25a — Profile fields:** Resolved by decision [0038](../decisions/0038-minimal-account-profile.md). Username and email address are the only account profile fields needed for now.
+- [x] **Q26 — Application meaning:** Resolved by decision [0039](../decisions/0039-separate-products-sharing-accounts.md). Future applications are separate products sharing accounts through the same identity system.
+- [x] **Q27 — Cross-application sessions:** Resolved by decision [0040](../decisions/0040-single-sign-on-and-local-logout.md). Existing login signs users into other authorized products automatically; logout affects only the current product.
+- [x] **Q27a — Return after logout:** Resolved by decision [0041](../decisions/0041-automatic-sign-in-after-local-logout.md). Returning signs the user in automatically if the shared login remains active and application access remains authorized.
+- [x] **Q28 — Access grants:** Resolved by decision [0042](../decisions/0042-request-and-approve-application-access.md). Users request product access and an administrator approves it; existing accounts do not automatically receive access to new products.
+- [x] **Q28a — Approval administrators:** Resolved by decision [0043](../decisions/0043-shared-and-product-administrators.md). Shared administrators manage access approvals across all products; product administrators manage approvals for their own product.
+- [x] **Q28b — Roles and permissions:** Resolved by decision [0044](../decisions/0044-no-additional-initial-product-roles.md). No additional roles or custom permissions are needed for the initial campaign product beyond approved DMs and the agreed administrators.
+- [x] **Q28c — Rejected access requests:** Resolved by decision [0045](../decisions/0045-repeat-access-requests-after-rejection.md). Users can submit another request after rejection without permission to request again; approval is still required for access. Remaining lifecycle questions are split out below.
+- [x] **Q28c1 — Access revocation:** Resolved by decision [0046](../decisions/0046-revoke-access-and-allow-new-requests.md). Administrators can revoke approved product access within their scope; affected users can request access again, with approval required to restore access.
+- [x] **Q28c2 — Invitation access:** Resolved by decision [0047](../decisions/0047-registration-invitation-grants-product-access.md). Accepting a valid invitation, completing registration, and verifying email grants access to the invited product without a separate request or approval.
+- [x] **Q28c3 — Request review interface:** Resolved by decision [0048](../decisions/0048-shared-access-request-portal.md). One shared portal handles requests and reviews across products, showing administrators only what they are authorized to manage.
+- [x] **Q28d — Administrator assignment:** Resolved by decision [0049](../decisions/0049-shared-administrators-appoint-administrators.md). Only shared administrators can appoint shared or product administrators.
+- [x] **Q28d1 — First shared administrator:** Resolved by decision [0050](../decisions/0050-first-shared-administrator-during-setup.md). Designate the first shared administrator account during deployment or setup, with no public setup page.
+- [x] **Q28e — Invitation issuers:** Resolved by decision [0051](../decisions/0051-shared-and-product-administrators-issue-invitations.md). Shared administrators can invite users to any product; product administrators can invite users only to their own product.
+- [x] **Q28e1 — Invitation reuse and recipients:** Resolved by decision [0052](../decisions/0052-reusable-registration-invitations.md). Invitation links are reusable by multiple people, are not tied to one recipient email address, and are not consumed by registration.
+- [x] **Q28e2 — Invitation expiry:** Resolved by decision [0053](../decisions/0053-invitations-expire-after-24-hours.md). Reusable invitation links expire 24 hours after issuance; reuse does not extend validity.
+- [x] **Q29 — Password/session behavior:** Resolved by decision [0054](../decisions/0054-password-changes-and-session-revocation.md). Password reset signs out all existing sessions across products and devices; authenticated password change renews the current session and signs out all others.
+- [x] **Q29a — Browser persistence:** Resolved by decision [0055](../decisions/0055-remember-me-for-persistent-login.md). Login persists after closing and reopening the browser only when the user selects Remember me.
+- [x] **Q29a1 — Remember me duration:** Resolved by decision [0056](../decisions/0056-remember-me-30-days-since-activity.md). Remembered login lasts 30 days since last user activity, renewed by activity while still valid. Other session expiry defaults remain under T02.
+- [ ] **Q29b — Reset-link expiry:** How long should a password-reset link remain valid, or should this use the chosen identity implementation's default?
 
 ## Release expectations and implementation follow-up
 

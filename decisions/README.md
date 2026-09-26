@@ -45,3 +45,22 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0035](0035-hp-edit-damage-and-heal.md) | Accepted | Set HP directly; Damage subtracts, Heal adds; both need current HP; decide status colors in prototyping. |
 | [0036](0036-username-email-and-verification.md) | Accepted | Sign in with username or email; use email for resets and require verification before access. |
 | [0037](0037-invitation-only-registration.md) | Accepted | New users need an invitation to create an account; open registration is disabled. |
+| [0038](0038-minimal-account-profile.md) | Accepted | Username and email are the only account profile fields for now. |
+| [0039](0039-separate-products-sharing-accounts.md) | Accepted | Future applications are separate products sharing accounts through the same identity system. |
+| [0040](0040-single-sign-on-and-local-logout.md) | Accepted | Sign in automatically across authorized products; logout affects only the current product. |
+| [0041](0041-automatic-sign-in-after-local-logout.md) | Accepted | Returning after local logout signs the user in automatically while the shared login remains active. |
+| [0042](0042-request-and-approve-application-access.md) | Accepted | Users request product access and an administrator approves it; new products do not grant access automatically. |
+| [0043](0043-shared-and-product-administrators.md) | Accepted | Shared administrators approve access across products; product administrators approve access for their own product. |
+| [0044](0044-no-additional-initial-product-roles.md) | Accepted | No additional roles or custom permissions for the initial campaign product beyond DMs and the agreed administrators. |
+| [0045](0045-repeat-access-requests-after-rejection.md) | Accepted | Users can submit another product access request after rejection without permission to request again. |
+| [0046](0046-revoke-access-and-allow-new-requests.md) | Accepted | Administrators can revoke product access; affected users can request access again, subject to approval. |
+| [0047](0047-registration-invitation-grants-product-access.md) | Accepted | Registration invitations grant access to the invited product after registration and email verification, without a separate request. |
+| [0048](0048-shared-access-request-portal.md) | Accepted | One shared portal handles access requests and reviews, showing administrators only what they can manage. |
+| [0049](0049-shared-administrators-appoint-administrators.md) | Accepted | Only shared administrators can appoint shared or product administrators. |
+| [0050](0050-first-shared-administrator-during-setup.md) | Accepted | Designate the first shared administrator during deployment or setup, with no public setup page. |
+| [0051](0051-shared-and-product-administrators-issue-invitations.md) | Accepted | Shared administrators invite users to any product; product administrators invite users only to their own product. |
+| [0052](0052-reusable-registration-invitations.md) | Accepted | Registration invitation links are reusable by multiple people and are not tied to one recipient email address. |
+| [0053](0053-invitations-expire-after-24-hours.md) | Accepted | Reusable registration invitations expire 24 hours after issuance; reuse does not extend validity. |
+| [0054](0054-password-changes-and-session-revocation.md) | Accepted | Password reset signs out all sessions; authenticated password change renews the current session and signs out all others. |
+| [0055](0055-remember-me-for-persistent-login.md) | Accepted | Login persists after browser closure only when the user selects Remember me; duration remains open. |
+| [0056](0056-remember-me-30-days-since-activity.md) | Accepted | Remembered login expires after 30 days without user activity; activity renews the period. |
