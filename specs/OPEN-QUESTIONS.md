@@ -2,7 +2,11 @@
 
 Last reviewed: 2026-09-25.
 
-Resume the business-analysis conversation here. Ask a few questions at a time, starting with Q01. Unchecked items are unresolved; suggested behaviors are proposals, not accepted decisions. When answered, update the related spec and decision record, then mark the item answered with a link to that record.
+Resume the business-analysis conversation here. Continue with the next unchecked item, currently Q25a. Unchecked items are unresolved; suggested behaviors are proposals, not accepted decisions. When answered, update the related spec and decision record, then mark the item answered with a link to that record.
+
+## Handoff
+
+Requirements and decisions through Q25 are committed and pushed to `origin/main` (commit `4ec64ab`). On another computer, pull the repository and continue at Q25a: whether the account needs profile fields beyond username and email. The next questions are listed below in order; this file is the durable continuation point.
 
 ## Confirmed context: do not ask again
 
@@ -15,6 +19,7 @@ Resume the business-analysis conversation here. Ask a few questions at a time, s
 - HP is optional, current-only, entered separately for each encounter, and never carried between encounters. Returning to the same encounter restores its saved HP and status.
 - Damage subtracts from HP, preserving negative values. HP strictly between -10 and 0 means Unconscious; HP at or below -10 means alive adjacent. Raising HP updates the status, clearing these statuses at zero or above. Statuses persist on return.
 - Both statuses stay in normal turn order and are not skipped automatically. Other statuses and spell effects remain deferred.
+- Users sign in with username or email, reset passwords by email, and must verify email before access. New accounts require an invitation. No multifactor authentication is required in the initial phase.
 
 ## Turn flow and encounter lifecycle
 
