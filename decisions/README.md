@@ -81,3 +81,5 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0071](0071-local-test-inbox-for-email.md) | Accepted | Capture verification and password-reset emails in a local test inbox during setup instead of sending real email. |
 | [0072](0072-password-strength-without-periodic-expiry.md) | Accepted | Use a NIST-based password-strength baseline without scheduled password expiration. |
 | [0073](0073-local-hosts-and-migration-ownership.md) | Accepted | Two local hosts share SQLite with separate EF Core contexts and migration histories; Vite serves two entry pages. |
+| [0074](0074-sqlite-local-test-inbox.md) | Accepted for local development | Capture verification messages in SQLite and expose a Development-only loopback inbox. |
+| [0075](0075-interactive-first-administrator-setup.md) | Accepted for local setup | Create the first shared administrator through an interactive setup command, then verify email. |

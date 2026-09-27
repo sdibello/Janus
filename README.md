@@ -14,11 +14,11 @@ Janus provides campaign and encounter management for dungeon masters, with share
 
 ## Getting started
 
-Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database and start the two backend hosts and Vite. The current pages show service readiness; account, campaign, and encounter workflows are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
+Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database, set up the first administrator, and start the two backend hosts and Vite. Invitation-based registration, email verification, and sign-in work in the access portal. Campaign, encounter, and remaining identity workflows are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).
 
-Janus will run locally during initial setup and validation, with cloud hosting planned for long-term operation. Local setup commands and the cloud provider remain undecided. See [decision 0061](decisions/0061-local-setup-then-cloud-hosting.md).
+Janus will run locally during initial setup and validation, with cloud hosting planned for long-term operation. The cloud provider remains undecided. See [decision 0061](decisions/0061-local-setup-then-cloud-hosting.md).
 
 Use SQLite for initial local operation and revisit the database choice before cloud deployment. See [decision 0064](decisions/0064-sqlite-for-initial-local-use.md).
 
@@ -30,4 +30,4 @@ Entity Framework Core handles database access and schema migrations; Vite runs a
 
 Shared identity will use ASP.NET Core Identity and OpenIddict with OpenID Connect, hosted locally initially and in the cloud later. See [decision 0067](decisions/0067-self-hosted-identity-and-openiddict.md).
 
-Local setup will capture verification and password-reset emails in a test inbox without sending real email. The inbox tool remains to be selected. See [decision 0071](decisions/0071-local-test-inbox-for-email.md).
+Local setup captures verification messages in the SQLite-backed test inbox without sending real email. Password-reset messages will use the same inbox when recovery is implemented. See [decision 0074](decisions/0074-sqlite-local-test-inbox.md).

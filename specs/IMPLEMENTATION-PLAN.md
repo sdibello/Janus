@@ -1,7 +1,7 @@
 # Local implementation plan
 
 - Date: 2026-09-26
-- Status: In progress. The Windows foundation has been scaffolded and smoke-tested; Fedora, local email capture, and application workflows remain.
+- Status: In progress. The Windows foundation and first invitation-based account flow have been smoke-tested; Fedora and the remaining application workflows remain.
 - Product scope: all accepted requirements in specs 001–007 and decisions through 0072.
 
 ## Starting point
@@ -20,7 +20,7 @@ The local implementation uses one SQLite database with separately owned identity
 
 Use OpenID Connect authorization code flow with PKCE and server-side product sessions. Validate application grants on protected requests, not only at login. Persist session identifiers and revocation state so password resets and access revocation take effect without waiting for an old token to expire. Prove this behavior with a second minimal client before expanding the UI.
 
-Proposed local email tool: Mailpit bound to loopback, with external forwarding disabled. Store data-protection and signing keys outside the repository in an application data directory. Use persistent local development keys rather than regenerating them on every restart. A database move must not assume machine-specific keys move with it; require a documented sign-in/recovery procedure on the destination.
+The local email capture is now a SQLite-backed inbox exposed by the Development identity host on loopback, under [decision 0074](../decisions/0074-sqlite-local-test-inbox.md). Store data-protection and signing keys outside the repository in an application data directory. Use persistent local development keys rather than regenerating them on every restart. A database move must not assume machine-specific keys move with it; require a documented sign-in/recovery procedure on the destination.
 
 ## Runtime and tooling baseline
 
@@ -56,11 +56,11 @@ The accepted initiative and HP requirements have no application-defined range. D
 
 - Choose exact versions and test dependencies after checking restore/build compatibility; update T01d with evidence.
 - Validate the proposed host/database arrangement and key lifecycle; then record the durable architecture choice and close T01e1.
-- Select a common/compromised-password blocklist source and update mechanism without transmitting plaintext passwords or logging them.
+- Expand the current small local common-password list into a maintained common/expected/compromised-password blocklist source without transmitting plaintext passwords or logging them. The present list is only an interim safeguard and does not fulfill R10a completely.
 - Specify configurable rate limits for login, recovery, verification, and invitations; select password hashing parameters with the chosen Identity version and measured performance. No periodic password expiration.
 - Define non-Remember-me session timeout, email-verification expiry, username/email normalization and collision handling, and which authenticated user actions renew remembered sessions. Background polling must not silently keep an idle user logged in.
 - Maintain accepted 30-day remembered inactivity expiry, one-hour reset expiry, and 24-hour invitation expiry. Do not substitute library defaults for these decisions.
 
 ## Next executable task
 
-Continue Step 1 by adding a local test email inbox and validating setup on Fedora; static serving of published frontend assets from the hosts remains to be wired. The solution, migrations, two Vite pages, pinned dependencies, startup commands, and Windows smoke test are in place. Then implement Step 2's identity flows. Before Step 3 is finalized, resolve the browser-close qualification in the review. No cloud deployment is needed for this work.
+Continue Step 2 with password change and recovery, then product administrator scopes and shared access requests. The first shared administrator can now be created through an interactive setup command; a Development inbox, reusable invitations, registration, verification, and login run locally. Extend the interim password blocklist before claiming R10a. Step 1 still needs Fedora validation and static serving of published frontend assets. Before Step 3 is finalized, resolve the browser-close qualification in the review. No cloud deployment is needed for this work.

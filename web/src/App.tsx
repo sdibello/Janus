@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import AccountPortal from './AccountPortal'
 
 type ServiceName = 'identity' | 'campaigns'
 type ServiceState = 'checking' | 'ready' | 'unavailable'
@@ -60,7 +61,7 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
           <h1>{isPortal ? 'One account for every adventure.' : 'Keep the story moving.'}</h1>
           <p className="hero-copy">
             {isPortal
-              ? 'The shared account and application access portal will live here. Its database and service are taking shape.'
+              ? 'Create an invited account, verify your email, and sign in to the shared access portal.'
               : 'Campaigns, characters, and encounters will live here. The local foundation is running while the first workflows are built.'}
           </p>
           <div className="hero-rule" aria-hidden="true" />
@@ -94,6 +95,8 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
             ))}
           </div>
         </section>
+
+        {isPortal && <AccountPortal />}
       </main>
 
       <footer>Janus · Local build</footer>

@@ -217,6 +217,23 @@ button:hover {
 .status-badge.checking { color: #775f2f; background: #f7eed8; }
 .status-badge.unavailable { color: #8a3934; background: #f9e9e6; }
 
+.account-section { padding-top: 72px; }
+.account-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.account-card { padding: 28px; background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 18px; }
+.account-card h3 { margin: 0 0 16px; font-size: 20px; }
+.account-card p { color: var(--muted); line-height: 1.5; }
+.account-card label { display: block; margin: 16px 0; font-size: 13px; font-weight: 700; }
+.account-card input:not([type='checkbox']) { display: block; width: 100%; padding: 11px 12px; margin-top: 7px; border: 1px solid #bfc9c6; border-radius: 6px; font: inherit; }
+.account-card .check-label { display: flex; align-items: center; gap: 8px; }
+.account-card button:disabled { opacity: .55; cursor: wait; }
+.account-message { padding: 14px 18px; border-radius: 6px; background: #e5f4e8; color: #1b6c4b; }
+.admin-actions { border-top: 1px solid var(--border); margin-top: 26px; padding-top: 24px; }
+.admin-actions a { overflow-wrap: anywhere; }
+.inbox-card { margin-top: 28px; }
+.inbox-card .section-heading { align-items: center; }
+.inbox-card ul { padding-left: 20px; }
+.inbox-card li { margin: 14px 0; line-height: 1.6; }
+
 footer {
   padding: 28px 0 32px;
   color: var(--muted);
@@ -233,4 +250,5 @@ footer {
   main { padding-top: 20px; }
   .hero-panel { min-height: 0; }
   .service-grid { grid-template-columns: 1fr; }
+  .account-grid { grid-template-columns: 1fr; }
 }

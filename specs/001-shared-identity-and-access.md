@@ -118,7 +118,7 @@ During local setup, capture verification and password-reset messages in a local 
 
 When implementation exists, exercise the account and password lifecycle through integration tests and a manual walkthrough. Include negative cases for credential failures, expired/reused recovery proof, session invalidation, unauthorized profile access, and direct calls to protected operations.
 
-Use two minimal application integrations to validate identity reuse and permission isolation. Review credential handling and verify that logs and responses do not disclose secrets. The local foundation exists; these identity flows and executable tests have not been implemented yet.
+Use two minimal application integrations to validate identity reuse and permission isolation. Review credential handling and verify that logs and responses do not disclose secrets. A first local flow now covers setup-only administrator creation, reusable invitations, registration, email verification, username/email login, and product grants; `tests/account-smoke.ps1` exercises the HTTP API against a fresh SQLite database. Password management, full product administrator and access-request rules, OpenID Connect integration, and the remaining acceptance checks are still implementation work.
 
 ## Open questions
 
