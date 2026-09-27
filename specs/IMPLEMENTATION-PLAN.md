@@ -1,7 +1,7 @@
 # Local implementation plan
 
 - Date: 2026-09-26
-- Status: Draft technical plan; no application implementation exists yet.
+- Status: In progress. The Windows foundation has been scaffolded and smoke-tested; Fedora, local email capture, and application workflows remain.
 - Product scope: all accepted requirements in specs 001–007 and decisions through 0072.
 
 ## Starting point
@@ -16,7 +16,7 @@ Use two small ASP.NET Core hosts in one repository: an identity host for account
 
 Use one React workspace with separate portal and campaign entry points. Vite supplies development assets; published builds are served by their respective hosts. Browser requests use the appropriate host's same-origin API. Keep product session cookies distinct from the identity cookie. Do not put long-lived credentials in browser storage.
 
-Initially use one local SQLite database with separately owned identity and campaign tables and one coordinated migration history. The two hosts must use short transactions and handle SQLite contention. This supports the agreed manual database transfer without adding synchronization. Do not assume the eventual cloud database will have identical migration behavior.
+The local implementation uses one SQLite database with separately owned identity and campaign EF Core contexts and separate migration history tables under [decision 0073](../decisions/0073-local-hosts-and-migration-ownership.md). Apply migrations sequentially, identity first. The two hosts must use short transactions and handle SQLite contention. This supports the agreed manual database transfer without adding synchronization. Do not assume the eventual cloud database will have identical migration behavior.
 
 Use OpenID Connect authorization code flow with PKCE and server-side product sessions. Validate application grants on protected requests, not only at login. Persist session identifiers and revocation state so password resets and access revocation take effect without waiting for an old token to expire. Prove this behavior with a second minimal client before expanding the UI.
 
@@ -24,7 +24,7 @@ Proposed local email tool: Mailpit bound to loopback, with external forwarding d
 
 ## Runtime and tooling baseline
 
-Propose .NET 10 LTS with matching ASP.NET Core and EF Core major versions, and Node.js 24 LTS with npm. Verify package compatibility and pin exact SDK/package versions during scaffolding, including OpenIddict, React, TypeScript, Vite, and test tools. Commit lockfiles. Do not use an unpinned latest dependency in reproducible setup instructions.
+The Windows foundation uses .NET SDK 10.0.202, EF Core 10.0.12, OpenIddict 7.7.1, Node.js 24.14.1, npm 11.11.0, React 19.3.0, TypeScript 6.0.3, and Vite 8.3.1. Project package versions and the npm lockfile are pinned. Validate the same setup on Fedora before treating Step 1 as complete, and pin test dependencies when tests are introduced.
 
 The official .NET Fedora documentation currently lists Fedora 44 and 43 with .NET 10 support. This is compatibility evidence, not a claim that either platform has been tested here or that the owner's laptop version was inspected. Recheck the stable Fedora release at setup time.
 
@@ -63,4 +63,4 @@ The accepted initiative and HP requirements have no application-defined range. D
 
 ## Next executable task
 
-Begin step 1: scaffold the local solution and frontend, resolve and pin dependencies, add actual startup/build/test commands, and verify on available platforms. Do not claim Fedora validation from Windows results. Before step 3 is finalized, resolve the browser-close qualification in the review. No cloud deployment is needed for this work.
+Continue Step 1 by adding a local test email inbox and validating setup on Fedora; static serving of published frontend assets from the hosts remains to be wired. The solution, migrations, two Vite pages, pinned dependencies, startup commands, and Windows smoke test are in place. Then implement Step 2's identity flows. Before Step 3 is finalized, resolve the browser-close qualification in the review. No cloud deployment is needed for this work.

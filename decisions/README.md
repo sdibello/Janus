@@ -80,3 +80,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0070](0070-latest-stable-fedora-target.md) | Accepted | Target the latest stable Fedora release and record the concrete version during setup and validation. |
 | [0071](0071-local-test-inbox-for-email.md) | Accepted | Capture verification and password-reset emails in a local test inbox during setup instead of sending real email. |
 | [0072](0072-password-strength-without-periodic-expiry.md) | Accepted | Use a NIST-based password-strength baseline without scheduled password expiration. |
+| [0073](0073-local-hosts-and-migration-ownership.md) | Accepted | Two local hosts share SQLite with separate EF Core contexts and migration histories; Vite serves two entry pages. |

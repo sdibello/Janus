@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Janus.Campaigns/Janus.Campaigns.csproj" />
+    <Project Path="src/Janus.Domain/Janus.Domain.csproj" />
+    <Project Path="src/Janus.Identity/Janus.Identity.csproj" />
+  </Folder>
+</Solution>

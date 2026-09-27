@@ -16,7 +16,7 @@ Janus is a small project in its initial setup stage. Read README.md, relevant sp
 ## Validation
 
 - Run relevant checks when available; add meaningful tests for new behavior and bug fixes.
-- No build, test, or lint commands exist yet. Document real commands in README.md when tooling is added; do not invent commands or claim unrun checks passed.
+- Build and lint commands are documented in [local development](docs/LOCAL-DEVELOPMENT.md). Run the relevant checks and report only checks actually performed; executable feature tests have not been added yet.
 - Summarize changes, validation performed, and remaining limitations at handoff.
 
 ## Project layout

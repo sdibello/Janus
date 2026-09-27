@@ -17,12 +17,22 @@ Desktop.ini
 *.user
 
 # Logs and temporary files
+.local/
 *.log
 /tmp/
 /temp/
 .cache/
 
 # Common dependency, build, and test outputs (adjust when a stack is chosen)
+bin/
+obj/
+**/dist/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 node_modules/
 /.next/
 /.nuxt/

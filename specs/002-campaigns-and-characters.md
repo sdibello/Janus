@@ -57,6 +57,6 @@ HP tracking is included through [spec 007](007-hit-point-tracking.md) at the enc
 
 When implementation exists, walk through campaign creation and the add/reclassify/remove character flow. Test persistence, empty lists, and blank-name validation. Use two campaigns and two user accounts to check campaign isolation and unauthorized direct requests.
 
-No application code or executable tests exist yet.
+The local foundation exists; campaign workflows and executable tests have not been implemented yet.
 
 ## Open questions

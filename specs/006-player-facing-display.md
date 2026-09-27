@@ -31,7 +31,7 @@ A separate presentation view is a possible future enhancement, not a commitment 
 
 ## Validation
 
-When implemented, manually share the encounter window using an external screen-sharing tool and check readability during turn advancement, reordering, and ending. No application code or executable tests exist yet.
+When implemented, manually share the encounter window using an external screen-sharing tool and check readability during turn advancement, reordering, and ending. The local foundation exists; the encounter display and executable tests have not been implemented yet.
 
 ## Open questions
 

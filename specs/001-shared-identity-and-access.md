@@ -118,7 +118,7 @@ During local setup, capture verification and password-reset messages in a local 
 
 When implementation exists, exercise the account and password lifecycle through integration tests and a manual walkthrough. Include negative cases for credential failures, expired/reused recovery proof, session invalidation, unauthorized profile access, and direct calls to protected operations.
 
-Use two minimal application integrations to validate identity reuse and permission isolation. Review credential handling and verify that logs and responses do not disclose secrets. No application code or executable tests exist yet.
+Use two minimal application integrations to validate identity reuse and permission isolation. Review credential handling and verify that logs and responses do not disclose secrets. The local foundation exists; these identity flows and executable tests have not been implemented yet.
 
 ## Open questions
 

@@ -79,7 +79,7 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 
 When implementation exists, create two encounters and add the same PC and NPC to both, verifying that neither can be added twice to one encounter. Add multiple same-name mobs during Prepare and verify that each has its own turn and HP. Reopen both after logout and login to verify persistence. Remove participants during Prepare to verify that campaign lists and the other encounter remain unchanged.
 
-Use a second campaign owned by the same dungeon master to verify rejection of cross-campaign character selection, and a second user account to validate unauthorized access. Add a mob during play, finish the encounter, log out, and reopen it through its campaign. Verify that removing a referenced campaign character is rejected, including when referenced only by a finished encounter. Encounters display current campaign character values under decision 0032. No application code or executable tests exist yet.
+Use a second campaign owned by the same dungeon master to verify rejection of cross-campaign character selection, and a second user account to validate unauthorized access. Add a mob during play, finish the encounter, log out, and reopen it through its campaign. Verify that removing a referenced campaign character is rejected, including when referenced only by a finished encounter. Encounters display current campaign character values under decision 0032. The local foundation exists; these flows and executable tests have not been implemented yet.
 
 ## Open questions
 

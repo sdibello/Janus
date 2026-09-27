@@ -80,7 +80,7 @@ Included is automatic Unconscious status with a colored participant treatment fo
 
 ## Validation
 
-When implemented, exercise optional HP entry, direct editing, Damage, and Heal across all participant categories, including duplicate-name mobs, non-active participants, and mobs added during Fight. Check negative-value persistence, Unconscious labeling and status color (once chosen during UI prototyping), active-highlight coexistence, and restored status. Cover missing HP, 0, -1, -9, -10, -11, and -20, including changes that cross directly from positive HP to below -10. Verify upward transitions from -14 to -5, -5 to 0, and directly from -14 to 5, including status restoration after reopening. No application code or executable tests exist yet.
+When implemented, exercise optional HP entry, direct editing, Damage, and Heal across all participant categories, including duplicate-name mobs, non-active participants, and mobs added during Fight. Check negative-value persistence, Unconscious labeling and status color (once chosen during UI prototyping), active-highlight coexistence, and restored status. Cover missing HP, 0, -1, -9, -10, -11, and -20, including changes that cross directly from positive HP to below -10. Verify upward transitions from -14 to -5, -5 to 0, and directly from -14 to 5, including status restoration after reopening. The local foundation exists; HP workflows and executable tests have not been implemented yet.
 
 ## Open questions
 

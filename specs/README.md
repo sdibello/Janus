@@ -18,7 +18,7 @@ The first release targets desktop and laptop computers only. Tablet and phone su
 
 An internet connection is required. Offline operation, including continuing an open encounter or opening saved encounters without internet, is outside the first-release scope. Restoring saved encounter progress remains required when connected. See decision [0059](../decisions/0059-internet-required-for-first-release.md).
 
-Acceptance: the included account, access-management, campaign, and encounter workflows must be usable on supported desktop and laptop environments with an internet connection. Select specific supported environments with the implementation and validate those workflows there; no application exists yet.
+Acceptance: the included account, access-management, campaign, and encounter workflows must be usable on supported desktop and laptop environments with an internet connection. Select specific supported environments with the implementation and validate those workflows there; only the local application foundation exists so far.
 
 First-release acceptance must cover the agreed requirements in every listed spec; a smaller implemented subset does not complete the release scope.
 
