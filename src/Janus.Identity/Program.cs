@@ -6,10 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using OpenIddict.Server;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.AddFilter("OpenIddict", LogLevel.Warning);
 
 var dataDirectory = builder.Configuration["Janus:DataDirectory"]
     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Janus");
@@ -105,7 +108,31 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
     options.ValidationInterval = TimeSpan.Zero);
 
 builder.Services.AddOpenIddict()
-    .AddCore(options => options.UseEntityFrameworkCore().UseDbContext<IdentityDataContext>());
+    .AddCore(options => options.UseEntityFrameworkCore().UseDbContext<IdentityDataContext>())
+    .AddServer(options =>
+    {
+        options.SetAuthorizationEndpointUris("/connect/authorize");
+        options.SetTokenEndpointUris("/connect/token");
+        options.AllowAuthorizationCodeFlow();
+        options.RequireProofKeyForCodeExchange();
+        options.RegisterScopes(Scopes.Email, Scopes.Profile);
+        options.SetAccessTokenLifetime(TimeSpan.FromHours(8));
+        if (!builder.Environment.IsDevelopment())
+            throw new InvalidOperationException("Configure production OpenID Connect certificates before hosting Janus Identity.");
+        options.AddEncryptionCertificate(LocalOidcCertificates.LoadOrCreate(keyDirectory, "encryption"));
+        options.AddSigningCertificate(LocalOidcCertificates.LoadOrCreate(keyDirectory, "signing"));
+        var integration = options.UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough()
+            .EnableTokenEndpointPassthrough();
+        if (builder.Environment.IsDevelopment()) integration.DisableTransportSecurityRequirement();
+    })
+    .AddValidation(options =>
+    {
+        options.UseLocalServer();
+        options.UseAspNetCore();
+    });
+builder.Services.Configure<OpenIddictServerOptions>(options =>
+    options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain));
 
 var app = builder.Build();
 
@@ -114,6 +141,8 @@ if (args.Contains("--setup-admin", StringComparer.Ordinal))
     await AccountEndpoints.SetupAdministratorAsync(app);
     return;
 }
+
+await OpenIdConnectEndpoints.RegisterLocalClientAsync(app);
 
 app.UseRouting();
 app.Use(async (context, next) =>
@@ -163,5 +192,6 @@ app.MapGet("/health", async (IdentityDataContext data, CancellationToken cancell
 app.MapAccountEndpoints();
 app.MapAccountPasswordEndpoints();
 app.MapAccessEndpoints();
+app.MapOpenIdConnectEndpoints();
 
 app.Run();

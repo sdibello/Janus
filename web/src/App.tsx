@@ -4,6 +4,9 @@ import AccountPortal from './AccountPortal'
 
 type ServiceName = 'identity' | 'campaigns'
 type ServiceState = 'checking' | 'ready' | 'unavailable'
+type CampaignProfile = { userId: string; userName: string; email: string; productId: string }
+type CampaignSession = { state: 'checking' | 'signed-out' | 'ready' | 'denied' | 'unavailable'; profile?: CampaignProfile }
+const campaignOrigin = import.meta.env.VITE_CAMPAIGN_ORIGIN ?? 'http://localhost:5199'
 
 const services: { name: ServiceName; label: string; path: string }[] = [
   { name: 'identity', label: 'Accounts', path: '/api/identity/health' },
@@ -15,6 +18,24 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
     identity: 'checking',
     campaigns: 'checking',
   })
+  const [campaignSession, setCampaignSession] = useState<CampaignSession>({ state: 'checking' })
+  const [signInFailed] = useState(() => new URLSearchParams(window.location.search).has('signInError'))
+  const [silentSignInTried] = useState(() => new URLSearchParams(window.location.search).has('silent'))
+
+  const checkCampaignSession = useCallback(async (trySilentSignIn = false) => {
+    try {
+      const response = await fetch('/api/campaigns/auth/me', { cache: 'no-store' })
+      if (response.ok) {
+        setCampaignSession({ state: 'ready', profile: await response.json() as CampaignProfile })
+      } else if (response.status === 401 && trySilentSignIn && !signInFailed && !silentSignInTried) {
+        window.location.assign(`${campaignOrigin}/auth/try-sign-in`)
+      } else {
+        setCampaignSession({ state: response.status === 401 ? 'signed-out' : response.status === 403 ? 'denied' : 'unavailable' })
+      }
+    } catch {
+      setCampaignSession({ state: 'unavailable' })
+    }
+  }, [signInFailed, silentSignInTried])
 
   const checkServices = useCallback(async () => {
     await Promise.all(
@@ -35,6 +56,22 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
   useEffect(() => {
     void checkServices()
   }, [checkServices])
+
+  useEffect(() => {
+    let active = true
+    void Promise.resolve().then(() => { if (active && page === 'campaigns') return checkCampaignSession(true) })
+    return () => { active = false }
+  }, [page, checkCampaignSession])
+
+  async function signOutCampaign() {
+    try {
+      const response = await fetch('/api/campaigns/auth/logout', { method: 'POST' })
+      if (response.ok) setCampaignSession({ state: 'signed-out' })
+      else setCampaignSession({ state: 'unavailable' })
+    } catch {
+      setCampaignSession({ state: 'unavailable' })
+    }
+  }
 
   const isPortal = page === 'portal'
 
@@ -62,13 +99,43 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
           <p className="hero-copy">
             {isPortal
               ? 'Create an invited account, verify your email, and sign in to the shared access portal.'
-              : 'Campaigns, characters, and encounters will live here. The local foundation is running while the first workflows are built.'}
+              : 'Sign in with your Janus account to begin managing campaigns and encounters.'}
           </p>
           <div className="hero-rule" aria-hidden="true" />
           <p className="hero-note">
             {isPortal ? 'Identity service' : 'Campaign service'} · React / ASP.NET Core / SQLite
           </p>
         </section>
+
+        {!isPortal && <section className="account-section" aria-labelledby="campaign-account-heading">
+          <div className="section-heading"><div>
+            <p className="eyebrow">Campaign access</p>
+            <h2 id="campaign-account-heading">Your session</h2>
+          </div></div>
+          <div className="account-card account-narrow">
+            {campaignSession.state === 'checking' && <p>Checking your campaign session…</p>}
+            {campaignSession.state === 'ready' && <>
+              <h3>Signed in as {campaignSession.profile?.userName}</h3>
+              <p>Your campaign access is active.</p>
+              <button type="button" onClick={() => void signOutCampaign()}>Sign out of campaigns</button>
+            </>}
+            {campaignSession.state === 'signed-out' && <>
+              <h3>Sign in to Janus campaigns</h3>
+              {signInFailed && <p role="alert">Sign-in could not be completed. Check your campaign access in the portal.</p>}
+              <p>Use your shared account. You need an invitation or approved campaign access.</p>
+              <a className="primary-link" href={`${campaignOrigin}/auth/login`}>Sign in</a>
+            </>}
+            {campaignSession.state === 'denied' && <>
+              <h3>Campaign access required</h3>
+              <p>Your account is signed in, but it does not currently have campaign access.</p>
+              <a href="/portal.html">Request access in the portal</a>
+            </>}
+            {campaignSession.state === 'unavailable' && <>
+              <p>We could not check your campaign session.</p>
+              <button type="button" onClick={() => void checkCampaignSession()}>Try again</button>
+            </>}
+          </div>
+        </section>}
 
         <section className="status-section" aria-labelledby="status-heading">
           <div className="section-heading">

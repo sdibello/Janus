@@ -37,6 +37,7 @@ function readLink() {
     verifyToken: query.get('verifyToken') ?? '',
     resetUser: query.get('resetUser') ?? '',
     resetToken: query.get('resetToken') ?? '',
+    returnTo: query.get('returnTo') ?? '',
   }
 }
 
@@ -60,7 +61,7 @@ async function post(path: string, body: object): Promise<{ ok: boolean; message:
 
 function AccountPortal() {
   const [link] = useState(readLink)
-  const { invitation, verifyUser, verifyToken, resetUser, resetToken } = link
+  const { invitation, verifyUser, verifyToken, resetUser, resetToken, returnTo } = link
   const [account, setAccount] = useState<Account | null>(null)
   const [inbox, setInbox] = useState<MailMessage[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -174,7 +175,19 @@ function AccountPortal() {
       rememberMe: values.get('rememberMe') === 'on',
     })
     setMessage(result.message)
-    if (result.ok) await refresh()
+    if (result.ok) {
+      if (returnTo) {
+        try {
+          const identityOrigin = new URL(import.meta.env.VITE_IDENTITY_ORIGIN ?? 'http://localhost:5186').origin
+          const target = new URL(returnTo, identityOrigin)
+          if (target.origin === identityOrigin && target.pathname === '/connect/authorize') {
+            window.location.assign(target.href)
+            return
+          }
+        } catch { /* Ignore malformed return URLs after a successful sign-in. */ }
+      }
+      await refresh()
+    }
     setBusy(false)
   }
 

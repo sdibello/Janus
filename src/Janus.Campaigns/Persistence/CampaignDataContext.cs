@@ -9,6 +9,7 @@ public sealed class CampaignDataContext(DbContextOptions<CampaignDataContext> op
     public DbSet<CampaignCharacter> Characters => Set<CampaignCharacter>();
     public DbSet<Encounter> Encounters => Set<Encounter>();
     public DbSet<EncounterParticipant> Participants => Set<EncounterParticipant>();
+    public DbSet<CampaignSession> Sessions => Set<CampaignSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +52,14 @@ public sealed class CampaignDataContext(DbContextOptions<CampaignDataContext> op
                 .HasFilter("\"CharacterId\" IS NOT NULL");
             entity.HasIndex(x => new { x.EncounterId, x.Position }).IsUnique();
         });
+
+        modelBuilder.Entity<CampaignSession>(entity =>
+        {
+            entity.ToTable("CampaignSessions");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ProtectedTicket).IsRequired();
+            entity.HasIndex(x => x.ExpiresAtUtc);
+        });
     }
 }
 
@@ -91,4 +100,11 @@ public sealed class EncounterParticipant
     public string? CurrentHp { get; set; }
     public int Position { get; set; }
     public long TurnCount { get; set; }
+}
+
+public sealed class CampaignSession
+{
+    public string Id { get; set; } = "";
+    public byte[] ProtectedTicket { get; set; } = [];
+    public DateTimeOffset ExpiresAtUtc { get; set; }
 }

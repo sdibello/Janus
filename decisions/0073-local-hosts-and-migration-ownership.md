@@ -17,4 +17,4 @@ The local implementation needs shared identity for future products and a campaig
 
 ## Consequences
 
-Identity and campaign tables can evolve without either host owning the other's EF model. Both hosts still contend for one SQLite file, so database operations should stay short and migrations must run sequentially. The shared file supports the agreed manual local transfer; keys and future session handling need separate transfer and recovery guidance before that workflow is considered complete. The current implementation contains schemas and service health checks; it does not yet implement authentication or campaign operations.
+Identity and campaign tables can evolve without either host owning the other's EF model. Both hosts still contend for one SQLite file, so database operations should stay short and migrations must run sequentially. The shared file supports the agreed manual local transfer; keys and session handling need separate transfer and recovery guidance before that workflow is considered complete.

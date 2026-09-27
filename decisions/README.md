@@ -85,3 +85,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0075](0075-interactive-first-administrator-setup.md) | Accepted for local setup | Create the first shared administrator through an interactive setup command, then verify email. |
 | [0076](0076-local-password-recovery-proof.md) | Accepted for local identity host | Use a database-backed one-hour, single-use reset proof and immediate identity-cookie stamp validation. |
 | [0077](0077-product-access-registry-and-scopes.md) | Accepted for local identity proof | Keep product grants, scoped administrators, and request decisions separate; check current grants on identity access requests. |
+| [0078](0078-local-openid-connect-product-sessions.md) | Accepted for local implementation | Use S256 OpenID Connect sign-in with campaign-owned SQLite sessions and current identity grant checks. |
