@@ -83,3 +83,5 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0073](0073-local-hosts-and-migration-ownership.md) | Accepted | Two local hosts share SQLite with separate EF Core contexts and migration histories; Vite serves two entry pages. |
 | [0074](0074-sqlite-local-test-inbox.md) | Accepted for local development | Capture verification messages in SQLite and expose a Development-only loopback inbox. |
 | [0075](0075-interactive-first-administrator-setup.md) | Accepted for local setup | Create the first shared administrator through an interactive setup command, then verify email. |
+| [0076](0076-local-password-recovery-proof.md) | Accepted for local identity host | Use a database-backed one-hour, single-use reset proof and immediate identity-cookie stamp validation. |
+| [0077](0077-product-access-registry-and-scopes.md) | Accepted for local identity proof | Keep product grants, scoped administrators, and request decisions separate; check current grants on identity access requests. |

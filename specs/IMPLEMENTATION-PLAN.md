@@ -1,8 +1,8 @@
 # Local implementation plan
 
 - Date: 2026-09-26
-- Status: In progress. The Windows foundation and first invitation-based account flow have been smoke-tested; Fedora and the remaining application workflows remain.
-- Product scope: all accepted requirements in specs 001–007 and decisions through 0072.
+- Status: In progress. Local identity registration, password, and access workflows have been smoke-tested on Windows; Fedora and product integration remain.
+- Product scope: all accepted requirements in specs 001–007 and decisions through 0077.
 
 ## Starting point
 
@@ -63,4 +63,4 @@ The accepted initiative and HP requirements have no application-defined range. D
 
 ## Next executable task
 
-Continue Step 2 with password change and recovery, then product administrator scopes and shared access requests. The first shared administrator can now be created through an interactive setup command; a Development inbox, reusable invitations, registration, verification, and login run locally. Extend the interim password blocklist before claiming R10a. Step 1 still needs Fedora validation and static serving of published frontend assets. Before Step 3 is finalized, resolve the browser-close qualification in the review. No cloud deployment is needed for this work.
+Advance Step 3 by adding an OpenID Connect server and a minimal second product client, with server-side product sessions that validate current grants and global password-driven revocation. Step 2 now has a local proof for setup-only administrator creation, reusable invitations, verification, login, one-hour single-use password recovery, password change, product administrator scopes, access requests, approval, rejection, and revocation. The three HTTP smoke scripts passed against one fresh Windows SQLite database. Extend the interim password blocklist before claiming R10a, and prove that product sessions honor revocation before treating Step 2's full integration contract as complete. Step 1 still needs Fedora validation and static serving of published frontend assets. Resolve the browser-close qualification before Step 3 is finalized. No cloud deployment is needed for this work.

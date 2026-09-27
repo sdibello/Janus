@@ -10,7 +10,7 @@ $adminPasswordText = ConvertFrom-SecureString $AdminPassword -AsPlainText
 $userPassword = "Smoke-Passphrase-$([guid]::NewGuid().ToString('N'))"
 
 function Send-Json([string]$path, [object]$body, $session) {
-    Invoke-WebRequest -Uri "$base$path" -Method Post -ContentType 'application/json' -Body ($body | ConvertTo-Json -Compress) -WebSession $session -SkipHttpErrorCheck
+    Invoke-WebRequest -Uri "$base$path" -Method Post -ContentType 'application/json' -Headers @{ Origin = $base } -Body ($body | ConvertTo-Json -Compress) -WebSession $session -SkipHttpErrorCheck
 }
 
 function Check([int]$actual, [int]$expected, [string]$name) {
@@ -33,6 +33,11 @@ Check $response.StatusCode 200 'administrator email verified'
 $adminSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $response = Send-Json '/account/login' @{ identifier = $AdminEmail; password = $adminPasswordText; rememberMe = $false } $adminSession
 Check $response.StatusCode 200 'administrator email login'
+$withoutOriginSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$response = Invoke-WebRequest "$base/account/login" -Method Post -ContentType 'application/json' -Body (@{ identifier = $AdminIdentifier; password = $adminPasswordText; rememberMe = $false } | ConvertTo-Json) -WebSession $withoutOriginSession -SkipHttpErrorCheck
+Check $response.StatusCode 200 'administrator signed in without origin'
+$response = Invoke-WebRequest "$base/admin/invitations" -Method Post -ContentType 'application/json' -Body '{"productId":"janus-campaigns"}' -WebSession $withoutOriginSession -SkipHttpErrorCheck
+Check $response.StatusCode 403 'cookie write without origin denied'
 $response = Send-Json '/admin/invitations' @{ productId = 'janus-campaigns' } $adminSession
 Check $response.StatusCode 200 'administrator creates invitation'
 $inviteUrl = ($response.Content | ConvertFrom-Json).url

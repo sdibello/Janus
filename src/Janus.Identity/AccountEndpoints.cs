@@ -18,7 +18,7 @@ public static class AccountEndpoints
     {
         app.MapPost("/account/register", RegisterAsync).RequireRateLimiting("account-write");
         app.MapPost("/account/verify-email", VerifyEmailAsync).RequireRateLimiting("account-write");
-        app.MapPost("/account/login", LoginAsync).RequireRateLimiting("account-write");
+        app.MapPost("/account/login", LoginAsync).RequireRateLimiting("login-attempt");
         app.MapPost("/account/logout", async (SignInManager<JanusUser> signIn) =>
         {
             await signIn.SignOutAsync();
@@ -35,7 +35,10 @@ public static class AccountEndpoints
         {
             app.MapGet("/dev/inbox", async (HttpContext context, IdentityDataContext data) =>
             {
-                if (context.Connection.RemoteIpAddress is not { } address || !IPAddress.IsLoopback(address))
+                var host = context.Request.Host.Host;
+                if (context.Connection.RemoteIpAddress is not { } address || !IPAddress.IsLoopback(address)
+                    || !string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+                        && host is not "127.0.0.1" and not "::1")
                     return Results.NotFound();
 
                 context.Response.Headers.CacheControl = "no-store";
@@ -51,7 +54,8 @@ public static class AccountEndpoints
         RegisterRequest request, IdentityDataContext data, UserManager<JanusUser> users,
         IConfiguration configuration)
     {
-        if (string.IsNullOrWhiteSpace(request.Invitation) || string.IsNullOrWhiteSpace(request.UserName)
+        if (string.IsNullOrWhiteSpace(request.Invitation) || request.Invitation.Length != 43
+            || string.IsNullOrWhiteSpace(request.UserName)
             || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrEmpty(request.Password))
             return Results.BadRequest(new { message = "Invitation, username, email, and password are required." });
 
@@ -68,14 +72,32 @@ public static class AccountEndpoints
         };
 
         await using var transaction = await data.Database.BeginTransactionAsync();
-        var created = await users.CreateAsync(user, request.Password);
+        IdentityResult created;
+        try
+        {
+            created = await users.CreateAsync(user, request.Password);
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync();
+            return Results.BadRequest(new { message = "Could not create an account with those details." });
+        }
         if (!created.Succeeded)
         {
             await transaction.RollbackAsync();
-            return Results.BadRequest(new { message = string.Join(" ", created.Errors.Select(error => error.Description)) });
+            var passwordError = created.Errors.FirstOrDefault(error => error.Code.StartsWith("Password", StringComparison.Ordinal));
+            return Results.BadRequest(new
+            {
+                message = passwordError?.Description ?? "Could not create an account with those details.",
+            });
         }
 
         await CaptureVerificationAsync(data, users, user, configuration);
+        if (invitation.ExpiresAtUtc <= DateTime.UtcNow)
+        {
+            await transaction.RollbackAsync();
+            return Results.BadRequest(new { message = "This invitation is invalid or expired." });
+        }
         await transaction.CommitAsync();
         return Results.Ok(new { message = "Account created. Open the local test inbox and verify your email before signing in." });
     }
@@ -139,12 +161,16 @@ public static class AccountEndpoints
 
         var products = await data.ProductGrants.Where(grant => grant.UserId == user.Id)
             .Select(grant => grant.ProductId).ToListAsync();
+        var administeredProducts = await data.ProductAdministrators
+            .Where(administrator => administrator.UserId == user.Id)
+            .Select(administrator => administrator.ProductId).ToListAsync();
         return Results.Ok(new
         {
             user.Id,
             user.UserName,
             user.Email,
             Products = products,
+            AdministeredProducts = administeredProducts,
             IsSharedAdministrator = await users.IsInRoleAsync(user, SharedAdministratorRole),
         });
     }
@@ -154,11 +180,11 @@ public static class AccountEndpoints
         UserManager<JanusUser> users, IConfiguration configuration)
     {
         var user = await users.GetUserAsync(context.User);
-        if (user is null || !await users.IsInRoleAsync(user, SharedAdministratorRole))
-            return Results.Forbid();
         if (string.IsNullOrWhiteSpace(request.ProductId)
             || !await data.Products.AnyAsync(product => product.Id == request.ProductId))
             return Results.BadRequest(new { message = "Unknown product." });
+        if (user is null || !await AccessEndpoints.CanManageProductAsync(data, users, user, request.ProductId))
+            return Results.Forbid();
 
         var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
         var expiresAt = DateTime.UtcNow.AddHours(24);

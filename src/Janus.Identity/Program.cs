@@ -33,8 +33,24 @@ builder.Services.AddRateLimiter(options =>
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 30,
+            PermitLimit = 100,
             Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+    options.AddPolicy("login-attempt", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+    options.AddPolicy("password-recovery", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromHours(1),
             QueueLimit = 0,
         }));
 });
@@ -83,6 +99,10 @@ builder.Services.ConfigureApplicationCookie(options =>
         return Task.CompletedTask;
     };
 });
+// Identity rotates the security stamp on password changes and resets. Validate it on
+// every protected request so old cookies cannot remain usable for the default 30 minutes.
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+    options.ValidationInterval = TimeSpan.Zero);
 
 builder.Services.AddOpenIddict()
     .AddCore(options => options.UseEntityFrameworkCore().UseDbContext<IdentityDataContext>());
@@ -98,17 +118,25 @@ if (args.Contains("--setup-admin", StringComparer.Ordinal))
 app.UseRouting();
 app.Use(async (context, next) =>
 {
-    if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method)
-        && context.Request.Headers.Origin is { Count: > 0 } origin)
+    if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method))
     {
-        var portalOrigin = new Uri(builder.Configuration["Janus:PortalBaseUrl"] ?? "http://localhost:5173")
-            .GetLeftPart(UriPartial.Authority);
-        var requestOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
-        if (!string.Equals(origin.ToString(), portalOrigin, StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(origin.ToString(), requestOrigin, StringComparison.OrdinalIgnoreCase))
+        var origin = context.Request.Headers.Origin;
+        if (origin.Count == 0 && context.Request.Headers.Cookie.Count > 0)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return;
+        }
+        if (origin.Count > 0)
+        {
+            var portalOrigin = new Uri(builder.Configuration["Janus:PortalBaseUrl"] ?? "http://localhost:5173")
+                .GetLeftPart(UriPartial.Authority);
+            var requestOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
+            if (!string.Equals(origin.ToString(), portalOrigin, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(origin.ToString(), requestOrigin, StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return;
+            }
         }
     }
     await next();
@@ -133,5 +161,7 @@ app.MapGet("/health", async (IdentityDataContext data, CancellationToken cancell
 });
 
 app.MapAccountEndpoints();
+app.MapAccountPasswordEndpoints();
+app.MapAccessEndpoints();
 
 app.Run();

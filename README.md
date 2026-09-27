@@ -11,10 +11,11 @@ Janus provides campaign and encounter management for dungeon masters, with share
 - [Implementation plan](specs/IMPLEMENTATION-PLAN.md): local architecture proposal, delivery sequence, and validation gates.
 - [Requirements review](specs/REQUIREMENTS-REVIEW.md): corrected contradictions and remaining qualifications.
 - [Local development](docs/LOCAL-DEVELOPMENT.md): setup, migrations, startup, and build commands.
+- [Identity integration](docs/IDENTITY-INTEGRATION.md): current local access API and the remaining cross-product session boundary.
 
 ## Getting started
 
-Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database, set up the first administrator, and start the two backend hosts and Vite. Invitation-based registration, email verification, and sign-in work in the access portal. Campaign, encounter, and remaining identity workflows are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
+Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database, set up the first administrator, and start the two backend hosts and Vite. The access portal now supports invitation-based registration, email verification, sign-in, password management, and product access requests and administration. Cross-product sign-in, campaign, and encounter workflows are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).
 

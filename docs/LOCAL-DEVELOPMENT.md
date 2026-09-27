@@ -36,7 +36,15 @@ Enter a username, email address, and password when prompted. The password is ent
 
 Then start the identity host and Vite as shown below. Open <http://localhost:5173/portal.html>, find the verification message in the **Local test inbox**, open its link, and select **Verify email**. Sign in with the username or email address and password. To create another account, sign in as the administrator, select **Create invitation**, and share the resulting link. An invitation grants access to Janus campaigns after the new user's email is verified, works for multiple people, and expires after 24 hours.
 
-The inbox is stored in the local SQLite database and is exposed only in Development from the loopback interface. Verification links and invitations are secrets: do not commit the database, copy links into logs, or use this inbox as a production email service. A real email delivery provider is still required before cloud deployment.
+Signed-in users can change their password from the portal after entering the current password. From the sign-in form, **Forgot password?** accepts the account's verified email address and places a reset link in the local test inbox. The response is the same when the email address is unknown. Each reset link can be used once within one hour. A reset signs out existing identity sessions; a password change keeps the current identity session and signs out other identity sessions.
+
+## Manage product access
+
+The portal lists registered products and each signed-in user's current grants and access requests. A verified account can request a product it does not have. A pending request grants no access. Shared administrators can register products, appoint shared or product administrators, issue invitations, review requests, and revoke grants across products. Product administrators see those controls only for their appointed products. Rejected requests and revoked grants can be requested again.
+
+Registering a product here creates identity and access metadata, not a running application or OpenID Connect client. The campaign host is not yet authenticated through this shared service. Product access must be enforced inside each product during the next integration step; the identity host's `/account/access/{productId}` endpoint reads the current grant on every request and is available as the local access-contract proof.
+
+The inbox is stored in the local SQLite database and is exposed only in Development from the loopback interface. Keep Vite bound to localhost as configured; do not expose or tunnel its development proxy, which can reach the inbox. Verification links and invitations are secrets: do not commit the database, copy links into logs, or use this inbox as a production email service. A real email delivery provider is still required before cloud deployment.
 
 ## Run the application
 
@@ -64,10 +72,24 @@ npm run build --prefix web
 npm run lint --prefix web
 ```
 
-The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, password recovery/change, full password compromise screening, product administrator management, access requests, OpenID Connect sessions, and campaign workflows remain implementation work. Remember-me currently uses an Identity cookie, but the agreed cross-product session behavior has not yet been validated.
+The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, full password compromise screening, OpenID Connect sessions, and campaign workflows remain implementation work. Remember-me currently uses an Identity cookie, but the agreed cross-product session behavior has not yet been validated.
 
 For a repeatable account API smoke test, create a fresh isolated database, apply the identity migration, and run `--setup-admin` as above. Start the identity host with the same `Janus__DataDirectory`, then run `tests/account-smoke.ps1` with the administrator identifier, email, and password. The script requires PowerShell 7 and consumes the new database's local verification message. For example, PowerShell can prompt for the password without putting it on the command line:
 
 ```powershell
 ./tests/account-smoke.ps1 -AdminIdentifier admin -AdminEmail admin@example.test -AdminPassword (Read-Host 'Admin password' -AsSecureString)
 ```
+
+After verifying an account, `tests/password-smoke.ps1` exercises change and recovery against an isolated database. It changes the test account's password, so run it only on disposable data. The optional `-DatabasePath` argument checks expiry by updating a reset proof in that test database and requires Python 3:
+
+```powershell
+./tests/password-smoke.ps1 -Email admin@example.test -Password (Read-Host 'Current password' -AsSecureString) -DatabasePath .local/test-identity/janus.db
+```
+
+`tests/access-smoke.ps1` exercises a second registered product, product-scoped administrators, request approval/rejection, revocation, and direct-API denials. It creates test accounts and changes grants, so use the same kind of disposable database. The administrator must already be verified:
+
+```powershell
+./tests/access-smoke.ps1 -AdminIdentifier admin -AdminEmail admin@example.test -AdminPassword (Read-Host 'Admin password' -AsSecureString) -BaseUri http://localhost:5186
+```
+
+For a combined run, execute account, access, then password smoke in that order on one disposable database. Restart the identity host after the account script, which intentionally exhausts the in-memory login rate limiter. The password script changes the administrator's password, so run it last.

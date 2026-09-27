@@ -3,6 +3,7 @@ using System;
 using Janus.Identity.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Janus.Identity.Persistence.Migrations
 {
     [DbContext(typeof(IdentityDataContext))]
-    partial class IdentityDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260927143829_PasswordResetProof")]
+    partial class PasswordResetProof
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
@@ -165,62 +168,6 @@ namespace Janus.Identity.Persistence.Migrations
                             Id = "janus-campaigns",
                             Name = "Janus campaigns"
                         });
-                });
-
-            modelBuilder.Entity("Janus.Identity.Persistence.ProductAccessRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ResolvedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResolvedByUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UserId", "ProductId")
-                        .IsUnique()
-                        .HasFilter("Status = 'Pending'");
-
-                    b.ToTable("ProductAccessRequests");
-                });
-
-            modelBuilder.Entity("Janus.Identity.Persistence.ProductAdministrator", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("AppointedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("UserId", "ProductId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductAdministrators");
                 });
 
             modelBuilder.Entity("Janus.Identity.Persistence.ProductGrant", b =>
@@ -613,36 +560,6 @@ namespace Janus.Identity.Persistence.Migrations
 
             modelBuilder.Entity("Janus.Identity.Persistence.PasswordResetProof", b =>
                 {
-                    b.HasOne("Janus.Identity.Persistence.JanusUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Janus.Identity.Persistence.ProductAccessRequest", b =>
-                {
-                    b.HasOne("Janus.Identity.Persistence.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Janus.Identity.Persistence.JanusUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Janus.Identity.Persistence.ProductAdministrator", b =>
-                {
-                    b.HasOne("Janus.Identity.Persistence.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Janus.Identity.Persistence.JanusUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
