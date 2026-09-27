@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import AccountPortal from './AccountPortal'
+import CampaignWorkspace from './CampaignWorkspace'
 
 type ServiceName = 'identity' | 'campaigns'
 type ServiceState = 'checking' | 'ready' | 'unavailable'
@@ -136,6 +137,8 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
             </>}
           </div>
         </section>}
+
+        {!isPortal && campaignSession.state === 'ready' && <CampaignWorkspace />}
 
         <section className="status-section" aria-labelledby="status-heading">
           <div className="section-heading">

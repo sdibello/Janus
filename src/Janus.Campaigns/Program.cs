@@ -1,6 +1,4 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using Janus.Campaigns;
 using Janus.Campaigns.Persistence;
 using Microsoft.AspNetCore.Authentication;
@@ -14,6 +12,8 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var dataDirectory = builder.Configuration["Janus:DataDirectory"]
     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Janus");
@@ -22,7 +22,7 @@ var databasePath = Path.Combine(dataDirectory, "janus.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath }.ToString();
 var identityBaseUrl = builder.Configuration["Janus:IdentityBaseUrl"] ?? "http://localhost:5186";
 var webBaseUrl = builder.Configuration["Janus:WebBaseUrl"] ?? "http://localhost:5173";
-const string campaignCookie = "Janus.Campaign";
+const string campaignCookie = CampaignAccessService.CookieScheme;
 
 var keyDirectory = Path.Combine(dataDirectory, "campaign-keys");
 Directory.CreateDirectory(keyDirectory);
@@ -97,6 +97,7 @@ builder.Services.AddAuthentication(options =>
         };
     });
 builder.Services.AddHttpClient("identity-access", client => client.BaseAddress = new Uri(identityBaseUrl));
+builder.Services.AddScoped<CampaignAccessService>();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -149,29 +150,15 @@ app.MapGet("/auth/try-sign-in", () =>
     return Results.Challenge(properties, [OpenIdConnectDefaults.AuthenticationScheme]);
 });
 
-app.MapGet("/auth/me", async (HttpContext context, IHttpClientFactory clients,
+app.MapGet("/auth/me", async (HttpContext context, CampaignAccessService access,
     CancellationToken cancellationToken) =>
 {
     context.Response.Headers.CacheControl = "no-store";
-    var session = await context.AuthenticateAsync(campaignCookie);
-    if (!session.Succeeded || session.Properties?.GetTokenValue("access_token") is not { } token)
-        return Results.Unauthorized();
-
-    using var request = new HttpRequestMessage(HttpMethod.Get, "/connect/access/janus-campaigns");
-    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    try
-    {
-        using var response = await clients.CreateClient("identity-access")
-            .SendAsync(request, cancellationToken);
-        if (response.StatusCode == HttpStatusCode.Forbidden) return Results.Forbid();
-        if (response.StatusCode == HttpStatusCode.Unauthorized) return Results.Unauthorized();
-        if (!response.IsSuccessStatusCode) return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
-        var profile = await response.Content.ReadFromJsonAsync<CampaignUserProfile>(cancellationToken);
-        return profile is null ? Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
-            : Results.Ok(profile);
-    }
-    catch (HttpRequestException) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
+    var result = await access.CheckAsync(context, cancellationToken);
+    return result.Profile is null ? result.Failure() : Results.Ok(result.Profile);
 });
+
+app.MapCampaignEndpoints();
 
 app.MapPost("/auth/logout", async (HttpContext context) =>
 {
@@ -180,5 +167,3 @@ app.MapPost("/auth/logout", async (HttpContext context) =>
 });
 
 app.Run();
-
-internal sealed record CampaignUserProfile(string UserId, string UserName, string Email, string ProductId);

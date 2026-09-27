@@ -55,8 +55,6 @@ HP tracking is included through [spec 007](007-hit-point-tracking.md) at the enc
 
 ## Validation
 
-When implementation exists, walk through campaign creation and the add/reclassify/remove character flow. Test persistence, empty lists, and blank-name validation. Use two campaigns and two user accounts to check campaign isolation and unauthorized direct requests.
-
-The local foundation exists; campaign workflows and executable tests have not been implemented yet.
+Walk through campaign creation and the add/reclassify/remove character flow. Test persistence, empty lists, and blank-name validation. Use two campaigns and two user accounts to check campaign isolation and unauthorized direct requests. `tests/campaign-smoke.ps1` now exercises the API with those cases against a disposable SQLite database. A separate disposable-data check inserted an encounter reference and confirmed character removal returns 409. Browser interaction and Fedora validation remain.
 
 ## Open questions

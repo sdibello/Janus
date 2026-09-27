@@ -266,6 +266,17 @@ button:hover {
 .inbox-card .section-heading { align-items: center; }
 .inbox-card ul { padding-left: 20px; }
 .inbox-card li { margin: 14px 0; line-height: 1.6; }
+.campaign-grid { display: grid; grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.4fr); gap: 18px; }
+.campaign-grid > .account-card { margin-bottom: 0; }
+.campaign-list-heading { margin-top: 32px !important; }
+.campaign-list { list-style: none; padding: 0; margin: 0; }
+.campaign-list li + li { margin-top: 8px; }
+.campaign-list button { width: 100%; text-align: left; }
+.campaign-list button.selected { border-color: #245c4c; background: #e5f4e8; }
+.campaign-list strong, .campaign-list small { display: block; }
+.campaign-list small { margin-top: 5px; color: var(--muted); font-weight: 400; }
+.character-list { margin-top: 30px; }
+.character-list h4 { margin-bottom: 10px; }
 
 footer {
   padding: 28px 0 32px;
@@ -284,5 +295,6 @@ footer {
   .hero-panel { min-height: 0; }
   .service-grid { grid-template-columns: 1fr; }
   .account-grid { grid-template-columns: 1fr; }
+  .campaign-grid { grid-template-columns: 1fr; }
   .account-list li { align-items: flex-start; flex-direction: column; }
 }

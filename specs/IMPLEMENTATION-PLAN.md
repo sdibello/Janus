@@ -1,7 +1,7 @@
 # Local implementation plan
 
 - Date: 2026-09-26
-- Status: In progress. Local identity registration, password, access, and the first campaign OpenID Connect session have been smoke-tested on Windows; Fedora and full cross-product integration remain.
+- Status: In progress. Local identity, the first campaign OpenID Connect session, and owner-scoped campaign/character workflows have been smoke-tested on Windows; Fedora, encounters, and full cross-product integration remain.
 - Product scope: all accepted requirements in specs 001–007 and decisions through 0078.
 
 ## Starting point
@@ -63,4 +63,4 @@ The accepted initiative and HP requirements have no application-defined range. D
 
 ## Next executable task
 
-Complete Step 3 with a second minimal product client to prove shared sign-in and permission isolation, then automate the password-session checks and finish Remember me semantics. The first Janus campaign client now uses authorization-code flow with S256 PKCE, a SQLite-backed server-side session, and a current-grant check on `/auth/me`; `tests/oidc-smoke.ps1` passed sign-in, local logout, return sign-in, and immediate grant revocation on Windows. Manual checks on disposable data showed password change invalidating the old product session while preserving the current identity session and allowing silent product renewal; password reset invalidated both the product and identity sessions. Campaign data endpoints are still absent and must enforce that same check before Step 4 exposes them. Extend the interim password blocklist before claiming R10a. Step 1 still needs Fedora validation and static serving of published frontend assets. Resolve the browser-close qualification before Step 3 is finalized. No cloud deployment is needed for this work.
+Continue Step 4 with encounter creation, campaign PC/NPC selection, encounter-local mobs, and a persisted Prepare phase. Campaign and character APIs now enforce current product grants and creating-DM ownership; `tests/campaign-smoke.ps1` passed duplicate-name, list-maintenance, and two-user isolation checks on Windows. `tests/oidc-smoke.ps1` passed sign-in, local logout, return sign-in, and immediate grant revocation. Manual disposable-data checks showed password change invalidating the old product session while preserving the current identity session and allowing silent product renewal; password reset invalidated both product and identity sessions. Step 3 still needs a second minimal product client, automated password-session checks, and Remember me semantics. Extend the interim password blocklist before claiming R10a. Step 1 still needs Fedora validation and static serving of published frontend assets. Resolve the browser-close qualification before Step 3 is finalized. No cloud deployment is needed for this work.
