@@ -43,6 +43,8 @@ npm run dev --prefix web
 
 Open the [access portal](http://localhost:5173/portal.html), verify the first account using its message in the **Local test inbox**, and sign in. Open the [campaign app](http://localhost:5173/) to create campaigns and encounters. On later runs, start only the three terminals. Stop each with Ctrl+C. The SQLite database and local keys are stored outside the repository in your operating system's local application data directory under `Janus`; see [local development](docs/LOCAL-DEVELOPMENT.md) for a custom data directory, account invitations, published hosting, and checks.
 
+After pulling a version with new database migrations, rerun the relevant `dotnet ef database update` command before starting Janus. For the alpha encounter update, rerun the `CampaignDataContext` command above. It upgrades the existing local database without recreating your account or campaigns. If `Janus__DataDirectory` is set, use the same value for the migration command and the running hosts.
+
 The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, collapsed encounter preparation, a Fight-start initiative prompt, active-first Fight tiles, and encounter-specific HP. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).

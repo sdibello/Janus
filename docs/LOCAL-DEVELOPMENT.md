@@ -26,6 +26,8 @@ The `AlphaRoundProgress` campaign migration stores which participants have acted
 
 For an isolated test database, set `Janus__DataDirectory` to a disposable directory before running both migration commands and both hosts. The same value must be used by both hosts. The repository's `.local/` path is ignored and was used for the Windows smoke test.
 
+After pulling a version with new migrations, stop the hosts and rerun the affected `dotnet ef database update` command before starting them again. The alpha encounter update requires the `CampaignDataContext` command above. A running app with an older schema may fail with `no such column: e.CompletedThisRound`. Apply the migration to the same data directory used by that app; rerunning an already applied migration is safe.
+
 ## Create the first account
 
 After applying the identity migration, run the setup command from the repository root in an interactive terminal:
