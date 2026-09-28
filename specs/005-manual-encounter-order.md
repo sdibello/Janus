@@ -60,7 +60,7 @@ Adding PCs, NPCs, and mobs while running is covered by specs 003 and 004. New en
 
 When implementation exists, exercise the examples above with PCs, NPCs, and same-name mobs. Test moving both the active participant and other participants across its position, moves to the first and last positions, canceled moves, and multiple wraparounds. Verify that initiative never overrides the manually chosen order. Check keyboard operation, access enforcement, and encounter isolation.
 
-The Fight UI supports drag-and-drop and keyboard Move up/down controls. Windows API smoke checks cover changed and unchanged order, pre-reorder active successor, and persistence; browser interaction checks remain.
+The Fight UI supports drag-and-drop and keyboard Move up/down controls. Windows API smoke checks cover changed and unchanged order, pre-reorder active successor, and persistence. The published-page browser check now covers Move up, an actual drag-and-drop reorder, and the resulting active successor; the remaining reorder examples and keyboard-only navigation still need coverage.
 
 ## Open questions
 

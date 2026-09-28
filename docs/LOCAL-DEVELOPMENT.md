@@ -118,6 +118,26 @@ npm run test:browser-session --prefix web
 
 Set `JANUS_TEST_BROWSER_CHANNEL=msedge` to run against installed Microsoft Edge instead. This check passed with headless Chrome and Edge on Windows; it does not establish behavior when a browser is configured to restore prior sessions.
 
+The browser encounter check uses the same environment variables and published hosts. It creates a uniquely named campaign and finished encounter in the configured database, so use disposable data. It exercises initiative order, Next, Skip, HP status boundaries, Move up, drag-and-drop, Fight insertion, and the finished view after a page reload:
+
+```powershell
+npm run test:encounter-flow --prefix web
+```
+
+To verify persistence across a host restart, choose a unique suffix and leave the encounter in Fight. After the first command finishes, stop and restart both published hosts with the same data directory, then run the reopen check. It verifies Round, the active PC and its Turn counter, all participants, and HP status. Omit `JANUS_TEST_PHASE` for a finished encounter:
+
+```powershell
+$env:JANUS_TEST_SUFFIX='restarttrial1'
+$env:JANUS_TEST_STOP_AT_FIGHT='1'
+npm run test:encounter-flow --prefix web
+# Restart both hosts before continuing.
+$env:JANUS_TEST_CAMPAIGN="Browser campaign $env:JANUS_TEST_SUFFIX"
+$env:JANUS_TEST_ENCOUNTER="Browser encounter $env:JANUS_TEST_SUFFIX"
+$env:JANUS_TEST_PC="Browser PC $env:JANUS_TEST_SUFFIX"
+$env:JANUS_TEST_PHASE='Fight'
+npm run test:encounter-reopen --prefix web
+```
+
 For the Development-only second product test, start `dotnet run --project tests/Janus.SessionProof --launch-profile http` in a fourth terminal, using the same `Janus__DataDirectory`. It listens on port 5201 and stores proof-only data-protection keys in `proof-keys/`. On disposable data, run:
 
 ```powershell

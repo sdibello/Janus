@@ -80,7 +80,7 @@ Included is automatic Unconscious status with a colored participant treatment fo
 
 ## Validation
 
-Exercise optional HP entry, direct editing, Damage, and Heal across all participant categories, including duplicate-name mobs, non-active participants, and mobs added during Fight. Check negative-value persistence, Unconscious labeling and status color, active-highlight coexistence, and restored status. Cover missing HP, 0, fractional negatives, -9, -10, -14, and -20, including changes that cross directly from positive HP to below -10. Verify upward transitions from -14 to -5, -5 to 0, and directly from below -10 to positive HP. The Windows API smoke test now covers exact arithmetic, these status boundaries, saved Fight/Finished values, and cross-user denial. Browser color/keyboard interaction and process-restart checks remain.
+Exercise optional HP entry, direct editing, Damage, and Heal across all participant categories, including duplicate-name mobs, non-active participants, and mobs added during Fight. Check negative-value persistence, Unconscious labeling and status color, active-highlight coexistence, and restored status. Cover missing HP, 0, fractional negatives, -9, -10, -14, and -20, including changes that cross directly from positive HP to below -10. Verify upward transitions from -14 to -5, -5 to 0, and directly from below -10 to positive HP. The Windows API smoke test covers exact arithmetic, these status boundaries, saved Fight/Finished values, and cross-user denial. The published-page browser check covered 10.5 to -10 via Damage, -10 to -9.5 via Heal, and Unconscious status after both a finished reload and active-Fight host restart. Browser color review and the remaining interactions are still open.
 
 ## Open questions
 

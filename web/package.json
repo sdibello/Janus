@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test:browser-session": "node tests/browser-session.mjs",
+    "test:encounter-flow": "node tests/encounter-flow.mjs",
+    "test:encounter-reopen": "node tests/encounter-reopen.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
