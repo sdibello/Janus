@@ -74,7 +74,7 @@ npm run build --prefix web
 npm run lint --prefix web
 ```
 
-The web build writes both pages to `web/dist/`. The ASP.NET Core publish commands copy each page and shared assets into its host. Full password compromise screening, Fedora validation, and browser interaction checks remain implementation work. OpenID Connect campaign sign-in, campaign/encounter/HP APIs, shared sign-in across two products, Remember me cookie renewal, and the identity password lifecycle have been smoke-tested on Windows. A browser-close check and automated cross-product password revocation check remain.
+The web build writes both pages to `web/dist/`. The ASP.NET Core publish commands copy each page and shared assets into its host. Full password compromise screening, Fedora validation, and browser interaction checks remain implementation work. OpenID Connect campaign sign-in, campaign/encounter/HP APIs, shared sign-in across two products, Remember me cookie renewal, and password-driven revocation across both products have been smoke-tested on Windows. A browser-close check remains.
 
 ## Run published pages without Vite
 
@@ -113,6 +113,12 @@ For the Development-only second product test, start `dotnet run --project tests/
 ```powershell
 ./tests/session-smoke.ps1 -Identifier admin -Password (Read-Host 'Admin password' -AsSecureString)
 ./tests/cross-product-smoke.ps1 -AdminIdentifier admin -AdminPassword (Read-Host 'Admin password' -AsSecureString)
+```
+
+On disposable data, `tests/cross-product-password-smoke.ps1` signs the administrator into two browser sessions and both products, then changes and resets that account's password. It checks that old product tokens cannot access campaign data, that the current browser can silently obtain fresh product sessions after a change, and that reset prevents silent return. The script leaves the account with a generated password, so do not run it against an account you need to keep using:
+
+```powershell
+./tests/cross-product-password-smoke.ps1 -AdminIdentifier admin -AdminEmail admin@example.test -AdminPassword (Read-Host 'Admin password' -AsSecureString)
 ```
 
 After setup and email verification, run `tests/oidc-smoke.ps1` against a disposable database to check campaign sign-in, local logout, and password-free return. Its optional `-ExerciseRevocation` switch revokes the signed-in user's campaign grant, so use it only on disposable data with a shared administrator account:

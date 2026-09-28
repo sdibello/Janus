@@ -29,7 +29,8 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
       const response = await fetch(`${campaignApi}/auth/me`, { cache: 'no-store' })
       if (response.ok) {
         setCampaignSession({ state: 'ready', profile: await response.json() as CampaignProfile })
-      } else if (response.status === 401 && trySilentSignIn && !signInFailed && !silentSignInTried) {
+      } else if ((response.status === 401 || response.status === 403)
+        && trySilentSignIn && !signInFailed && !silentSignInTried) {
         window.location.assign(`${campaignOrigin}/auth/try-sign-in`)
       } else {
         setCampaignSession({ state: response.status === 401 ? 'signed-out' : response.status === 403 ? 'denied' : 'unavailable' })
