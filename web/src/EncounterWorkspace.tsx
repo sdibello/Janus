@@ -229,7 +229,7 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
           onClick={() => void mutate(`${api}/${selected.id}/fight`, 'POST',
             { revision: selected.revision }, 'Fight started.')}>Begin Fight</button>
         {selected.participants.length > 0 && selected.participants.some((participant) => participant.initiative === null)
-          && <p>Enter initiative for every participant before beginning Fight.</p>}
+          && <p>Enter initiative for each PC, NPC, and mob in the list below before beginning Fight.</p>}
       </div>}
       <h5>{selected.phase === 'Prepare' ? 'Initial order' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
       {selected.phase === 'Fight' && <p>Drag a participant to reorder, or use Move up and Move down. A move makes the participant who followed the active one before the move active.</p>}
@@ -256,6 +256,21 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
             <div><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
               {active && <span className="active-label">Active turn</span>}
             </div>
+            {selected.phase === 'Prepare' && <div className="prepare-initiative">
+              {participant.initiative === null && <p>Initiative needed before Fight</p>}
+              <form key={`${participant.id}-${participant.initiative}`} onSubmit={(event) => {
+                event.preventDefault()
+                const value = new FormData(event.currentTarget).get('initiative')
+                void mutate(`${api}/${selected.id}/participants/${participant.id}/initiative`, 'PATCH',
+                  { revision: selected.revision, initiative: value }, 'Initiative saved.')
+              }}>
+                <label>Initiative for {participant.name} ({participant.kind.toUpperCase()})
+                  <input name="initiative" defaultValue={participant.initiative ?? ''}
+                    inputMode="numeric" pattern="[+-]?[0-9]+" />
+                </label>
+                <button type="submit" disabled={busy}>Save initiative</button>
+              </form>
+            </div>}
             <p>HP: {participant.currentHp ?? 'Not set'}
               {participant.status === 'Unconscious' && <span className="hp-status unconscious-label">Unconscious</span>}
               {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
@@ -283,16 +298,6 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
               </>}
             </div>}
             {selected.phase === 'Prepare' ? <>
-              <form key={`${participant.id}-${participant.initiative}`} onSubmit={(event) => {
-                event.preventDefault()
-                const value = new FormData(event.currentTarget).get('initiative')
-                void mutate(`${api}/${selected.id}/participants/${participant.id}/initiative`, 'PATCH',
-                  { revision: selected.revision, initiative: value }, 'Initiative saved.')
-              }}>
-                <label>Initiative<input name="initiative" defaultValue={participant.initiative ?? ''}
-                  inputMode="numeric" pattern="[+-]?[0-9]+" /></label>
-                <button type="submit" disabled={busy}>Save</button>
-              </form>
               <div className="account-actions">
                 <button type="button" disabled={busy || !previous || !participant.initiative || previous.initiative !== participant.initiative}
                   onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/move-tie`, 'POST',

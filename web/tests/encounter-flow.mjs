@@ -12,6 +12,8 @@ if (!identifier || !password) {
 const suffix = process.env.JANUS_TEST_SUFFIX ?? Date.now().toString(36)
 const campaignName = `Browser campaign ${suffix}`
 const pcName = `Browser PC ${suffix}`
+const npcName = `Browser NPC ${suffix}`
+const preparationName = `Initiative check ${suffix}`
 const mobName = `Browser mob ${suffix}`
 const secondMobName = `Late mob ${suffix}`
 const encounterName = `Browser encounter ${suffix}`
@@ -38,12 +40,44 @@ try {
   await page.getByLabel('Character name').fill(pcName)
   await page.getByRole('button', { name: 'Add character' }).first().click()
   await page.locator('.character-list').getByText(pcName, { exact: true }).waitFor()
+  await page.getByLabel('Character name').fill(npcName)
+  await page.getByLabel('Type').selectOption('Npc')
+  await page.getByRole('button', { name: 'Add character' }).first().click()
+  await page.locator('.character-list').getByText(npcName, { exact: true }).waitFor()
+
+  await page.getByLabel('Encounter name').fill(preparationName)
+  await page.getByRole('button', { name: 'Create encounter' }).click()
+  await page.locator('.encounter-detail').getByRole('heading', { name: preparationName }).waitFor()
+  const preparationForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="characterId"]') })
+  await preparationForm.locator('[name="characterId"]').selectOption({ label: `${pcName} (PC)` })
+  await preparationForm.getByRole('button', { name: 'Add character' }).click()
+  await preparationForm.locator('[name="characterId"]').selectOption({ label: `${npcName} (NPC)` })
+  await preparationForm.getByRole('button', { name: 'Add character' }).click()
+  const preparedPc = page.locator('.encounter-participants > li').filter({ hasText: pcName })
+  const preparedNpc = page.locator('.encounter-participants > li').filter({ hasText: npcName })
+  await preparedNpc.waitFor()
+  assert.equal(await page.getByRole('button', { name: 'Begin Fight' }).isDisabled(), true)
+  await preparedPc.getByLabel(`Initiative for ${pcName} (PC)`).fill('8')
+  await preparedPc.getByRole('button', { name: 'Save initiative' }).click()
+  await preparedNpc.getByLabel(`Initiative for ${npcName} (NPC)`).fill('15')
+  await preparedNpc.getByRole('button', { name: 'Save initiative' }).click()
+  await page.locator('.encounter-participants > li').first().locator('strong')
+    .filter({ hasText: npcName }).waitFor()
+  assert.equal(await page.getByRole('button', { name: 'Begin Fight' }).isEnabled(), true)
+
+  await page.reload()
+  await page.locator('.campaign-list button').filter({ hasText: campaignName }).click()
+  await page.locator('.encounter-list button').filter({ hasText: preparationName }).click()
+  await preparedNpc.getByLabel(`Initiative for ${npcName} (NPC)`).waitFor()
+  assert.equal(await preparedPc.getByLabel(`Initiative for ${pcName} (PC)`).inputValue(), '8')
+  assert.equal(await preparedNpc.getByLabel(`Initiative for ${npcName} (NPC)`).inputValue(), '15')
 
   await page.getByLabel('Encounter name').fill(encounterName)
   await page.getByRole('button', { name: 'Create encounter' }).click()
   await page.locator('.encounter-detail').getByRole('heading', { name: encounterName }).waitFor()
 
   const characterForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="characterId"]') })
+  await characterForm.locator('[name="characterId"]').selectOption({ label: `${pcName} (PC)` })
   await characterForm.getByLabel('Initiative (can be entered later)').fill('18')
   await characterForm.getByLabel('Starting HP (optional)').fill('10.5')
   await characterForm.getByRole('button', { name: 'Add character' }).click()

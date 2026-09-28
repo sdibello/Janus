@@ -296,6 +296,8 @@ button:hover {
 .encounter-participants li.unconscious { margin-left: -24px; padding-left: 20px; border-left: 4px solid #9a6b17; background: #fff2d8; }
 .encounter-participants li.alive-adjacent { margin-left: -24px; padding-left: 20px; border-left: 4px solid #a34138; background: #f9e8e5; }
 .encounter-participants li.drop-target { outline: 2px dashed #245c4c; outline-offset: 2px; }
+.prepare-initiative { margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #f3f8f5; }
+.prepare-initiative p { margin: 0 0 8px; color: #6d4300; font-weight: 700; }
 .active-label { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; background: #245c4c; color: #fff; font-size: 11px; font-weight: 800; }
 .hp-status { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
 .unconscious-label { background: #f4d27a; color: #4e3509; }
