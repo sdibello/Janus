@@ -1,10 +1,10 @@
 # 0025: Track rounds and participant turns separately
 
 - Date: 2026-09-25
-- Status: Accepted
+- Status: Superseded
 - Related specs: [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md)
 - Supersedes: None; refines [0020](0020-turn-counter-wrap-only.md)
-- Superseded by: None
+- Superseded by: [0079](0079-alpha-encounter-workflow.md)
 
 ## Context
 

@@ -1,10 +1,10 @@
 # 0011: Prepare and Fight phases
 
 - Date: 2026-09-25
-- Status: Accepted
+- Status: Superseded
 - Related specs: [003](../specs/003-encounters-and-participants.md), [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md)
 - Supersedes: [0010](0010-mob-initiative-and-finished-ui.md)
-- Superseded by: None
+- Superseded by: [0079](0079-alpha-encounter-workflow.md)
 
 ## Context
 

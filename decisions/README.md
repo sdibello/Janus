@@ -18,7 +18,7 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0008](0008-screen-sharing-only.md) | Accepted | Use screen sharing this phase; a separate presentation view is a possible future enhancement. |
 | [0009](0009-campaign-encounters-and-history.md) | Accepted | Require campaign encounters, allow mobs during play, and retain finished encounters for viewing. |
 | [0010](0010-mob-initiative-and-finished-ui.md) | Superseded | Replaced by 0011: phase-specific mob placement; finished UI behavior retained. |
-| [0011](0011-prepare-and-fight.md) | Accepted | Prepare sets initiative order; Fight allows manual ordering and mob placement anywhere. |
+| [0011](0011-prepare-and-fight.md) | Superseded | Replaced by 0079: initiative moves to the Fight-start lightbox. |
 | [0012](0012-active-participant-selection.md) | Superseded | Replaced by 0019: active selection follows the pre-reorder list. |
 | [0013](0013-resume-encounters.md) | Accepted | Restore saved encounter phase, participants, order, active highlight, and counter when Janus reopens. |
 | [0014](0014-hit-point-scope.md) | Accepted | Track HP for all participant categories now; status and spell effects are future work. |
@@ -27,16 +27,16 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0017](0017-alive-adjacent.md) | Accepted | HP changes update status: Unconscious at -1 through -9, alive adjacent at -10 or below, neither at zero or above. |
 | [0018](0018-encounter-specific-hp.md) | Accepted | Enter HP separately per encounter; restore it on return without carrying it between encounters. |
 | [0019](0019-active-after-reorder.md) | Accepted | Reorder selects the pre-reorder successor; the DM can set any participant active. |
-| [0020](0020-turn-counter-wrap-only.md) | Accepted | Only Next wrapping from last to first increments Round; see 0025 for individual Turn counters. |
+| [0020](0020-turn-counter-wrap-only.md) | Superseded | Replaced by 0079: Round completes after each participant uses Next or Skip. |
 | [0021](0021-next-follows-current-order.md) | Accepted | Next always advances in current order; use set-active for exceptions. |
 | [0022](0022-place-new-mobs-before-advancing.md) | Accepted | Place new mobs before Next; they use the normal current-order sequence. |
-| [0023](0023-manual-initiative-ties.md) | Accepted | DM manually resolves equal initiative order during Prepare. |
+| [0023](0023-manual-initiative-ties.md) | Superseded | Replaced by 0079: ties keep encounter entry order. |
 | [0024](0024-unbounded-whole-number-initiative.md) | Accepted | Initiative is any whole number, including positive, negative, and zero, without an app-defined range. |
-| [0025](0025-round-and-individual-turn-counters.md) | Accepted | Track each participant's turns separately from the Round counter. |
+| [0025](0025-round-and-individual-turn-counters.md) | Superseded | Replaced by 0079: separate counters remain, with a new Round rule. |
 | [0026](0026-add-participants-during-fight.md) | Accepted | Add any participant during Fight immediately before active; then allow reordering. |
-| [0027](0027-skip-and-no-removal-during-fight.md) | Accepted | Next counts an individual turn; Skip advances without counting; no Fight removals. |
+| [0027](0027-skip-and-no-removal-during-fight.md) | Superseded | Replaced by 0079: Skip counts toward Round but not individual Turn; no Fight removals. |
 | [0028](0028-fight-transition-is-one-way.md) | Accepted | Once Fight starts, the encounter cannot return to Prepare. |
-| [0029](0029-display-initiative-values.md) | Accepted | Keep recorded initiative visible during Prepare and Fight; it does not govern Fight order. |
+| [0029](0029-display-initiative-values.md) | Superseded | Replaced by 0079: Prepare initiative appears in the Fight-start lightbox. |
 | [0030](0030-no-additional-encounter-history.md) | Accepted | Finished encounters show saved state and final counts; no event history is needed now. |
 | [0031](0031-no-back-button.md) | Accepted | No Back/undo-turn control; use set-active to correct who acts next. |
 | [0032](0032-campaign-character-ownership-and-current-values.md) | Accepted | PCs/NPCs belong to one campaign; encounters display current character values rather than snapshots. |
@@ -86,3 +86,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0076](0076-local-password-recovery-proof.md) | Accepted for local identity host | Use a database-backed one-hour, single-use reset proof and immediate identity-cookie stamp validation. |
 | [0077](0077-product-access-registry-and-scopes.md) | Accepted for local identity proof | Keep product grants, scoped administrators, and request decisions separate; check current grants on identity access requests. |
 | [0078](0078-local-openid-connect-product-sessions.md) | Accepted for local implementation | Use S256 OpenID Connect sign-in with campaign-owned SQLite sessions and current identity grant checks. |
+| [0079](0079-alpha-encounter-workflow.md) | Accepted | Prompt initiative at Fight start, rotate saved Fight order, and count Rounds by participant completion. |

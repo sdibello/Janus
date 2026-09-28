@@ -11,6 +11,7 @@ Janus provides campaign and encounter management for dungeon masters, with share
 - [Implementation plan](specs/IMPLEMENTATION-PLAN.md): local architecture proposal, delivery sequence, and validation gates.
 - [Requirements review](specs/REQUIREMENTS-REVIEW.md): corrected contradictions and remaining qualifications.
 - [Local development](docs/LOCAL-DEVELOPMENT.md): setup, migrations, startup, and build commands.
+- [Alpha 0.1 task list](docs/ALPHA-IMPLEMENTATION-TASKS.md): requested UI changes, decision points, and implementation order.
 - [Identity integration](docs/IDENTITY-INTEGRATION.md): current local access API and the remaining cross-product session boundary.
 
 ## Run locally
