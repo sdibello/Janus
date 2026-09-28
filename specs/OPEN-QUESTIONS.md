@@ -8,7 +8,7 @@ The planned user-facing questionnaire is complete. A consistency review correcte
 
 Accepted decisions run through 0078. The next executable task is the remaining implementation-plan step 3 cross-product session work. The Windows foundation and encounter Prepare/Fight/HP workflows have been built and smoke-tested with .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
 
-Before finalizing the relevant workflows, resolve the remaining review qualifications: browser session restoration without Remember me, identifier collisions, and verification after invitation expiry. The local HP implementation accepts signed decimal Damage/Heal amounts and applies the stated subtraction/addition exactly, without adding a sign restriction. Do not reopen settled encounter rules. Resume with [the implementation plan](IMPLEMENTATION-PLAN.md).
+Before finalizing the relevant workflows, resolve the remaining review qualifications: browser session restoration without Remember me, identifier collisions, and verification after invitation expiry. Close/reopen checks passed for ordinary and remembered login in headless Chrome and Edge on Windows with default settings; browser session-restoration settings remain untested. The local HP implementation accepts signed decimal Damage/Heal amounts and applies the stated subtraction/addition exactly, without adding a sign restriction. Do not reopen settled encounter rules. Resume with [the implementation plan](IMPLEMENTATION-PLAN.md).
 
 
 ## Confirmed context: do not ask again

@@ -74,7 +74,7 @@ npm run build --prefix web
 npm run lint --prefix web
 ```
 
-The web build writes both pages to `web/dist/`. The ASP.NET Core publish commands copy each page and shared assets into its host. Full password compromise screening, Fedora validation, and browser interaction checks remain implementation work. OpenID Connect campaign sign-in, campaign/encounter/HP APIs, shared sign-in across two products, Remember me cookie renewal, and password-driven revocation across both products have been smoke-tested on Windows. A browser-close check remains.
+The web build writes both pages to `web/dist/`. The ASP.NET Core publish commands copy each page and shared assets into its host. Full password compromise screening, Fedora validation, and broader browser interaction checks remain implementation work. OpenID Connect campaign sign-in, campaign/encounter/HP APIs, shared sign-in across two products, Remember me cookie renewal, and password-driven revocation across both products have been smoke-tested on Windows. Headless Chrome and Edge browser-close checks passed for ordinary and remembered login with default settings; browser session-restoration settings still need a product decision before claiming the behavior for every configuration.
 
 ## Run published pages without Vite
 
@@ -107,6 +107,16 @@ dotnet Janus.Campaigns.dll
 ```
 
 Open <http://localhost:5186/portal.html> for accounts and <http://localhost:5199/> for campaigns. Replace the example data path with the absolute path used during setup. The compiled frontend defaults to these local origins; set `VITE_IDENTITY_ORIGIN` and `VITE_CAMPAIGN_ORIGIN` before building if ports change. Identity still requires Development for local certificates; production hosting needs a certificate and email-delivery setup.
+
+With both published hosts running and a verified, disposable account that has campaign access, run the browser-close check from `web/`. It requires an installed Chrome browser and creates temporary browser profiles that it removes after the run. The test closes and reopens Chrome once without Remember me and once with it, checking both the portal and campaign page:
+
+```powershell
+$env:JANUS_TEST_IDENTIFIER='admin'
+$env:JANUS_TEST_PASSWORD=Read-Host 'Test password'
+npm run test:browser-session --prefix web
+```
+
+Set `JANUS_TEST_BROWSER_CHANNEL=msedge` to run against installed Microsoft Edge instead. This check passed with headless Chrome and Edge on Windows; it does not establish behavior when a browser is configured to restore prior sessions.
 
 For the Development-only second product test, start `dotnet run --project tests/Janus.SessionProof --launch-profile http` in a fourth terminal, using the same `Janus__DataDirectory`. It listens on port 5201 and stores proof-only data-protection keys in `proof-keys/`. On disposable data, run:
 
