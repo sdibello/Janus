@@ -89,8 +89,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = IdentitySessionLifetime.BrowserSession;
+    // Renewal is driven by explicit, trusted browser activity, never by polling.
+    options.SlidingExpiration = false;
     options.Events.OnRedirectToLogin = context =>
     {
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;

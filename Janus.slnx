@@ -4,4 +4,7 @@
     <Project Path="src/Janus.Domain/Janus.Domain.csproj" />
     <Project Path="src/Janus.Identity/Janus.Identity.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Janus.SessionProof/Janus.SessionProof.csproj" />
+  </Folder>
 </Solution>

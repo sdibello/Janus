@@ -19,6 +19,7 @@ namespace Janus.Identity;
 public static class OpenIdConnectEndpoints
 {
     private const string CampaignClientId = "janus-campaigns";
+    private const string ProofClientId = "janus-session-proof";
     private const string StampClaim = "janus:security_stamp";
     private const string ProductClaim = "janus:product";
 
@@ -29,33 +30,42 @@ public static class OpenIdConnectEndpoints
         if ((await data.Database.GetPendingMigrationsAsync()).Any()) return;
 
         var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-        if (await manager.FindByClientIdAsync(CampaignClientId) is not null) return;
-
-        var redirect = app.Configuration["Janus:CampaignClientRedirectUri"]
-            ?? "http://localhost:5199/signin-oidc";
-        if (!Uri.TryCreate(redirect, UriKind.Absolute, out var redirectUri)
-            || !app.Environment.IsDevelopment() && redirectUri.Scheme != Uri.UriSchemeHttps
-            || app.Environment.IsDevelopment() && redirectUri.Scheme == Uri.UriSchemeHttp
-                && !redirectUri.IsLoopback)
-            throw new InvalidOperationException("Configure a valid, secure campaign client redirect URI.");
-
-        await manager.CreateAsync(new OpenIddictApplicationDescriptor
+        var clients = new List<(string Id, string Name, string Redirect)>
         {
-            ClientId = CampaignClientId,
-            ClientType = ClientTypes.Public,
-            ConsentType = ConsentTypes.Implicit,
-            DisplayName = "Janus campaigns",
-            RedirectUris = { redirectUri },
-            Permissions =
+            (CampaignClientId, "Janus campaigns",
+                app.Configuration["Janus:CampaignClientRedirectUri"] ?? "http://localhost:5199/signin-oidc"),
+        };
+        if (app.Environment.IsDevelopment())
+            clients.Add((ProofClientId, "Janus session proof",
+                app.Configuration["Janus:ProofClientRedirectUri"] ?? "http://localhost:5201/signin-oidc"));
+
+        foreach (var client in clients)
+        {
+            if (!Uri.TryCreate(client.Redirect, UriKind.Absolute, out var redirectUri)
+                || !app.Environment.IsDevelopment() && redirectUri.Scheme != Uri.UriSchemeHttps
+                || app.Environment.IsDevelopment() && redirectUri.Scheme == Uri.UriSchemeHttp
+                    && !redirectUri.IsLoopback)
+                throw new InvalidOperationException($"Configure a valid, secure redirect URI for {client.Id}.");
+            if (await manager.FindByClientIdAsync(client.Id) is not null) continue;
+
+            await manager.CreateAsync(new OpenIddictApplicationDescriptor
             {
-                Permissions.Endpoints.Authorization,
-                Permissions.Endpoints.Token,
-                Permissions.GrantTypes.AuthorizationCode,
-                Permissions.ResponseTypes.Code,
-                Permissions.Scopes.Email,
-                Permissions.Scopes.Profile,
-            },
-        });
+                ClientId = client.Id,
+                ClientType = ClientTypes.Public,
+                ConsentType = ConsentTypes.Implicit,
+                DisplayName = client.Name,
+                RedirectUris = { redirectUri },
+                Permissions =
+                {
+                    Permissions.Endpoints.Authorization,
+                    Permissions.Endpoints.Token,
+                    Permissions.GrantTypes.AuthorizationCode,
+                    Permissions.ResponseTypes.Code,
+                    Permissions.Scopes.Email,
+                    Permissions.Scopes.Profile,
+                },
+            });
+        }
     }
 
     public static void MapOpenIdConnectEndpoints(this WebApplication app)

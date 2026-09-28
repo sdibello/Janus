@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Janus.Identity;
 
@@ -25,6 +26,7 @@ public static class AccountEndpoints
             return Results.Ok(new { message = "Signed out." });
         }).RequireAuthorization();
         app.MapGet("/account/me", MeAsync).RequireAuthorization();
+        app.MapPost("/account/activity", RecordActivityAsync).RequireAuthorization();
         app.MapGet("/products", async (IdentityDataContext data) =>
             Results.Ok(await data.Products.OrderBy(product => product.Name)
                 .Select(product => new { product.Id, product.Name }).ToListAsync()));
@@ -147,10 +149,25 @@ public static class AccountEndpoints
         if (user is null)
             return Results.Unauthorized();
 
-        var result = await signIn.PasswordSignInAsync(user, request.Password, request.RememberMe, lockoutOnFailure: true);
-        return result.Succeeded
-            ? Results.Ok(new { message = "Signed in." })
-            : Results.Unauthorized();
+        var result = await signIn.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+        if (!result.Succeeded) return Results.Unauthorized();
+
+        await signIn.SignInAsync(user, IdentitySessionLifetime.Create(request.RememberMe));
+        return Results.Ok(new { message = "Signed in." });
+    }
+
+    private static async Task<IResult> RecordActivityAsync(
+        HttpContext context, UserManager<JanusUser> users, SignInManager<JanusUser> signIn)
+    {
+        var session = await context.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        if (session.Properties?.IsPersistent != true)
+            return Results.NoContent();
+
+        var user = await users.GetUserAsync(context.User);
+        if (user is null) return Results.Unauthorized();
+
+        await signIn.SignInAsync(user, IdentitySessionLifetime.Create(rememberMe: true));
+        return Results.NoContent();
     }
 
     private static async Task<IResult> MeAsync(

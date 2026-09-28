@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import AccountPortal from './AccountPortal'
 import CampaignWorkspace from './CampaignWorkspace'
+import useSessionActivity from './useSessionActivity'
 
 type ServiceName = 'identity' | 'campaigns'
 type ServiceState = 'checking' | 'ready' | 'unavailable'
@@ -22,6 +23,7 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
   const [campaignSession, setCampaignSession] = useState<CampaignSession>({ state: 'checking' })
   const [signInFailed] = useState(() => new URLSearchParams(window.location.search).has('signInError'))
   const [silentSignInTried] = useState(() => new URLSearchParams(window.location.search).has('silent'))
+  useSessionActivity(page === 'campaigns' && campaignSession.state === 'ready')
 
   const checkCampaignSession = useCallback(async (trySilentSignIn = false) => {
     try {

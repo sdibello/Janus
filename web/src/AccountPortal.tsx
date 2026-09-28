@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useState, type FormEvent } from 'react'
+import useSessionActivity from './useSessionActivity'
 
 type Account = {
   id: string
@@ -63,6 +64,7 @@ function AccountPortal() {
   const [link] = useState(readLink)
   const { invitation, verifyUser, verifyToken, resetUser, resetToken, returnTo } = link
   const [account, setAccount] = useState<Account | null>(null)
+  useSessionActivity(account !== null)
   const [inbox, setInbox] = useState<MailMessage[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [ownRequests, setOwnRequests] = useState<AccessRequest[]>([])

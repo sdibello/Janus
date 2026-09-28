@@ -30,12 +30,17 @@ function Get-ResetLink([string] $recipient) {
 
 $sessionA = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $sessionB = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-Check (Post-Json '/account/login' @{ identifier = $Email; password = $passwordText; rememberMe = $false } $sessionA).StatusCode 200 'first login'
+Check (Post-Json '/account/login' @{ identifier = $Email; password = $passwordText; rememberMe = $true } $sessionA).StatusCode 200 'remembered first login'
 Check (Post-Json '/account/login' @{ identifier = $Email; password = $passwordText; rememberMe = $false } $sessionB).StatusCode 200 'second login'
 Check (Post-Json '/account/change-password' @{ currentPassword = 'wrong password'; newPassword = $changedPassword } $sessionA).StatusCode 400 'incorrect current password denied'
 Check (Post-Json '/account/change-password' @{ currentPassword = $passwordText; newPassword = 'passwordpassword' } $sessionA).StatusCode 400 'blocked new password denied'
 Check (Post-Json '/account/change-password' @{ currentPassword = $passwordText; newPassword = $changedPassword } $sessionA).StatusCode 200 'password changed'
 Check (Invoke-WebRequest "$BaseUrl/account/me" -WebSession $sessionA -SkipHttpErrorCheck).StatusCode 200 'changing session stays signed in'
+$currentCookie = $sessionA.Cookies.GetCookies([uri] $BaseUrl) | Where-Object Name -eq '.AspNetCore.Identity.Application' | Select-Object -First 1
+if (!$currentCookie -or $currentCookie.Expires -lt [datetime]::UtcNow.AddDays(29)) {
+    throw 'Password change did not preserve the remembered current session.'
+}
+Write-Output 'PASS password change preserves Remember me'
 Check (Invoke-WebRequest "$BaseUrl/account/me" -WebSession $sessionB -SkipHttpErrorCheck).StatusCode 401 'other session revoked after change'
 Check (Post-Json '/account/login' @{ identifier = $Email; password = $passwordText; rememberMe = $false } (New-Object Microsoft.PowerShell.Commands.WebRequestSession)).StatusCode 401 'old password denied after change'
 

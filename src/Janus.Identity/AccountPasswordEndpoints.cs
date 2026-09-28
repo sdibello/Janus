@@ -5,6 +5,7 @@ using Janus.Identity.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 namespace Janus.Identity;
@@ -117,6 +118,8 @@ public static class AccountPasswordEndpoints
 
         var user = await users.GetUserAsync(context.User);
         if (user is null) return Results.Unauthorized();
+        var session = await context.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        var rememberMe = session.Properties?.IsPersistent == true;
 
         var result = await users.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
@@ -129,8 +132,9 @@ public static class AccountPasswordEndpoints
             });
         }
 
-        // Changing the security stamp revokes other Identity cookies. Refresh only this cookie.
-        await signIn.RefreshSignInAsync(user);
+        // Changing the security stamp revokes other Identity cookies. Reissue only
+        // this one, retaining its browser-session or remembered-session choice.
+        await signIn.SignInAsync(user, IdentitySessionLifetime.Create(rememberMe));
         return Results.Ok(new { message = "Password changed." });
     }
 
