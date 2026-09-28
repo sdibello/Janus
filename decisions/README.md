@@ -88,3 +88,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0078](0078-local-openid-connect-product-sessions.md) | Accepted for local implementation | Use S256 OpenID Connect sign-in with campaign-owned SQLite sessions and current identity grant checks. |
 | [0079](0079-alpha-encounter-workflow.md) | Accepted | Prompt initiative at Fight start, rotate saved Fight order, and count Rounds by participant completion. |
 | [0080](0080-keep-active-on-reorder-and-show-drop-slot.md) | Accepted | Preview the insertion slot and keep the active participant when reordering. |
+| [0081](0081-active-card-actions-and-hp-save-layout.md) | Accepted | Put Next/Skip on the active card, remove Move buttons, and place Save beside Current HP. |

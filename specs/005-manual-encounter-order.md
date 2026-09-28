@@ -28,7 +28,7 @@ Adding PCs, NPCs, and mobs while running is covered by specs 003 and 004. New en
 - R12: Round increments after every participant in the current Round has used Next or Skip once. Each Next increments only the active participant's individual Turn counter; Skip does not. Newly added participants join the current Round. Drag-and-drop reordering, insertion, and manual active selection do not themselves change either counter.
 - R6: Next and Skip advance to the next participant in the current cyclic order, move the former active participant to the bottom of the active-first sequence, and save the resulting order. An already completed participant's repeated action does not finish the Round early. The DM can select any participant active when an exception is needed.
 - R8: A manual reorder changes the relative cyclic order until another manual reorder; ordinary Next and Skip rotations preserve that relative cyclic order. A canceled drag or a drop in the original position leaves the sequence, active participant, and both counter types unchanged.
-- R9: Provide a keyboard-accessible way to move entries with the same behavior as drag and drop, and keep the moved entry identifiable after a move.
+- R9: Remove Move up/down buttons from participant cards. Provide a keyboard-accessible alternative: focus a Fight tile and use Alt+ArrowUp or Alt+ArrowDown to move it one slot with the same active-preserving behavior as drag and drop. Explain the shortcut near the list and keep the moved entry identifiable after a move.
 - R10: Reordering requires permission to maintain the encounter, enforced on direct requests as well as in the UI. Reorder requests against an ended encounter do not change its stopped sequence.
 
 ## Acceptance criteria
@@ -54,7 +54,7 @@ Order examples below name the **saved** order. The visible tile list starts at t
 - [ ] Drag-and-drop reordering, whether moving the active or another participant, never resets or changes either counter type.
 - [ ] Two mobs with the same name can be reordered independently without losing, duplicating, or changing either participant.
 - [ ] Canceling a drag or dropping in the same position has no effect on order, active participant, or counter.
-- [ ] Keyboard Move up/down uses the same active-preserving reorder behavior; Set active remains a separate explicit action.
+- [ ] No participant card shows Move up/down buttons. Focusing a Fight tile and pressing Alt+ArrowUp or Alt+ArrowDown moves it one slot without changing the active participant; Set active remains a separate explicit action.
 - [ ] Single-participant behavior remains as defined in spec 004: Next increments that participant's individual Turn and Round, while Skip increments only Round; the participant remains active.
 - [ ] Unauthorized or ended-encounter reorder requests do not change the sequence.
 - [ ] Reordering leaves campaign character information and other encounters unchanged.
@@ -63,7 +63,7 @@ Order examples below name the **saved** order. The visible tile list starts at t
 
 Exercise the examples above with PCs, NPCs, and same-name mobs. Test moving both the active participant and other participants, insertion slots between tiles and after the last tile, canceled moves, and multiple completed Rounds. Verify that initiative never overrides the manually chosen order. Check keyboard operation, access enforcement, and encounter isolation.
 
-The Fight UI supports drag-and-drop and keyboard Move up/down controls. Windows API smoke checks cover changed and unchanged order, active preservation, and persistence. The browser check covers keyboard Move up, insertion markers between tiles and at the end, actual drag-and-drop reorders, and active preservation. Full assistive-technology review remains for later validation.
+The Fight UI supports drag-and-drop and Alt+ArrowUp/Down keyboard reordering without Move buttons. Windows API smoke checks cover changed and unchanged order, active preservation, and persistence. The browser check covers the keyboard shortcut, insertion markers between tiles and at the end, actual drag-and-drop reorders, and active preservation. Full assistive-technology review remains for later validation.
 
 ## Open questions
 

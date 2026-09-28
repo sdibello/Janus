@@ -35,6 +35,7 @@ Encounters run through Prepare and Fight phases, followed by a Finished state. P
 ### Advance and repeat
 
 - R8: Exactly one participant is active while the encounter is running. A single column of tiles shows the active participant first, followed by the current cyclic order. Show participant names, categories, and recorded initiative values. For participants added during Fight, show no initiative value unless one was entered; initiative is not required for Fight additions. The active tile is highlighted and explicitly labeled so its state does not depend on color alone.
+- R29: Show Next and Skip on the active participant's Fight tile, and on no other participant tile or detached toolbar. End encounter remains available at encounter level.
 - R9: The active participant remains unchanged until the user clicks Next or Skip, the dungeon master manually selects any participant under spec 005, or the encounter ends. Adding or reordering participants does not change the highlight. No timer automatically advances the sequence.
 - R10: Each Next action moves the active tile to the bottom of the active-first sequence and saves that order, then highlights the new first tile. Increment the individual Turn counter for the participant whose turn was active when Next was clicked.
 - R25: Skip makes the same saved order and active-tile move as Next but does not increment the skipped participant's individual Turn counter. It counts that participant as completed for the current Round.
@@ -75,6 +76,7 @@ HP tracking is defined in [spec 007](007-hit-point-tracking.md) and is part of t
 - [ ] An empty encounter cannot begin a sequence and offers guidance to add participants.
 - [ ] Under the accepted ordering, a PC at 18, NPC at 12, and mob at 5 appear in that order; the PC is initially active, Round displays 1, and each individual Turn counter displays 0.
 - [ ] Clicking Next while the PC is active saves NPC, mob, PC as the order, increments only the PC's individual Turn counter, and highlights the NPC at the top.
+- [ ] Next and Skip appear on the currently active Fight tile only, and move to the newly active tile after a turn action or Set active. They are absent from Prepare and Finished.
 - [ ] Clicking Skip while the NPC is active saves mob, PC, NPC as the order without incrementing NPC's individual Turn counter.
 - [ ] Clicking Next while the mob is active increments the mob's Turn counter and Round, since PC, NPC, and mob have each used Next or Skip once.
 - [ ] Selecting a participant who already acted and clicking Next again does not increment Round before all other participants act.

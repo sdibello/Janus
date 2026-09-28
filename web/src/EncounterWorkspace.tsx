@@ -205,15 +205,18 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   function hpEditor(participant: Participant) {
     if (!selected || selected.phase === 'Finished') return null
     return <div className="hp-controls">
-      <form key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
+      <form className="hp-set-form" key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
         event.preventDefault()
         const currentHp = new FormData(event.currentTarget).get('currentHp')
         void mutate(`${api}/${selected.id}/participants/${participant.id}/hp`, 'PATCH',
           { revision: selected.revision, currentHp }, 'HP saved.')
       }}>
-        <label>Current HP<input name="currentHp" defaultValue={participant.currentHp ?? ''}
-          inputMode="decimal" /></label>
-        <button type="submit" disabled={busy}>Save HP</button>
+        <label htmlFor={`hp-${participant.id}`}>Current HP</label>
+        <div className="hp-input-line">
+          <input id={`hp-${participant.id}`} name="currentHp" defaultValue={participant.currentHp ?? ''}
+            inputMode="decimal" />
+          <button type="submit" disabled={busy}>Save</button>
+        </div>
       </form>
       {selected.phase === 'Fight' && participant.currentHp !== null && <>
         <form onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
@@ -256,10 +259,6 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       <p>Phase: {selected.phase}. {selected.participants.length} participant{selected.participants.length === 1 ? '' : 's'}.
         {selected.phase !== 'Prepare' && <> Round {selected.round}.</>}</p>
       {selected.phase === 'Fight' && <div className="encounter-controls">
-        <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/next`, 'POST',
-          { revision: selected.revision }, 'Turn completed.')}>Next</button>
-        <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
-          { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
         <button type="button" disabled={busy} onClick={() => {
           if (window.confirm('End this encounter? It cannot return to Fight.'))
             void mutate(`${api}/${selected.id}/end`, 'POST',
@@ -289,7 +288,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
         </form>
       </details>}
       <h5>{selected.phase === 'Prepare' ? 'Participants' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
-      {selected.phase === 'Fight' && <p>Drag a participant to the arrow between tiles or at the end, or use Move up and Move down. Reordering keeps the current active participant.</p>}
+      {selected.phase === 'Fight' && <p>Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.</p>}
       {selected.participants.length === 0 ? <p>Add a PC, NPC, or mob to prepare the order.</p> :
         <ol className={`encounter-participants ${selected.phase === 'Fight' ? 'fight-list' : ''}`}
           onDragOver={(event) => {
@@ -312,6 +311,15 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
             : ''
           return <li key={participant.id} className={`${active ? 'active' : ''} ${marker} ${participant.status === 'Unconscious' ? 'unconscious' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
             draggable={selected.phase === 'Fight' && !busy}
+            tabIndex={selected.phase === 'Fight' ? 0 : undefined}
+            aria-keyshortcuts={selected.phase === 'Fight' ? 'Alt+ArrowUp Alt+ArrowDown' : undefined}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget || !event.altKey || busy) return
+              if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                event.preventDefault()
+                moveToIndex(participant.id, index + (event.key === 'ArrowUp' ? -1 : 1))
+              }
+            }}
             onDragStart={(event) => {
               setDraggedId(participant.id)
               setDropIndex(null)
@@ -338,14 +346,16 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                 {participant.status === 'Unconscious' && <span className="hp-status unconscious-label">Unconscious</span>}
                 {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
               </p>
+              {active && <div className="active-turn-controls" role="group" aria-label={`Turn actions for ${participant.name}`}>
+                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/next`, 'POST',
+                  { revision: selected.revision }, 'Turn completed.')}>Next</button>
+                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
+                  { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
+              </div>}
               {selected.phase === 'Fight' && <details className="fight-tile-actions">
                 <summary>Manage {participant.name}</summary>
                 {hpEditor(participant)}
                 <div className="account-actions">
-                  <button type="button" disabled={busy || index === 0}
-                    onClick={() => moveToIndex(participant.id, index - 1)}>Move up</button>
-                  <button type="button" disabled={busy || index === selected.participants.length - 1}
-                    onClick={() => moveToIndex(participant.id, index + 1)}>Move down</button>
                   <button type="button" disabled={busy || active}
                     onClick={() => void mutate(`${api}/${selected.id}/active`, 'POST',
                       { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>

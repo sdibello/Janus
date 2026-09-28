@@ -333,6 +333,9 @@ button:hover {
 .fight-tile-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .fight-tile-heading strong { font-size: 18px; }
 .fight-tile-meta { margin: 10px 0; color: var(--muted); }
+.active-turn-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.active-turn-controls button:first-child { background: #245c4c; color: #fff; border-color: #245c4c; }
+.active-turn-controls button:first-child:hover { background: #194637; }
 .fight-tile-actions { margin-top: 12px; }
 .fight-tile-actions summary { cursor: pointer; font-weight: 700; }
 .fight-tile-actions .hp-controls { margin: 12px 0; }
@@ -349,6 +352,10 @@ button:hover {
 .alive-adjacent-label { background: #e8aaa3; color: #5c211b; }
 .hp-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
 .hp-controls form { margin: 0; }
+.hp-controls .hp-set-form { display: block; }
+.hp-controls .hp-set-form label { display: block; flex: none; min-width: 0; margin-bottom: 6px; }
+.hp-input-line { display: flex; align-items: center; gap: 8px; }
+.hp-input-line input { width: min(140px, 100%); min-width: 0; padding: 9px 10px; border: 1px solid #bfc9c6; border-radius: 6px; font: inherit; }
 
 footer {
   padding: 28px 0 32px;
