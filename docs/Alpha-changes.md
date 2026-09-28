@@ -6,3 +6,5 @@
 * Once a fight has begun, i want a clean new screen with tiles for each participant, with the active participant at the top, and when you complete a turn it slides to the bottom.  This also allows the user to drag and drop the order in that battle order.  This should be in a single column, with a clean, simple appearance.
 * Hide the Local Services section when editing or using an encounter
 * in the prepare phase, you no longer need the Move Up, and Move Down buttons, as initiative will be set when the fight starts.
+* in the prepare phase, allow me to collapse each participant into a single row to make it easier to manage.
+* Add the "Begin Fight" button in the prepare phase to the top, next to the  name of the fight encounter
