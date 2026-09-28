@@ -15,6 +15,7 @@ type Participant = {
   status: 'Disabled' | 'Dying' | 'AliveAdjacent' | null
   conditions: { kind: ConditionKind; turnCount: number }[]
   position: number
+  isHeld: boolean
   turnCount: number
 }
 type EncounterDetail = EncounterSummary & {
@@ -153,6 +154,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       mobName: type === 'mob' ? values.get('mobName') : null,
       initiative: values.get('initiative'),
       currentHp: values.get('currentHp'),
+      isHeld: values.get('isHeld') === 'on',
     }, 'Participant added.')
     if (saved) form.reset()
   }
@@ -173,7 +175,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   async function savePromptedInitiative(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected) return
-    const participant = selected.participants[initiativeStep]
+    const participant = selected.participants.filter((item) => !item.isHeld)[initiativeStep]
     if (!participant) return
     const initiative = new FormData(event.currentTarget).get('initiative')
     const saved = await mutate(`${api}/${selected.id}/participants/${participant.id}/initiative`, 'PATCH',
@@ -193,7 +195,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
 
   function moveToIndex(participantId: string, targetIndex: number) {
     if (!selected || selected.phase !== 'Fight' || busy) return
-    const order = selected.participants.map((participant) => participant.id)
+    const order = selected.participants.filter((participant) => !participant.isHeld).map((participant) => participant.id)
     const oldIndex = order.indexOf(participantId)
     if (oldIndex < 0 || targetIndex < 0 || targetIndex >= order.length || oldIndex === targetIndex) return
     order.splice(oldIndex, 1)
@@ -212,17 +214,24 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     if (!selected || selected.phase !== 'Fight' || busy) return
     event.preventDefault()
     const sourceId = draggedId ?? event.dataTransfer.getData('text/plain')
-    const sourceIndex = selected.participants.findIndex((participant) => participant.id === sourceId)
+    const sourceIndex = activeParticipants.findIndex((participant) => participant.id === sourceId)
     const insertionIndex = insertionIndexAt(event.currentTarget, event.clientY)
     setDropIndex(null)
     setDraggedId(null)
-    if (sourceIndex < 0) return
+    if (sourceIndex < 0) {
+      if (heldParticipants.some((participant) => participant.id === sourceId))
+        void mutate(`${api}/${selected.id}/participants/${sourceId}/activate`, 'POST',
+          { revision: selected.revision, targetIndex: insertionIndex }, 'Participant moved to the active list.')
+      return
+    }
     moveToIndex(sourceId, insertionIndex > sourceIndex ? insertionIndex - 1 : insertionIndex)
   }
 
+  const activeParticipants = selected?.participants.filter((participant) => !participant.isHeld) ?? []
+  const heldParticipants = selected?.participants.filter((participant) => participant.isHeld) ?? []
   const available = characters.filter((character) =>
     !selected?.participants.some((participant) => participant.characterId === character.id))
-  const reviewedOrder = selected?.phase === 'Prepare' ? [...selected.participants].sort((left, right) => {
+  const reviewedOrder = selected?.phase === 'Prepare' ? [...activeParticipants].sort((left, right) => {
     if (left.initiative === null) return 1
     if (right.initiative === null) return -1
     const first = BigInt(left.initiative)
@@ -294,10 +303,10 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     {selectedId && selected && <div className="encounter-detail">
       <div className="encounter-heading">
         <h2>{selected.name}</h2>
-        {selected.phase === 'Prepare' && <button type="button" disabled={busy || selected.participants.length === 0}
+        {selected.phase === 'Prepare' && <button type="button" disabled={busy || activeParticipants.length === 0}
           onClick={() => { setMessage(''); setInitiativeStep(0); setInitiativeOpen(true) }}>Begin Fight</button>}
       </div>
-      <p>Phase: {selected.phase}. {selected.participants.length} participant{selected.participants.length === 1 ? '' : 's'}.
+      <p>Phase: {selected.phase}. {activeParticipants.length} active, {heldParticipants.length} held.
         {selected.phase !== 'Prepare' && <> Round {selected.round}.</>}</p>
       {selected.phase === 'Fight' && <div className="encounter-controls">
         <button type="button" disabled={busy} onClick={() => {
@@ -320,6 +329,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               </option>)}
             </select></label>
             <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
+            <label className="hold-checkbox"><input type="checkbox" name="isHeld" /> Add to Hold</label>
             <button type="submit" disabled={busy}>Add character</button>
           </form>}
         <h5>Add an encounter-only mob</h5>
@@ -327,12 +337,59 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           <input type="hidden" name="participantType" value="mob" />
           <label>Mob name<input name="mobName" required /></label>
           <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
+          <label className="hold-checkbox"><input type="checkbox" name="isHeld" /> Add to Hold</label>
           <button type="submit" disabled={busy}>Add mob</button>
         </form>
       </div>}
-      <h5>{selected.phase === 'Prepare' ? 'Participants' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
+      <section className="held-section" aria-label="Hold list">
+        <h5>Hold ({heldParticipants.length})</h5>
+        <p>Held participants wait outside the turn order and do not affect Round or Turn counts.
+          {selected.phase === 'Fight' && ' Drag one into the turn order to release them.'}</p>
+        {heldParticipants.length === 0 ? <p>No participants on Hold.</p> :
+          <ul className="held-list">{heldParticipants.map((participant) => <li key={participant.id}
+            draggable={selected.phase === 'Fight' && !busy}
+            onDragStart={(event) => {
+              setDraggedId(participant.id)
+              setDropIndex(null)
+              event.dataTransfer.setData('text/plain', participant.id)
+              event.dataTransfer.effectAllowed = 'move'
+            }}
+            onDragEnd={() => { setDraggedId(null); setDropIndex(null) }}>
+            <div className="held-row"><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
+              <span>Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}</span>
+              {selected.phase === 'Prepare' && <>
+                <button type="button" disabled={busy}
+                  onClick={() => setPrepareSelectedId((id) => id === participant.id ? null : participant.id)}>
+                  {prepareSelectedId === participant.id ? 'Close HP' : 'Edit HP'}</button>
+                <button type="button" disabled={busy} onClick={() => void mutate(
+                  `${api}/${selected.id}/participants/${participant.id}/activate`, 'POST',
+                  { revision: selected.revision, targetIndex: activeParticipants.length }, 'Participant moved to active.')}>Move to active</button>
+                <button type="button" disabled={busy} onClick={() => void mutate(
+                  `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
+                  { revision: selected.revision }, 'Participant removed.')}>Remove</button>
+              </>}
+            </div>
+            {selected.phase === 'Prepare' && prepareSelectedId === participant.id && hpEditor(participant)}
+          </li>)}</ul>}
+      </section>
+      <section className={selected.phase === 'Prepare' ? 'prepare-active-section' : undefined}
+        aria-label={selected.phase === 'Prepare' ? 'Active participants' : undefined}>
+      <h5>{selected.phase === 'Prepare' ? `Active (${activeParticipants.length})` : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
       {selected.phase === 'Fight' && <p>Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.</p>}
-      {selected.participants.length === 0 ? <p>Add a PC, NPC, or mob to prepare the order.</p> :
+      {activeParticipants.length === 0 ? <div className={`empty-active-list ${draggedId && selected.phase === 'Fight' ? 'drop-ready' : ''}`}
+        onDragOver={(event) => {
+          if (selected.phase === 'Fight' && !busy && draggedId) { event.preventDefault(); event.dataTransfer.dropEffect = 'move' }
+        }}
+        onDrop={(event) => {
+          if (selected.phase !== 'Fight' || !draggedId || busy) return
+          event.preventDefault()
+          const sourceId = draggedId
+          setDraggedId(null)
+          void mutate(`${api}/${selected.id}/participants/${sourceId}/activate`, 'POST',
+            { revision: selected.revision, targetIndex: 0 }, 'Participant moved to the active list.')
+        }}>
+        {selected.phase === 'Fight' ? 'No active participants. Drop a held participant here to resume turns.'
+          : 'Add a PC, NPC, or mob to prepare the order.'}</div> :
         <ol className={`encounter-participants ${selected.phase === 'Fight' ? 'fight-list' : ''}`}
           onDragOver={(event) => {
             if (selected.phase === 'Fight' && !busy && draggedId) {
@@ -346,11 +403,11 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
             if (event.clientX < bounds.left || event.clientX > bounds.right
               || event.clientY < bounds.top || event.clientY > bounds.bottom) setDropIndex(null)
           }}
-          onDrop={dropOnList}>{selected.participants.map((participant, index) => {
+          onDrop={dropOnList}>{activeParticipants.map((participant, index) => {
           const active = selected.phase === 'Fight' && selected.activeParticipantId === participant.id
           const marker = selected.phase === 'Fight' && draggedId
             ? dropIndex === index ? 'drop-before'
-              : dropIndex === selected.participants.length && index === selected.participants.length - 1 ? 'drop-end' : ''
+              : dropIndex === activeParticipants.length && index === activeParticipants.length - 1 ? 'drop-end' : ''
             : ''
           return <li key={participant.id} className={`${active ? 'active' : ''} ${marker} ${participant.status === 'Disabled' ? 'disabled-hp' : participant.status === 'Dying' ? 'dying' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
             draggable={selected.phase === 'Fight' && !busy}
@@ -381,6 +438,9 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                 <button type="button" disabled={busy} onClick={() => void mutate(
                 `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
                 { revision: selected.revision }, 'Participant removed.')}>Remove</button>
+                <button type="button" disabled={busy} onClick={() => void mutate(
+                  `${api}/${selected.id}/participants/${participant.id}/hold`, 'POST',
+                  { revision: selected.revision }, 'Participant moved to Hold.')}>Hold</button>
               </div>
               {prepareSelectedId === participant.id && hpEditor(participant)}
             </div> : <>
@@ -415,7 +475,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                   event.preventDefault()
                   if (!active) setManageOpenIds((ids) => ids.includes(participant.id)
                     ? ids.filter((id) => id !== participant.id) : [...ids, participant.id])
-                }}>Manage {participant.name}</summary>
+                }}>actions</summary>
                 {hpEditor(participant)}
                 <div className="account-actions">
                   <button type="button" disabled={busy || active}
@@ -423,11 +483,15 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                       { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>
                     Set active
                   </button>
+                  <button type="button" disabled={busy}
+                    onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/hold`, 'POST',
+                      { revision: selected.revision }, 'Participant moved to Hold.')}>Hold</button>
                 </div>
               </details>}
             </>}
           </li>
         })}</ol>}
+      </section>
       {initiativeOpen && selected.phase === 'Prepare' && <dialog ref={initiativeDialog}
         aria-labelledby="initiative-title" onCancel={(event) => {
           event.preventDefault()
@@ -435,13 +499,13 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
         }}>
         <h3 id="initiative-title">Begin Fight: initiative</h3>
         {message && <p role="status">{message}</p>}
-        {initiativeStep < selected.participants.length ? <>
-          <p>Participant {initiativeStep + 1} of {selected.participants.length}</p>
-          <form key={selected.participants[initiativeStep].id} onSubmit={(event) => void savePromptedInitiative(event)}>
-            <label>Initiative for {selected.participants[initiativeStep].name}
-              ({selected.participants[initiativeStep].kind.toUpperCase()})
+        {initiativeStep < activeParticipants.length ? <>
+          <p>Participant {initiativeStep + 1} of {activeParticipants.length}</p>
+          <form key={activeParticipants[initiativeStep].id} onSubmit={(event) => void savePromptedInitiative(event)}>
+            <label>Initiative for {activeParticipants[initiativeStep].name}
+              ({activeParticipants[initiativeStep].kind.toUpperCase()})
               <input name="initiative" required autoFocus inputMode="numeric" pattern="[+-]?[0-9]+"
-                defaultValue={selected.participants[initiativeStep].initiative ?? ''} />
+                defaultValue={activeParticipants[initiativeStep].initiative ?? ''} />
             </label>
             <div className="dialog-actions">
               <button type="button" disabled={busy} onClick={() => setInitiativeOpen(false)}>Close and keep progress</button>
@@ -457,8 +521,8 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           </li>)}</ol>
           <div className="dialog-actions">
             <button type="button" disabled={busy} onClick={() => setInitiativeOpen(false)}>Close and keep progress</button>
-            <button type="button" disabled={busy} onClick={() => setInitiativeStep(selected.participants.length - 1)}>Previous</button>
-            <button type="button" disabled={busy || selected.participants.some((participant) => participant.initiative === null)}
+            <button type="button" disabled={busy} onClick={() => setInitiativeStep(activeParticipants.length - 1)}>Previous</button>
+            <button type="button" disabled={busy || activeParticipants.some((participant) => participant.initiative === null)}
               onClick={() => void mutate(`${api}/${selected.id}/fight`, 'POST',
                 { revision: selected.revision }, 'Fight started.').then((saved) => {
                   if (saved) setInitiativeOpen(false)

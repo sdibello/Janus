@@ -296,6 +296,8 @@ button:hover {
 .add-participant form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
 .add-participant form label { flex: 1 1 180px; margin: 0; font-size: 13px; font-weight: 700; }
 .add-participant input:not([type='hidden']), .add-participant select { display: block; width: 100%; min-height: 40px; padding: 9px 10px; margin-top: 6px; border: 1px solid #bfc9c6; border-radius: 6px; background: #fff; font: inherit; }
+.add-participant form label.hold-checkbox { display: flex; align-items: center; flex: 0 1 auto; gap: 6px; min-height: 40px; }
+.add-participant .hold-checkbox input[type='checkbox'] { display: inline; width: auto; min-height: 0; margin: 0; padding: 0; }
 .add-participant form button, .add-participant > button { min-height: 40px; }
 .encounter-workspace h4 { margin: 0 0 12px; font-size: 20px; }
 .encounter-workspace h5 { margin: 28px 0 0; font-size: 16px; }
@@ -309,6 +311,22 @@ button:hover {
 .finished-group { margin-top: 20px; }
 .finished-group summary { cursor: pointer; font-weight: 700; }
 .encounter-detail { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+.held-section, .prepare-active-section { margin-top: 24px; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: #f5f7f6; }
+.held-section h5, .prepare-active-section h5 { margin: 0; }
+.held-section p { margin: 8px 0 12px; }
+.held-list { list-style: none; padding: 0; margin: 0; }
+.held-list li { padding: 10px 0; border-top: 1px solid var(--border); }
+.held-list li[draggable='true'] { cursor: grab; }
+.held-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.held-row span { color: var(--muted); margin-right: auto; }
+.held-row small { color: var(--muted); }
+.prepare-active-section .encounter-participants { list-style: none; padding: 0; margin: 12px 0 0; }
+.prepare-active-section .encounter-participants > li { padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 0; }
+.prepare-active-section .prepare-row { padding: 0; border: 0; background: transparent; }
+.prepare-active-section .prepare-row-select { padding-left: 0; }
+.prepare-active-section .prepare-row.selected { padding: 8px; border-radius: 6px; background: #e5f4e8; }
+.empty-active-list { padding: 24px; border: 2px dashed var(--border); border-radius: 10px; }
+.empty-active-list.drop-ready { border-color: #245c4c; background: #e5f4e8; }
 .encounter-participants { padding-left: 24px; }
 .encounter-participants li { padding: 15px 0; border-bottom: 1px solid var(--border); }
 .encounter-participants small { color: var(--muted); }

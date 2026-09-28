@@ -33,13 +33,15 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 
 ### Mobs
 
-- R8: The dungeon master can add mobs directly within an encounter during Prepare or Fight, without a separate campaign or global mob record. Each mob is an individual entry; when multiple of the same kind are needed, create multiple entries during Prepare. At Begin Fight, initiative determines initial order. In Fight, insert the mob immediately before the active participant in saved order without initiative entry; the dungeon master can then reorder it before advancing, as specified in specs 004 and 005. "Monster" and "mob" refer to the same participant category here. Minimum identifying information is a nonblank name under decision 0033. Optional current HP tracking is supported under spec 007; entering HP is not required. Other statistics remain unspecified. The finished-encounter UI does not offer mob addition or other modification controls.
+- R8: The dungeon master can add mobs directly within an encounter during Prepare or Fight, without a separate campaign or global mob record. Each mob is an individual entry; when multiple of the same kind are needed, create multiple entries during Prepare. At Begin Fight, initiative determines initial active order. In Fight, insert a new active mob immediately before the active participant in saved order without initiative entry; the dungeon master can then reorder it before advancing, as specified in specs 004 and 005. A mob added to Hold stays outside the active order. "Monster" and "mob" refer to the same participant category here. Minimum identifying information is a nonblank name under decision 0033. Optional current HP tracking is supported under spec 007; entering HP is not required. Other statistics remain unspecified. The finished-encounter UI does not offer mob addition or other modification controls.
 - R9: Mobs persist with the encounter and remain available when the user reopens it, including after logout and login. Encounter-only storage does not mean temporary or session-only storage.
 - R10: Creating a mob does not add a PC or NPC to the campaign list and does not require creating a record in a reusable mob catalog.
 - R11: Each mob entry belongs to its encounter. Editing or removing a mob affects only that encounter and does not affect mobs or characters in another encounter.
 - R12: The user can remove individual mob entries during Prepare only; participants cannot be removed during Fight under decision 0079. Mob names cannot be changed in the current scope. Multiple mobs with the same name are allowed and addressed individually, so removing one does not remove the others.
 
 ### Participant view and access
+
+- R13b: Each encounter has a saved Hold list shown above its active participant list. A PC, NPC, or mob may be added directly to Hold during Prepare or Fight. During Prepare, the DM can move a participant between lists and remove a held participant. During Fight, the DM uses a Hold button on an active participant and drags a held participant to a drop slot in the active list. Holding does not remove encounter membership or alter campaign character data. A finished encounter displays both lists without editing controls. See [decision 0084](../decisions/0084-encounter-hold-list.md).
 
 - R13: The encounter view clearly identifies each participant as a PC, NPC, or mob. Duplicate participant names are allowed; individual entries are distinguished by identity and position in the encounter. Participant maintenance controls apply only to unfinished encounters.
 - R13a: Opening a Prepare, Fight, or Finished encounter switches to a focused encounter screen, hiding campaign editing and Local services while retaining a compact session display. Back to campaign returns to campaign management without changing encounter state.
@@ -75,6 +77,8 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - [ ] Viewing a finished encounter leaves it ended and does not advance its sequence.
 - [ ] The finished-encounter view offers no participant, order, or encounter modification controls. Verification does not require the underlying record to be immutable.
 - [ ] Removing a campaign character referenced by a finished encounter is rejected; the character and encounter remain available.
+- [ ] A participant added to Hold during Prepare stays there after refresh, is shown above the active list, and remains there when Fight begins.
+- [ ] Holding and releasing a participant preserves its encounter identity and saved HP; Finished shows both lists.
 
 ## Validation
 

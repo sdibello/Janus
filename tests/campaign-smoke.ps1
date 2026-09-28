@@ -382,4 +382,47 @@ if ($cycleReloaded.round -ne 2 -or $cycleReloaded.activeParticipantId -ne $cycle
     throw 'Completed Round did not persist.'
 }
 
-Write-Output 'Campaign, character, Prepare, Fight, persistence, and owner isolation passed.'
+$hold = (Expect (Send-Json $encounterBase 'POST' @{ name = 'Hold list' } $admin $campaign) `
+    201 'Create Hold encounter').Content | ConvertFrom-Json
+$holdBase = "$encounterBase/$($hold.id)"
+$hold = (Expect (Send-Json "$holdBase/participants" 'POST' `
+    @{ revision = $hold.revision; mobName = 'Active mob'; initiative = '10' } $admin $campaign) `
+    200 'Add active mob').Content | ConvertFrom-Json
+$activeMobId = $hold.participants[0].id
+$hold = (Expect (Send-Json "$holdBase/participants" 'POST' `
+    @{ revision = $hold.revision; mobName = 'Waiting mob'; isHeld = $true } $admin $campaign) `
+    200 'Add held mob without initiative').Content | ConvertFrom-Json
+$heldMobId = @($hold.participants | Where-Object { $_.isHeld })[0].id
+$hold = (Expect (Send-Json "$holdBase/fight" 'POST' @{ revision = $hold.revision } $admin $campaign) `
+    200 'Begin Fight with held mob').Content | ConvertFrom-Json
+if ($hold.activeParticipantId -ne $activeMobId) { throw 'Held mob entered the initial turn order.' }
+$null = Expect (Send-Json "$holdBase/active" 'POST' `
+    @{ revision = $hold.revision; participantId = $heldMobId } $admin $campaign) `
+    404 'Reject held participant as active'
+$hold = (Expect (Send-Json "$holdBase/next" 'POST' @{ revision = $hold.revision } $admin $campaign) `
+    200 'Advance with held mob').Content | ConvertFrom-Json
+if ($hold.round -ne 2 -or @($hold.participants | Where-Object { $_.id -eq $heldMobId })[0].turnCount -ne 0) {
+    throw 'Held mob changed a counter.'
+}
+$hold = (Expect (Send-Json "$holdBase/participants/$activeMobId/hold" 'POST' `
+    @{ revision = $hold.revision } $admin $campaign) 200 'Hold final active participant').Content | ConvertFrom-Json
+if ($hold.activeParticipantId -ne $null -or $hold.round -ne 2) { throw 'Holding the last active mob did not pause Fight.' }
+$null = Expect (Send-Json "$holdBase/next" 'POST' @{ revision = $hold.revision } $admin $campaign) `
+    409 'Reject Next while all are held'
+$hold = (Expect (Send-Json "$holdBase/participants/$heldMobId/activate" 'POST' `
+    @{ revision = $hold.revision; targetIndex = 0 } $admin $campaign) `
+    200 'Release into empty active list').Content | ConvertFrom-Json
+if ($hold.activeParticipantId -ne $heldMobId -or $hold.round -ne 2) { throw 'Release did not resume Fight.' }
+$hold = (Expect (Send-Json "$holdBase/participants/$activeMobId/activate" 'POST' `
+    @{ revision = $hold.revision; targetIndex = 1 } $admin $campaign) `
+    200 'Release previous active mob').Content | ConvertFrom-Json
+if ($hold.participants[1].id -ne $activeMobId -or $hold.participants[1].turnCount -ne 1) {
+    throw 'Release did not preserve the previous Turn count or drop position.'
+}
+$holdReloaded = (Expect (Invoke-WebRequest $holdBase -WebSession $admin -SkipHttpErrorCheck) `
+    200 'Reload Hold encounter').Content | ConvertFrom-Json
+if ($holdReloaded.participants[0].id -ne $heldMobId -or $holdReloaded.participants[1].isHeld) {
+    throw 'Hold state or release order did not persist.'
+}
+
+Write-Output 'Campaign, character, Prepare, Fight, Hold, persistence, and owner isolation passed.'

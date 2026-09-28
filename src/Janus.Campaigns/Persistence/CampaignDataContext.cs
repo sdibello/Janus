@@ -110,6 +110,7 @@ public sealed class EncounterParticipant
     public string? Initiative { get; set; }
     public string? CurrentHp { get; set; }
     public int Position { get; set; }
+    public bool IsHeld { get; set; }
     public long TurnCount { get; set; }
     public bool CompletedThisRound { get; set; }
 }

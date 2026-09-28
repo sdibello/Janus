@@ -26,6 +26,8 @@ The `AlphaRoundProgress` campaign migration stores which participants have acted
 
 The `EncounterConditions` campaign migration adds saved Invisible, Grappled, and Prone statuses. Apply the campaign migration after pulling this change before starting the Campaigns host. A status starts at zero turns and counts only that participant's Next actions while applied; Skip does not increase it.
 
+The `EncounterHoldList` campaign migration saves which participants are on Hold. Apply the Campaigns migration before running the updated app. Existing participants remain active.
+
 For an isolated test database, set `Janus__DataDirectory` to a disposable directory before running both migration commands and both hosts. The same value must be used by both hosts. The repository's `.local/` path is ignored and was used for the Windows smoke test.
 
 After pulling a version with new migrations, stop the hosts and rerun the affected `dotnet ef database update` command before starting them again. The alpha encounter update requires the `CampaignDataContext` command above. A running app with an older schema may fail with `no such column: e.CompletedThisRound`. Apply the migration to the same data directory used by that app; rerunning an already applied migration is safe.

@@ -91,3 +91,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0081](0081-active-card-actions-and-hp-save-layout.md) | Accepted | Put Next/Skip on the active card, remove Move buttons, and place Save beside Current HP. |
 | [0082](0082-align-damage-and-heal-controls.md) | Accepted | Place Damage and Heal buttons beside their amount fields, matching Current HP. |
 | [0083](0083-encounter-conditions-and-layout.md) | Accepted | Add encounter statuses, revised HP labels, Prepare shortcuts, and phase-grouped campaign navigation. |
+| [0084](0084-encounter-hold-list.md) | Accepted | Save held participants outside the turn sequence and release them into Fight by drag and drop. |
