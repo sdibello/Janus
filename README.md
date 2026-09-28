@@ -13,9 +13,36 @@ Janus provides campaign and encounter management for dungeon masters, with share
 - [Local development](docs/LOCAL-DEVELOPMENT.md): setup, migrations, startup, and build commands.
 - [Identity integration](docs/IDENTITY-INTEGRATION.md): current local access API and the remaining cross-product session boundary.
 
-## Getting started
+## Run locally
 
-Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database, set up the first administrator, and start the two backend hosts and Vite. The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, encounter preparation, Fight controls, and encounter-specific HP. The second product client and local release validation are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
+Install the .NET 10 SDK (see `global.json`) and Node.js 24 with npm 11. From the repository root, run this one-time setup in a terminal:
+
+```powershell
+dotnet tool restore
+dotnet restore Janus.slnx
+dotnet ef database update --project src/Janus.Identity --startup-project src/Janus.Identity --context IdentityDataContext
+dotnet ef database update --project src/Janus.Campaigns --startup-project src/Janus.Campaigns --context CampaignDataContext
+npm ci --prefix web
+dotnet run --project src/Janus.Identity -- --setup-admin
+```
+
+The final command prompts for the first administrator's username, email, and password. Run it only once. It creates the account but does not start the server. Then open three terminals at the repository root and keep each command running:
+
+```powershell
+dotnet run --project src/Janus.Identity --launch-profile http
+```
+
+```powershell
+dotnet run --project src/Janus.Campaigns --launch-profile http
+```
+
+```powershell
+npm run dev --prefix web
+```
+
+Open the [access portal](http://localhost:5173/portal.html), verify the first account using its message in the **Local test inbox**, and sign in. Open the [campaign app](http://localhost:5173/) to create campaigns and encounters. On later runs, start only the three terminals. Stop each with Ctrl+C. The SQLite database and local keys are stored outside the repository in your operating system's local application data directory under `Janus`; see [local development](docs/LOCAL-DEVELOPMENT.md) for a custom data directory, account invitations, published hosting, and checks.
+
+The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, encounter preparation, Fight controls, and encounter-specific HP. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).
 
@@ -31,4 +58,4 @@ Entity Framework Core handles database access and schema migrations; Vite runs a
 
 Shared identity will use ASP.NET Core Identity and OpenIddict with OpenID Connect, hosted locally initially and in the cloud later. See [decision 0067](decisions/0067-self-hosted-identity-and-openiddict.md).
 
-Local setup captures verification messages in the SQLite-backed test inbox without sending real email. Password-reset messages will use the same inbox when recovery is implemented. See [decision 0074](decisions/0074-sqlite-local-test-inbox.md).
+Local setup captures verification and password-reset messages in the SQLite-backed test inbox without sending real email. See [decision 0074](decisions/0074-sqlite-local-test-inbox.md).
