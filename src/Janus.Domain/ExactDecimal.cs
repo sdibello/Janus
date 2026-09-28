@@ -75,9 +75,8 @@ public readonly record struct ExactDecimal : IComparable<ExactDecimal>
             ".", digits.AsSpan(digits.Length - Scale));
     }
 
-    public string? Status => CompareTo(Zero) < 0
-        ? CompareTo(MinusTen) <= 0 ? "AliveAdjacent" : "Unconscious"
-        : null;
+    public string? Status => CompareTo(MinusTen) <= 0 ? "AliveAdjacent"
+        : CompareTo(Zero) < 0 ? "Dying" : CompareTo(Zero) == 0 ? "Disabled" : null;
 
     public static ExactDecimal Zero => new(BigInteger.Zero, 0);
     private static ExactDecimal MinusTen => new(new BigInteger(-10), 0);

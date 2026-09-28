@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [007](../specs/007-hit-point-tracking.md)
 - Supersedes: None; refines [0014](0014-hit-point-scope.md) and [0015](0015-optional-current-hp.md)
-- Superseded by: None
+- Superseded by: [0083](0083-encounter-conditions-and-layout.md) for the Unconscious label; negative HP persistence remains.
 
 ## Context
 

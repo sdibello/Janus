@@ -21,10 +21,10 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0011](0011-prepare-and-fight.md) | Superseded | Replaced by 0079: initiative moves to the Fight-start lightbox. |
 | [0012](0012-active-participant-selection.md) | Superseded | Replaced by 0019: active selection follows the pre-reorder list. |
 | [0013](0013-resume-encounters.md) | Accepted | Restore saved encounter phase, participants, order, active highlight, and counter when Janus reopens. |
-| [0014](0014-hit-point-scope.md) | Accepted | Track HP for all participant categories now; status and spell effects are future work. |
+| [0014](0014-hit-point-scope.md) | Partially superseded | Track HP now; 0083 brings three manual statuses into scope. |
 | [0015](0015-optional-current-hp.md) | Accepted | HP is optional and current-only; entered damage subtracts from it. |
-| [0016](0016-negative-hp-and-unconscious.md) | Accepted | Preserve negative HP and status on reopening; boundary clarified by 0017. |
-| [0017](0017-alive-adjacent.md) | Accepted | HP changes update status: Unconscious at -1 through -9, alive adjacent at -10 or below, neither at zero or above. |
+| [0016](0016-negative-hp-and-unconscious.md) | Partially superseded | Preserve negative HP and derived status; 0083 replaces the Unconscious label. |
+| [0017](0017-alive-adjacent.md) | Superseded | HP labels revised by 0083; alive adjacent remains at -10 or below. |
 | [0018](0018-encounter-specific-hp.md) | Accepted | Enter HP separately per encounter; restore it on return without carrying it between encounters. |
 | [0019](0019-active-after-reorder.md) | Superseded by 0080 | Earlier reorder rule selected the pre-reorder successor. |
 | [0020](0020-turn-counter-wrap-only.md) | Superseded | Replaced by 0079: Round completes after each participant uses Next or Skip. |
@@ -86,7 +86,8 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0076](0076-local-password-recovery-proof.md) | Accepted for local identity host | Use a database-backed one-hour, single-use reset proof and immediate identity-cookie stamp validation. |
 | [0077](0077-product-access-registry-and-scopes.md) | Accepted for local identity proof | Keep product grants, scoped administrators, and request decisions separate; check current grants on identity access requests. |
 | [0078](0078-local-openid-connect-product-sessions.md) | Accepted for local implementation | Use S256 OpenID Connect sign-in with campaign-owned SQLite sessions and current identity grant checks. |
-| [0079](0079-alpha-encounter-workflow.md) | Accepted | Prompt initiative at Fight start, rotate saved Fight order, and count Rounds by participant completion. |
+| [0079](0079-alpha-encounter-workflow.md) | Partially superseded | Prompt initiative at Fight start, rotate saved Fight order, and count Rounds by participant completion; 0083 revises presentation. |
 | [0080](0080-keep-active-on-reorder-and-show-drop-slot.md) | Accepted | Preview the insertion slot and keep the active participant when reordering. |
 | [0081](0081-active-card-actions-and-hp-save-layout.md) | Accepted | Put Next/Skip on the active card, remove Move buttons, and place Save beside Current HP. |
 | [0082](0082-align-damage-and-heal-controls.md) | Accepted | Place Damage and Heal buttons beside their amount fields, matching Current HP. |
+| [0083](0083-encounter-conditions-and-layout.md) | Accepted | Add encounter statuses, revised HP labels, Prepare shortcuts, and phase-grouped campaign navigation. |

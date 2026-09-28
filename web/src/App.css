@@ -292,12 +292,22 @@ button:hover {
 .encounter-heading h2 { overflow-wrap: anywhere; }
 .encounter-heading button { background: #245c4c; color: #fff; }
 .add-participant { margin-top: 24px; padding: 16px 20px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
-.add-participant > summary { cursor: pointer; font-weight: 700; }
+.add-participant h3 { margin: 0; font-size: 20px; }
+.add-participant form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.add-participant form label { flex: 1 1 180px; margin: 0; font-size: 13px; font-weight: 700; }
+.add-participant input:not([type='hidden']), .add-participant select { display: block; width: 100%; min-height: 40px; padding: 9px 10px; margin-top: 6px; border: 1px solid #bfc9c6; border-radius: 6px; background: #fff; font: inherit; }
+.add-participant form button, .add-participant > button { min-height: 40px; }
 .encounter-workspace h4 { margin: 0 0 12px; font-size: 20px; }
 .encounter-workspace h5 { margin: 28px 0 0; font-size: 16px; }
 .encounter-list { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 20px 0; }
 .encounter-list button.selected { border-color: #245c4c; background: #e5f4e8; }
 .encounter-list small { margin-left: 6px; color: var(--muted); }
+.encounter-group h5 { margin-top: 18px; }
+.encounter-list { display: block; }
+.encounter-list li + li { margin-top: 8px; }
+.encounter-list button { width: 100%; text-align: left; }
+.finished-group { margin-top: 20px; }
+.finished-group summary { cursor: pointer; font-weight: 700; }
 .encounter-detail { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
 .encounter-participants { padding-left: 24px; }
 .encounter-participants li { padding: 15px 0; border-bottom: 1px solid var(--border); }
@@ -308,15 +318,19 @@ button:hover {
 .encounter-controls p { margin: 0; }
 .encounter-participants li[draggable='true'] { cursor: grab; }
 .encounter-participants li.active { margin-left: -24px; padding-left: 20px; border-left: 4px solid #245c4c; background: #e5f4e8; outline: 3px solid #245c4c; outline-offset: 2px; }
-.encounter-participants li.unconscious { margin-left: -24px; padding-left: 20px; border-left: 4px solid #9a6b17; background: #fff2d8; }
+.encounter-participants li.disabled-hp { margin-left: -24px; padding-left: 20px; border-left: 4px solid #b89a17; background: #fff8ce; }
+.encounter-participants li.dying { margin-left: -24px; padding-left: 20px; border-left: 4px solid #bc6b21; background: #ffe8cd; }
 .encounter-participants li.alive-adjacent { margin-left: -24px; padding-left: 20px; border-left: 4px solid #a34138; background: #f9e8e5; }
-.prepare-row summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; cursor: pointer; }
-.prepare-row summary span:first-of-type { margin-left: auto; }
+.prepare-row { border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+.prepare-row.selected { background: #e5f4e8; border-color: #245c4c; }
+.prepare-row-main { display: flex; align-items: center; gap: 8px; }
+.prepare-row-select { flex: 1; display: grid; grid-template-columns: minmax(100px, 2fr) 55px minmax(100px, 1fr) auto; align-items: center; gap: 8px; text-align: left; border: 0; }
+.prepare-row-select span { font-weight: 400; }
 .prepare-row .hp-controls { margin: 12px 0; }
 .fight-list { padding: 0; list-style: none; }
 .fight-list > li { position: relative; margin-bottom: 16px; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
 .fight-list > li.active { margin-left: 0; padding: 20px; }
-.fight-list > li.unconscious, .fight-list > li.alive-adjacent { margin-left: 0; padding: 20px; }
+.fight-list > li.disabled-hp, .fight-list > li.dying, .fight-list > li.alive-adjacent { margin-left: 0; padding: 20px; }
 .fight-list > li.drop-before::before, .fight-list > li.drop-end::before {
   content: ''; position: absolute; left: 15px; right: 4px; height: 3px;
   background: #245c4c; pointer-events: none; z-index: 2;
@@ -332,6 +346,11 @@ button:hover {
 .fight-list > li.drop-end::after { bottom: -16px; }
 .fight-tile-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .fight-tile-heading strong { font-size: 18px; }
+.condition-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
+.condition-bubble { display: inline-flex; align-items: center; gap: 4px; padding: 3px 5px 3px 9px; border-radius: 999px; background: #e8e6f6; color: #40366e; font-size: 11px; font-weight: 800; }
+.condition-bubble button { border: 0; padding: 0 4px; font-size: 16px; line-height: 1; }
+.condition-picker { padding: 5px 9px; font-size: 17px; }
+.condition-choices { display: flex; flex-wrap: wrap; gap: 8px; }
 .fight-tile-meta { margin: 10px 0; color: var(--muted); }
 .active-turn-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .active-turn-controls button:first-child { background: #245c4c; color: #fff; border-color: #245c4c; }
@@ -348,7 +367,8 @@ button:hover {
 .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
 .active-label { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; background: #245c4c; color: #fff; font-size: 11px; font-weight: 800; }
 .hp-status { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-.unconscious-label { background: #f4d27a; color: #4e3509; }
+.disabled-label { background: #f5df77; color: #4e4009; }
+.dying-label { background: #f5ba7e; color: #66380d; }
 .alive-adjacent-label { background: #e8aaa3; color: #5c211b; }
 .hp-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
 .hp-controls form { margin: 0; }
@@ -377,4 +397,6 @@ footer {
   .account-grid { grid-template-columns: 1fr; }
   .campaign-grid { grid-template-columns: 1fr; }
   .account-list li { align-items: flex-start; flex-direction: column; }
+  .prepare-row-select { grid-template-columns: 1fr auto; }
+  .prepare-row-select span { grid-column: 1 / -1; }
 }

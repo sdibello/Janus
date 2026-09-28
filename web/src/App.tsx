@@ -136,7 +136,7 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
         {!isPortal && campaignSession.state === 'ready' &&
           <CampaignWorkspace onEncounterOpenChange={setEncounterOpen} />}
 
-        {(!encounterOpen || isPortal) && <section className="status-section" aria-labelledby="status-heading">
+        {isPortal && <section className="status-section" aria-labelledby="status-heading">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Environment</p>

@@ -9,6 +9,7 @@ public sealed class CampaignDataContext(DbContextOptions<CampaignDataContext> op
     public DbSet<CampaignCharacter> Characters => Set<CampaignCharacter>();
     public DbSet<Encounter> Encounters => Set<Encounter>();
     public DbSet<EncounterParticipant> Participants => Set<EncounterParticipant>();
+    public DbSet<ParticipantCondition> Conditions => Set<ParticipantCondition>();
     public DbSet<CampaignSession> Sessions => Set<CampaignSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -52,6 +53,15 @@ public sealed class CampaignDataContext(DbContextOptions<CampaignDataContext> op
             entity.HasIndex(x => new { x.EncounterId, x.CharacterId }).IsUnique()
                 .HasFilter("\"CharacterId\" IS NOT NULL");
             entity.HasIndex(x => new { x.EncounterId, x.Position }).IsUnique();
+        });
+
+        modelBuilder.Entity<ParticipantCondition>(entity =>
+        {
+            entity.ToTable("ParticipantConditions");
+            entity.HasKey(x => new { x.ParticipantId, x.Kind });
+            entity.Property(x => x.Kind).IsRequired();
+            entity.HasOne<EncounterParticipant>().WithMany().HasForeignKey(x => x.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CampaignSession>(entity =>
@@ -102,6 +112,13 @@ public sealed class EncounterParticipant
     public int Position { get; set; }
     public long TurnCount { get; set; }
     public bool CompletedThisRound { get; set; }
+}
+
+public sealed class ParticipantCondition
+{
+    public Guid ParticipantId { get; set; }
+    public string Kind { get; set; } = "";
+    public long AppliedAtTurnCount { get; set; }
 }
 
 public sealed class CampaignSession

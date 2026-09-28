@@ -1,5 +1,7 @@
 # 007: Hit point tracking
 
+> The HP status names, zero-HP rule, Prepare row presentation, and manual-status scope below are superseded by [spec 008](008-encounter-conditions-and-layout.md). All other HP requirements remain in effect.
+
 - Status: Draft
 - Date: 2026-09-25
 - Related decisions: [0014: Track HP now; defer status and spell effects](../decisions/0014-hit-point-scope.md)

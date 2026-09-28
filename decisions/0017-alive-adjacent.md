@@ -1,10 +1,10 @@
 # 0017: Unconscious range and alive adjacent at -10 or below
 
 - Date: 2026-09-25
-- Status: Accepted
+- Status: Superseded by [0083](0083-encounter-conditions-and-layout.md) for HP-derived labels
 - Related specs: [007](../specs/007-hit-point-tracking.md)
 - Supersedes: None; refines [0016](0016-negative-hp-and-unconscious.md)
-- Superseded by: None
+- Superseded by: [0083](0083-encounter-conditions-and-layout.md); the alive adjacent boundary and negative HP persistence remain.
 
 ## Context
 

@@ -74,7 +74,7 @@ $encounter = (Expect (Send-Json "$base/participants" 'POST' `
     @{ revision = $encounter.revision; characterId = $npc.id; initiative = '12'; currentHp = '0.000' } `
     $admin $campaign) 200 'Add NPC at zero HP').Content | ConvertFrom-Json
 $npcEntry = @($encounter.participants | Where-Object { $_.characterId -eq $npc.id })[0]
-if ($pcEntry.currentHp -ne $null -or $npcEntry.currentHp -ne '0' -or $npcEntry.status -ne $null) {
+if ($pcEntry.currentHp -ne $null -or $npcEntry.currentHp -ne '0' -or $npcEntry.status -ne 'Disabled') {
     throw 'Missing HP, zero HP, or zero status was incorrect.'
 }
 $encounter = (Expect (Send-Json "$base/participants" 'POST' `
@@ -101,9 +101,9 @@ $pcEntry = @($encounter.participants | Where-Object { $_.id -eq $pcEntry.id })[0
 if ($pcEntry.currentHp -ne '999999999999999999999999.07') { throw 'Fractional Heal lost precision.' }
 $encounter = (Expect (Send-Json "$base/participants/$($npcEntry.id)/hp" 'PATCH' `
     @{ revision = $encounter.revision; currentHp = '-9' } $admin $campaign) `
-    200 'Set Unconscious HP').Content | ConvertFrom-Json
+    200 'Set Dying HP').Content | ConvertFrom-Json
 $npcEntry = @($encounter.participants | Where-Object { $_.id -eq $npcEntry.id })[0]
-if ($npcEntry.status -ne 'Unconscious') { throw '-9 HP should be Unconscious.' }
+if ($npcEntry.status -ne 'Dying') { throw '-9 HP should be Dying.' }
 $encounter = (Expect (Send-Json "$base/participants/$($npcEntry.id)/damage" 'POST' `
     @{ revision = $encounter.revision; amount = '1' } $admin $campaign) `
     200 'Damage to -10').Content | ConvertFrom-Json
@@ -122,22 +122,22 @@ $encounter = (Expect (Send-Json "$base/participants/$($npcEntry.id)/heal" 'POST'
     @{ revision = $encounter.revision; amount = '9' } $admin $campaign) `
     200 'Heal to -5').Content | ConvertFrom-Json
 $npcEntry = @($encounter.participants | Where-Object { $_.id -eq $npcEntry.id })[0]
-if ($npcEntry.currentHp -ne '-5' -or $npcEntry.status -ne 'Unconscious') {
-    throw 'Healing did not restore Unconscious status.'
+if ($npcEntry.currentHp -ne '-5' -or $npcEntry.status -ne 'Dying') {
+    throw 'Healing did not restore Dying status.'
 }
 $encounter = (Expect (Send-Json "$base/participants/$($npcEntry.id)/heal" 'POST' `
     @{ revision = $encounter.revision; amount = '5' } $admin $campaign) `
     200 'Heal to zero').Content | ConvertFrom-Json
 $npcEntry = @($encounter.participants | Where-Object { $_.id -eq $npcEntry.id })[0]
-if ($npcEntry.currentHp -ne '0' -or $npcEntry.status -ne $null) {
-    throw 'Zero HP retained a negative-HP status.'
+if ($npcEntry.currentHp -ne '0' -or $npcEntry.status -ne 'Disabled') {
+    throw 'Zero HP should be Disabled.'
 }
 $encounter = (Expect (Send-Json "$base/participants/$($npcEntry.id)/hp" 'PATCH' `
     @{ revision = $encounter.revision; currentHp = '-0.5' } $admin $campaign) `
-    200 'Set fractional Unconscious HP').Content | ConvertFrom-Json
+    200 'Set fractional Dying HP').Content | ConvertFrom-Json
 $npcEntry = @($encounter.participants | Where-Object { $_.id -eq $npcEntry.id })[0]
-if ($npcEntry.currentHp -ne '-0.5' -or $npcEntry.status -ne 'Unconscious') {
-    throw 'Fractional negative HP should be Unconscious.'
+if ($npcEntry.currentHp -ne '-0.5' -or $npcEntry.status -ne 'Dying') {
+    throw 'Fractional negative HP should be Dying.'
 }
 $encounter = (Expect (Send-Json "$base/participants/$($npcEntry.id)/hp" 'PATCH' `
     @{ revision = $encounter.revision; currentHp = '-10.5' } $admin $campaign) `
@@ -173,7 +173,7 @@ $encounter = (Expect (Send-Json "$base/participants/$($mob.id)/damage" 'POST' `
     @{ revision = $encounter.revision; amount = '8' } $admin $campaign) `
     200 'Damage non-active mob').Content | ConvertFrom-Json
 $mob = @($encounter.participants | Where-Object { $_.id -eq $mob.id })[0]
-if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Unconscious' `
+if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Dying' `
     -or $encounter.activeParticipantId -ne $active `
     -or (@($encounter.participants | ForEach-Object { $_.id }) -join ',') -ne ($beforeOrder -join ',')) {
     throw 'Damage changed turn order, active participant, or status incorrectly.'
@@ -189,17 +189,24 @@ if ($encounter.participants[0].id -ne $active -or $newMob.status -ne 'AliveAdjac
 $reloaded = (Expect (Invoke-WebRequest $base -WebSession $admin -SkipHttpErrorCheck) `
     200 'Reload Fight HP').Content | ConvertFrom-Json
 $mob = @($reloaded.participants | Where-Object { $_.id -eq $mob.id })[0]
-if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Unconscious') {
+if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Dying') {
     throw 'HP status did not restore from the saved value.'
 }
+$reloaded = (Expect (Send-Json "$base/participants/$($mob.id)/conditions" 'POST' `
+    @{ revision = $reloaded.revision; kind = 'Prone' } $admin $campaign) `
+    200 'Apply Prone to non-active mob').Content | ConvertFrom-Json
+$mob = @($reloaded.participants | Where-Object { $_.id -eq $mob.id })[0]
+if (@($mob.conditions).Count -ne 1 -or $mob.conditions[0].kind -ne 'Prone' `
+    -or $mob.conditions[0].turnCount -ne 0) { throw 'Prone was not saved with a zero turn count.' }
 $encounter = (Expect (Send-Json "$base/active" 'POST' `
     @{ revision = $reloaded.revision; participantId = $mob.id } $admin $campaign) `
-    200 'Make Unconscious mob active').Content | ConvertFrom-Json
+    200 'Make Dying mob active').Content | ConvertFrom-Json
 $encounter = (Expect (Send-Json "$base/next" 'POST' @{ revision = $encounter.revision } $admin $campaign) `
-    200 'Advance Unconscious mob').Content | ConvertFrom-Json
+    200 'Advance Dying mob').Content | ConvertFrom-Json
 $mob = @($encounter.participants | Where-Object { $_.id -eq $mob.id })[0]
-if ($mob.turnCount -ne 1 -or $encounter.activeParticipantId -eq $mob.id) {
-    throw 'Unconscious participant was skipped or removed from turn order.'
+if ($mob.turnCount -ne 1 -or $mob.conditions[0].turnCount -ne 1 `
+    -or $encounter.activeParticipantId -eq $mob.id) {
+    throw 'Dying participant was skipped or removed from turn order.'
 }
 $finished = (Expect (Send-Json "$base/end" 'POST' @{ revision = $encounter.revision } $admin $campaign) `
     200 'Finish HP encounter').Content | ConvertFrom-Json
@@ -209,9 +216,15 @@ $null = Expect (Send-Json "$base/participants/$($mob.id)/hp" 'PATCH' `
 $final = (Expect (Invoke-WebRequest $base -WebSession $admin -SkipHttpErrorCheck) `
     200 'Reload final HP').Content | ConvertFrom-Json
 $mob = @($final.participants | Where-Object { $_.id -eq $mob.id })[0]
-if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Unconscious') {
+if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Dying') {
     throw 'Finished encounter lost HP or status.'
 }
+if ($mob.conditions[0].kind -ne 'Prone' -or $mob.conditions[0].turnCount -ne 1) {
+    throw 'Finished encounter lost its manual status or turn count.'
+}
+$null = Expect (Send-Json "$base/participants/$($mob.id)/conditions" 'POST' `
+    @{ revision = $final.revision; kind = 'Invisible' } $admin $campaign) `
+    409 'Reject status edit after End'
 
 $fresh = (Expect (Send-Json "$campaignBase/encounters" 'POST' `
     @{ name = 'Fresh HP' } $admin $campaign) 201 'Create second encounter').Content | ConvertFrom-Json
@@ -244,5 +257,8 @@ $null = Expect (Send-Json "$identity/account/login" 'POST' `
 Open-CampaignSession $other
 $null = Expect (Send-Json "$campaignBase/encounters/$($fresh.id)/participants/$($fresh.participants[0].id)/hp" `
     'PATCH' @{ revision = $fresh.revision; currentHp = '1' } $other $campaign) 404 'Reject other-user HP change'
+$null = Expect (Send-Json "$base/participants/$($mob.id)/conditions" 'POST' `
+    @{ revision = $final.revision; kind = 'Invisible' } $other $campaign) `
+    404 'Reject other-user status change'
 
 Write-Output 'Exact HP, Damage, Heal, status boundaries, persistence, isolation, and authorization passed.'

@@ -3,6 +3,8 @@ import { campaignApi } from './runtime'
 
 type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
 type EncounterSummary = { id: string; name: string; phase: 'Prepare' | 'Fight' | 'Finished'; round: number; revision: number }
+type ConditionKind = 'Invisible' | 'Grappled' | 'Prone'
+const conditionKinds: ConditionKind[] = ['Invisible', 'Grappled', 'Prone']
 type Participant = {
   id: string
   characterId: string | null
@@ -10,7 +12,8 @@ type Participant = {
   kind: 'Pc' | 'Npc' | 'Mob'
   initiative: string | null
   currentHp: string | null
-  status: 'Unconscious' | 'AliveAdjacent' | null
+  status: 'Disabled' | 'Dying' | 'AliveAdjacent' | null
+  conditions: { kind: ConditionKind; turnCount: number }[]
   position: number
   turnCount: number
 }
@@ -41,7 +44,18 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [initiativeOpen, setInitiativeOpen] = useState(false)
   const [initiativeStep, setInitiativeStep] = useState(0)
+  const [prepareSelectedId, setPrepareSelectedId] = useState<string | null>(null)
+  const [manageOpenIds, setManageOpenIds] = useState<string[]>([])
+  const [conditionParticipantId, setConditionParticipantId] = useState<string | null>(null)
   const initiativeDialog = useRef<HTMLDialogElement>(null)
+  const conditionDialog = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = conditionDialog.current
+    if (!dialog) return
+    if (conditionParticipantId && !dialog.open) dialog.showModal()
+    if (!conditionParticipantId && dialog.open) dialog.close()
+  }, [conditionParticipantId])
 
   useEffect(() => {
     const dialog = initiativeDialog.current
@@ -92,6 +106,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       })
       if (!response.ok) throw new Error(await responseMessage(response))
       const updated = await response.json() as EncounterDetail
+      if (updated.activeParticipantId !== selected.activeParticipantId) setManageOpenIds([])
       setSelected(updated)
       setEncounters((previous) => previous.map((item) => item.id === updated.id
         ? { id: updated.id, name: updated.name, phase: updated.phase,
@@ -140,6 +155,19 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       currentHp: values.get('currentHp'),
     }, 'Participant added.')
     if (saved) form.reset()
+  }
+
+  async function addAllParticipants() {
+    if (!selected) return
+    await mutate(`${api}/${selected.id}/participants/add-all`, 'POST',
+      { revision: selected.revision }, 'Available campaign PCs and NPCs added.')
+  }
+
+  async function setCondition(participant: Participant, kind: ConditionKind, add: boolean) {
+    if (!selected) return
+    const base = `${api}/${selected.id}/participants/${participant.id}/conditions`
+    await mutate(add ? base : `${base}/${kind}`, 'POST',
+      { revision: selected.revision, kind }, add ? `${kind} applied.` : `${kind} removed.`)
   }
 
   async function savePromptedInitiative(event: FormEvent<HTMLFormElement>) {
@@ -246,14 +274,21 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       <label>Encounter name<input name="encounterName" required /></label>
       <button type="submit" disabled={busy}>Create encounter</button>
     </form>
-    {encounters.length === 0 ? <p>No encounters yet.</p> : <ul className="encounter-list">
-      {encounters.map((encounter) => <li key={encounter.id}>
+    {encounters.length === 0 ? <p>No encounters yet.</p> : <div className="encounter-groups">
+      {(['Fight', 'Prepare', 'Finished'] as const).map((phase) => {
+        const items = encounters.filter((encounter) => encounter.phase === phase)
+        if (items.length === 0) return null
+        const list = <ul className="encounter-list">{items.map((encounter) => <li key={encounter.id}>
         <button type="button" className={selectedId === encounter.id ? 'selected' : ''}
           disabled={busy} onClick={() => { setSelected(null); onSelectId(encounter.id) }}>
           {encounter.name} <small>{encounter.phase}</small>
         </button>
-      </li>)}
-    </ul>}
+      </li>)}</ul>
+        return phase === 'Finished' ? <details key={phase} className="encounter-group finished-group">
+          <summary>Finished ({items.length})</summary>{list}</details>
+          : <section key={phase} className="encounter-group"><h5>{phase === 'Fight' ? 'Active fights' : 'Prepare'} ({items.length})</h5>{list}</section>
+      })}
+    </div>}
     </>}
     {selectedId && !selected && <p>Loading encounter…</p>}
     {selectedId && selected && <div className="encounter-detail">
@@ -271,9 +306,11 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               { revision: selected.revision }, 'Encounter ended.')
         }}>End encounter</button>
       </div>}
-      {selected.phase !== 'Finished' && <details className="add-participant" open={selected.phase === 'Prepare'}>
-        <summary>Add a PC, NPC, or mob</summary>
+      {selected.phase !== 'Finished' && <div className="add-participant">
+        <h3>Add a PC, NPC, or mob</h3>
         <h5>Add a campaign character</h5>
+        {selected.phase === 'Prepare' && <button type="button" disabled={busy || available.length === 0}
+          onClick={() => void addAllParticipants()}>Add All</button>}
         {available.length === 0 ? <p>No available PCs or NPCs in this campaign.</p> :
           <form onSubmit={(event) => void addParticipant(event)}>
             <input type="hidden" name="participantType" value="character" />
@@ -292,7 +329,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
           <button type="submit" disabled={busy}>Add mob</button>
         </form>
-      </details>}
+      </div>}
       <h5>{selected.phase === 'Prepare' ? 'Participants' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
       {selected.phase === 'Fight' && <p>Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.</p>}
       {selected.participants.length === 0 ? <p>Add a PC, NPC, or mob to prepare the order.</p> :
@@ -315,7 +352,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
             ? dropIndex === index ? 'drop-before'
               : dropIndex === selected.participants.length && index === selected.participants.length - 1 ? 'drop-end' : ''
             : ''
-          return <li key={participant.id} className={`${active ? 'active' : ''} ${marker} ${participant.status === 'Unconscious' ? 'unconscious' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
+          return <li key={participant.id} className={`${active ? 'active' : ''} ${marker} ${participant.status === 'Disabled' ? 'disabled-hp' : participant.status === 'Dying' ? 'dying' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
             draggable={selected.phase === 'Fight' && !busy}
             tabIndex={selected.phase === 'Fight' ? 0 : undefined}
             aria-keyshortcuts={selected.phase === 'Fight' ? 'Alt+ArrowUp Alt+ArrowDown' : undefined}
@@ -333,23 +370,37 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               event.dataTransfer.effectAllowed = 'move'
             }}
             onDragEnd={() => { setDraggedId(null); setDropIndex(null) }}>
-            {selected.phase === 'Prepare' ? <details className="prepare-row">
-              <summary><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
-                <span>HP: {participant.currentHp ?? 'Not set'}</span>
-                {participant.status && <span className="hp-status">{participant.status === 'AliveAdjacent' ? 'alive adjacent' : 'Unconscious'}</span>}
-              </summary>
-              {hpEditor(participant)}
-              <button type="button" disabled={busy} onClick={() => void mutate(
+            {selected.phase === 'Prepare' ? <div className={`prepare-row ${prepareSelectedId === participant.id ? 'selected' : ''}`}>
+              <div className="prepare-row-main">
+                <button type="button" className="prepare-row-select" aria-expanded={prepareSelectedId === participant.id}
+                  onClick={() => setPrepareSelectedId((id) => id === participant.id ? null : participant.id)}>
+                  <strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
+                  <span>HP: {participant.currentHp ?? 'Not set'}</span>
+                  {participant.status && <span className="hp-status">{participant.status === 'AliveAdjacent' ? 'alive adjacent' : participant.status}</span>}
+                </button>
+                <button type="button" disabled={busy} onClick={() => void mutate(
                 `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
-                { revision: selected.revision }, 'Participant removed.')}>Remove from encounter</button>
-            </details> : <>
+                { revision: selected.revision }, 'Participant removed.')}>Remove</button>
+              </div>
+              {prepareSelectedId === participant.id && hpEditor(participant)}
+            </div> : <>
               <div className="fight-tile-heading"><strong>{participant.name}</strong>
                 <small>{participant.kind.toUpperCase()}</small>
                 {active && <span className="active-label">Active turn</span>}
+                {selected.phase === 'Fight' && <div className="condition-actions">
+                  {participant.conditions.map((condition) => <span className="condition-bubble" key={condition.kind}>
+                    {condition.kind} · {condition.turnCount}
+                    <button type="button" aria-label={`Remove ${condition.kind} from ${participant.name}`}
+                      disabled={busy} onClick={() => void setCondition(participant, condition.kind, false)}>×</button>
+                  </span>)}
+                  <button type="button" className="condition-picker" aria-label={`Manage statuses for ${participant.name}`}
+                    disabled={busy} onClick={() => setConditionParticipantId(participant.id)} title="Add a status">✦</button>
+                </div>}
               </div>
-              <p className="fight-tile-meta">Initiative: {participant.initiative ?? '—'} · Turns completed: {participant.turnCount}
+              <p className="fight-tile-meta">Turns completed: {participant.turnCount}
                 · HP: {participant.currentHp ?? 'Not set'}
-                {participant.status === 'Unconscious' && <span className="hp-status unconscious-label">Unconscious</span>}
+                {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
+                {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
                 {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
               </p>
               {active && <div className="active-turn-controls" role="group" aria-label={`Turn actions for ${participant.name}`}>
@@ -358,8 +409,13 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                 <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
                   { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
               </div>}
-              {selected.phase === 'Fight' && <details className="fight-tile-actions">
-                <summary>Manage {participant.name}</summary>
+              {selected.phase === 'Fight' && <details className="fight-tile-actions"
+                open={active || manageOpenIds.includes(participant.id)}>
+                <summary onClick={(event) => {
+                  event.preventDefault()
+                  if (!active) setManageOpenIds((ids) => ids.includes(participant.id)
+                    ? ids.filter((id) => id !== participant.id) : [...ids, participant.id])
+                }}>Manage {participant.name}</summary>
                 {hpEditor(participant)}
                 <div className="account-actions">
                   <button type="button" disabled={busy || active}
@@ -409,6 +465,22 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                 })}>Confirm and begin Fight</button>
           </div>
         </>}
+      </dialog>}
+      {selected.phase === 'Fight' && conditionParticipantId && <dialog ref={conditionDialog}
+        aria-labelledby="condition-title" onCancel={(event) => {
+          event.preventDefault()
+          setConditionParticipantId(null)
+        }}>
+        <h3 id="condition-title">Statuses for {selected.participants.find((item) => item.id === conditionParticipantId)?.name}</h3>
+        <p>Add a status to this participant. Its count starts at 0 and increases only when they use Next.</p>
+        <div className="condition-choices">{conditionKinds.map((kind) => {
+          const participant = selected.participants.find((item) => item.id === conditionParticipantId)
+          if (!participant) return null
+          const applied = participant.conditions.some((condition) => condition.kind === kind)
+          return <button type="button" key={kind} disabled={busy || applied}
+            onClick={() => void setCondition(participant, kind, true)}>{kind}{applied ? ' ✓' : ''}</button>
+        })}</div>
+        <div className="dialog-actions"><button type="button" onClick={() => setConditionParticipantId(null)}>Done</button></div>
       </dialog>}
     </div>}
   </div>

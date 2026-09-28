@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [007: Hit point tracking](../specs/007-hit-point-tracking.md)
 - Supersedes: None; expands the character scope of [0003](0003-minimal-campaigns.md)
-- Superseded by: None
+- Superseded by: [0083](0083-encounter-conditions-and-layout.md) for the deferral of manual statuses; HP tracking and spell-effect deferral remain.
 
 ## Context
 

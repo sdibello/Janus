@@ -186,6 +186,8 @@ function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (
               <small>Created {new Date(campaign.createdAtUtc).toLocaleDateString()}</small>
             </button>
           </li>)}</ul>}
+        {selected && <EncounterWorkspace key={selected.id} campaignId={selected.id}
+          characters={selected.characters} selectedId={null} onSelectId={setEncounterId} />}
       </div>
       <div className="account-card">
         {!selected ? <><h3>Choose a campaign</h3><p>Select a campaign to manage its PCs and NPCs.</p></> : <>
@@ -198,8 +200,6 @@ function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (
           </form>
           {characterList('Pc', 'PCs')}
           {characterList('Npc', 'NPCs')}
-          <EncounterWorkspace key={selected.id} campaignId={selected.id}
-            characters={selected.characters} selectedId={null} onSelectId={setEncounterId} />
         </>}
       </div>
     </div>

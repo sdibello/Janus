@@ -16,6 +16,9 @@ internal static class EncounterEndpoints
         encounters.MapPost("/", CreateAsync);
         encounters.MapGet("/{encounterId:guid}", GetAsync);
         encounters.MapPost("/{encounterId:guid}/participants", AddParticipantAsync);
+        encounters.MapPost("/{encounterId:guid}/participants/add-all", AddAllParticipantsAsync);
+        encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/conditions", AddConditionAsync);
+        encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/conditions/{kind}", RemoveConditionAsync);
         encounters.MapPatch("/{encounterId:guid}/participants/{participantId:guid}/initiative", SetInitiativeAsync);
         encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/remove", RemoveParticipantAsync);
         encounters.MapPatch("/{encounterId:guid}/participants/{participantId:guid}/hp", SetHpAsync);
@@ -140,6 +143,109 @@ internal static class EncounterEndpoints
         }
         catch (DbUpdateConcurrencyException) { return Stale(); }
         catch (DbUpdateException exception) when (UniqueConstraint(exception)) { return Stale(); }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
+    private static async Task<IResult> AddAllParticipantsAsync(
+        Guid campaignId, Guid encounterId, RevisionRequest request, HttpContext context,
+        CampaignAccessService access, CampaignDataContext data, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        await using var transaction = await data.Database.BeginTransactionAsync(cancellationToken);
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (encounter.Phase != EncounterPhase.Prepare) return PrepareOnly();
+        if (request.Revision != encounter.Revision) return Stale();
+        var characters = (await data.Characters.Where(item => item.CampaignId == campaignId)
+            .ToListAsync(cancellationToken))
+            .OrderBy(item => item.Kind).ThenBy(item => item.Name).ThenBy(item => item.Id);
+        var participants = await data.Participants.Where(item => item.EncounterId == encounterId)
+            .ToListAsync(cancellationToken);
+        var existingIds = participants.Where(item => item.CharacterId.HasValue)
+            .Select(item => item.CharacterId!.Value).ToHashSet();
+        var missing = characters.Where(item => !existingIds.Contains(item.Id)).ToArray();
+        if (missing.Length == 0) return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+        var lastPosition = participants.Count == 0 ? -1 : participants.Max(item => item.Position);
+        if (missing.Length > int.MaxValue - (long)lastPosition - 1)
+            return Results.Conflict(new { message = "This encounter has too many participants." });
+        foreach (var character in missing)
+            data.Participants.Add(new EncounterParticipant
+            {
+                Id = Guid.NewGuid(), EncounterId = encounterId, CharacterId = character.Id,
+                Position = ++lastPosition,
+            });
+        encounter.Revision++;
+        try
+        {
+            await data.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException) { return Stale(); }
+        catch (DbUpdateException exception) when (UniqueConstraint(exception)) { return Stale(); }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
+    private static readonly HashSet<string> AllowedConditions = ["Invisible", "Grappled", "Prone"];
+
+    private static async Task<IResult> AddConditionAsync(
+        Guid campaignId, Guid encounterId, Guid participantId, ConditionRequest request,
+        HttpContext context, CampaignAccessService access, CampaignDataContext data,
+        CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (encounter.Phase != EncounterPhase.Fight) return FightOnly();
+        if (request.Revision != encounter.Revision) return Stale();
+        if (request.Kind is null || !AllowedConditions.Contains(request.Kind))
+            return Results.BadRequest(new { message = "Choose Invisible, Grappled, or Prone." });
+        var participant = await data.Participants.SingleOrDefaultAsync(item => item.Id == participantId
+            && item.EncounterId == encounterId, cancellationToken);
+        if (participant is null) return Results.NotFound();
+        if (!await data.Conditions.AnyAsync(item => item.ParticipantId == participantId
+                && item.Kind == request.Kind, cancellationToken))
+        {
+            data.Conditions.Add(new ParticipantCondition
+            {
+                ParticipantId = participantId, Kind = request.Kind,
+                AppliedAtTurnCount = participant.TurnCount,
+            });
+            encounter.Revision++;
+            try { await data.SaveChangesAsync(cancellationToken); }
+            catch (DbUpdateConcurrencyException) { return Stale(); }
+            catch (DbUpdateException exception) when (UniqueConstraint(exception)) { return Stale(); }
+        }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
+    private static async Task<IResult> RemoveConditionAsync(
+        Guid campaignId, Guid encounterId, Guid participantId, string kind, RevisionRequest request,
+        HttpContext context, CampaignAccessService access, CampaignDataContext data,
+        CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (encounter.Phase != EncounterPhase.Fight) return FightOnly();
+        if (request.Revision != encounter.Revision) return Stale();
+        var participant = await data.Participants.AnyAsync(item => item.Id == participantId
+            && item.EncounterId == encounterId, cancellationToken);
+        if (!participant) return Results.NotFound();
+        var condition = await data.Conditions.SingleOrDefaultAsync(item => item.ParticipantId == participantId
+            && item.Kind == kind, cancellationToken);
+        if (condition is not null)
+        {
+            data.Conditions.Remove(condition);
+            encounter.Revision++;
+            try { await data.SaveChangesAsync(cancellationToken); }
+            catch (DbUpdateConcurrencyException) { return Stale(); }
+        }
         return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
     }
 
@@ -442,6 +548,9 @@ internal static class EncounterEndpoints
             .Where(item => item.EncounterId == encounter.Id).ToListAsync(cancellationToken);
         var characters = await data.Characters.AsNoTracking()
             .Where(item => item.CampaignId == encounter.CampaignId).ToDictionaryAsync(item => item.Id, cancellationToken);
+        var participantIds = participants.Select(item => item.Id).ToArray();
+        var conditions = await data.Conditions.AsNoTracking()
+            .Where(item => participantIds.Contains(item.ParticipantId)).ToListAsync(cancellationToken);
         var savedOrder = participants.OrderBy(item => item.Position).ToArray();
         var ordered = encounter.Phase == EncounterPhase.Fight && encounter.ActiveParticipantId is { } activeId
             ? EncounterFlow.StartingAt(savedOrder.Select(item => item.Id).ToArray(), activeId)
@@ -460,6 +569,10 @@ internal static class EncounterEndpoints
                 Status = item.CurrentHp is { } hp && ExactDecimal.TryParse(hp, out var value)
                     ? value.Status : null,
                 item.Position, item.TurnCount,
+                Conditions = conditions.Where(condition => condition.ParticipantId == item.Id)
+                    .OrderBy(condition => condition.Kind)
+                    .Select(condition => new { condition.Kind,
+                        TurnCount = item.TurnCount - condition.AppliedAtTurnCount }).ToArray(),
             }).ToArray(),
         };
     }
@@ -546,4 +659,5 @@ internal static class EncounterEndpoints
     private sealed record SetActiveRequest(long Revision, Guid ParticipantId);
     private sealed record HpRequest(long Revision, string? CurrentHp);
     private sealed record HpAmountRequest(long Revision, string? Amount);
+    private sealed record ConditionRequest(long Revision, string? Kind);
 }
