@@ -38,6 +38,7 @@ public sealed class CampaignDataContext(DbContextOptions<CampaignDataContext> op
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Name).IsRequired();
             entity.Property(x => x.Phase).HasConversion<string>().IsRequired();
+            entity.Property(x => x.Revision).IsConcurrencyToken();
             entity.HasOne<Campaign>().WithMany().HasForeignKey(x => x.CampaignId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.CampaignId);
         });

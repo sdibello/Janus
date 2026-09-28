@@ -277,6 +277,24 @@ button:hover {
 .campaign-list small { margin-top: 5px; color: var(--muted); font-weight: 400; }
 .character-list { margin-top: 30px; }
 .character-list h4 { margin-bottom: 10px; }
+.encounter-workspace { margin-top: 40px; padding-top: 26px; border-top: 1px solid var(--border); }
+.encounter-workspace h4 { margin: 0 0 12px; font-size: 20px; }
+.encounter-workspace h5 { margin: 28px 0 0; font-size: 16px; }
+.encounter-list { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 20px 0; }
+.encounter-list button.selected { border-color: #245c4c; background: #e5f4e8; }
+.encounter-list small { margin-left: 6px; color: var(--muted); }
+.encounter-detail { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+.encounter-participants { padding-left: 24px; }
+.encounter-participants li { padding: 15px 0; border-bottom: 1px solid var(--border); }
+.encounter-participants small { color: var(--muted); }
+.encounter-participants form { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+.encounter-participants form label { flex: 1; min-width: 130px; }
+.encounter-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
+.encounter-controls p { margin: 0; }
+.encounter-participants li[draggable='true'] { cursor: grab; }
+.encounter-participants li.active { margin-left: -24px; padding-left: 20px; border-left: 4px solid #245c4c; background: #e5f4e8; }
+.encounter-participants li.drop-target { outline: 2px dashed #245c4c; outline-offset: 2px; }
+.active-label { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; background: #245c4c; color: #fff; font-size: 11px; font-weight: 800; }
 
 footer {
   padding: 28px 0 32px;

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import EncounterWorkspace from './EncounterWorkspace'
 
 type CampaignSummary = { id: string; name: string; createdAtUtc: string }
 type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
@@ -183,6 +184,7 @@ function CampaignWorkspace() {
           </form>
           {characterList('Pc', 'PCs')}
           {characterList('Npc', 'NPCs')}
+          <EncounterWorkspace key={selected.id} campaignId={selected.id} characters={selected.characters} />
         </>}
       </div>
     </div>

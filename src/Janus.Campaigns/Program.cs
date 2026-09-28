@@ -159,6 +159,7 @@ app.MapGet("/auth/me", async (HttpContext context, CampaignAccessService access,
 });
 
 app.MapCampaignEndpoints();
+app.MapEncounterEndpoints();
 
 app.MapPost("/auth/logout", async (HttpContext context) =>
 {

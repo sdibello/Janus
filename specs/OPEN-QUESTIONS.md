@@ -1,14 +1,14 @@
 # Requirements review: outstanding questions
 
-Last reviewed: 2026-09-26.
+Last reviewed: 2026-09-27.
 
 The planned user-facing questionnaire is complete. A consistency review corrected stale contradictions and identified qualifications that must be resolved before affected behavior is finalized. See [REQUIREMENTS-REVIEW.md](REQUIREMENTS-REVIEW.md) and [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md). Technical items below remain open until implemented or validated; proposals are not accepted product decisions.
 
 ## Handoff
 
-Accepted decisions run through 0072. The next executable task is implementation-plan step 1: scaffold the local solution and frontend and pin compatible dependencies. The proposed baseline is .NET 10 LTS and Node.js 24 LTS, with Mailpit for captured email; these are technical proposals pending adoption and validation. The Windows environment currently has .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
+Accepted decisions run through 0078. The next executable task is implementation-plan step 6: encounter-specific HP and status presentation. The Windows foundation and encounter Prepare/Fight workflows have been built and smoke-tested with .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
 
-Before finalizing the relevant workflows, resolve the review qualifications: browser session restoration without Remember me, Damage/Heal sign validation, identifier collisions, and verification after invitation expiry. Do not reopen settled encounter rules. This handoff accompanies the requirements and implementation-planning checkpoint; resume with implementation-plan step 1.
+Before finalizing the relevant workflows, resolve the review qualifications: browser session restoration without Remember me, Damage/Heal sign validation, identifier collisions, and verification after invitation expiry. Do not reopen settled encounter rules. Resume with [implementation-plan step 6](IMPLEMENTATION-PLAN.md).
 
 
 ## Confirmed context: do not ask again
@@ -116,4 +116,4 @@ Deferred cloud follow-up: once the local application is working, select the clou
 
 This consolidated list removes duplicates and does not reopen confirmed answers. HP is optional and encounter-specific; missing HP prevents arithmetic Damage and Heal actions, while zero HP leaves encounter membership and turn progression unchanged.
 
-All specs remain Draft. Prior accepted product decisions still apply; proposed edge cases must not be treated as approved merely because they appear in an acceptance example. No implementation or executable tests exist yet.
+All specs remain Draft. Prior accepted product decisions still apply; proposed edge cases must not be treated as approved merely because they appear in an acceptance example. The local identity, campaign, and encounter Prepare/Fight foundations now have executable smoke tests; HP remains implementation work.

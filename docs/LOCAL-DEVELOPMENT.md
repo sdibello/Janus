@@ -1,6 +1,6 @@
 # Local development
 
-The local application has two ASP.NET Core hosts, two React entry pages, and EF Core migrations in one SQLite file. The portal handles invitation-based accounts; the campaign page now signs in through the shared identity host. Campaign and encounter data workflows are still under development.
+The local application has two ASP.NET Core hosts, two React entry pages, and EF Core migrations in one SQLite file. The portal handles invitation-based accounts; the campaign page signs in through the shared identity host and supports campaign, character, and encounter preparation workflows.
 
 ## Requirements
 
@@ -38,7 +38,7 @@ Then start the identity host and Vite as shown below. Open <http://localhost:517
 
 Signed-in users can change their password from the portal after entering the current password. From the sign-in form, **Forgot password?** accepts the account's verified email address and places a reset link in the local test inbox. The response is the same when the email address is unknown. Each reset link can be used once within one hour. A reset signs out existing identity sessions; a password change keeps the current identity session and signs out other identity sessions.
 
-Open <http://localhost:5173/> to establish a separate campaign session through OpenID Connect. The page first tries a one-time silent sign-in; if the shared identity cookie is valid and the user has a campaign grant, no password prompt or button click is needed. Otherwise select **Sign in**. Once signed in, create campaigns and add, reclassify, or remove their PCs and NPCs. **Sign out of campaigns** removes only the campaign session; leaving and returning to the page can restore it from the still-valid shared login. The current campaign session is a browser-session cookie with an eight-hour maximum. Remember me across products remains future work.
+Open <http://localhost:5173/> to establish a separate campaign session through OpenID Connect. The page first tries a one-time silent sign-in; if the shared identity cookie is valid and the user has a campaign grant, no password prompt or button click is needed. Otherwise select **Sign in**. Once signed in, create campaigns and add, reclassify, or remove their PCs and NPCs. Within a campaign, create an encounter, add its PCs/NPCs and individual mobs, enter or edit whole-number initiative, and move tied entries up or down. Once every participant has initiative, choose **Begin Fight**. During Fight use Next, Skip, drag-and-drop or Move up/down, Set active, add participants, and End encounter. Finished encounters remain available to view. Changes save immediately. **Sign out of campaigns** removes only the campaign session; leaving and returning to the page can restore it from the still-valid shared login. The current campaign session is a browser-session cookie with an eight-hour maximum. Remember me across products remains future work.
 
 ## Manage product access
 
@@ -74,7 +74,7 @@ npm run build --prefix web
 npm run lint --prefix web
 ```
 
-The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, full password compromise screening, a second product client, and encounter workflows remain implementation work. OpenID Connect campaign sign-in and campaign APIs have been smoke-tested on Windows; Remember me across products and the full password-driven session lifecycle are not yet complete.
+The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, full password compromise screening, a second product client, and encounter HP workflows remain implementation work. OpenID Connect campaign sign-in and campaign/encounter APIs have been smoke-tested on Windows; Remember me across products and the full password-driven session lifecycle are not yet complete.
 
 After setup and email verification, run `tests/oidc-smoke.ps1` against a disposable database to check campaign sign-in, local logout, and password-free return. Its optional `-ExerciseRevocation` switch revokes the signed-in user's campaign grant, so use it only on disposable data with a shared administrator account:
 
@@ -82,7 +82,7 @@ After setup and email verification, run `tests/oidc-smoke.ps1` against a disposa
 ./tests/oidc-smoke.ps1 -Identifier admin -Password (Read-Host 'Admin password' -AsSecureString)
 ```
 
-On disposable data, `tests/campaign-smoke.ps1` checks campaign and character creation, duplicate names, PC/NPC reclassification, removal, two-campaign separation, and direct-request denial for a second invited user. Run it with a verified shared administrator who has a campaign grant and both hosts started:
+On disposable data, `tests/campaign-smoke.ps1` checks campaign and character creation, duplicate names, PC/NPC reclassification, removal, Prepare and Fight sequencing, single-participant turns, persistence, two-campaign separation, and direct-request denial for a second invited user. Run it with a verified shared administrator who has a campaign grant and both hosts started:
 
 ```powershell
 ./tests/campaign-smoke.ps1 -AdminIdentifier admin -AdminPassword (Read-Host 'Admin password' -AsSecureString)

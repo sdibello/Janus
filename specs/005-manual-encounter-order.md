@@ -60,7 +60,7 @@ Adding PCs, NPCs, and mobs while running is covered by specs 003 and 004. New en
 
 When implementation exists, exercise the examples above with PCs, NPCs, and same-name mobs. Test moving both the active participant and other participants across its position, moves to the first and last positions, canceled moves, and multiple wraparounds. Verify that initiative never overrides the manually chosen order. Check keyboard operation, access enforcement, and encounter isolation.
 
-The local foundation exists; manual ordering and executable tests have not been implemented yet.
+The Fight UI supports drag-and-drop and keyboard Move up/down controls. Windows API smoke checks cover changed and unchanged order, pre-reorder active successor, and persistence; browser interaction checks remain.
 
 ## Open questions
 
