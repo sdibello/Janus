@@ -171,25 +171,24 @@ $bigInitiative = '1234567890123456789012345678901234567890'
 $prepared = (Expect (Send-Json "$encounterBase/$($encounter.id)/participants" 'POST' `
     @{ revision = $prepared.revision; mobName = 'Goblin'; initiative = $bigInitiative } $admin $campaign) `
     200 'Add high-initiative mob').Content | ConvertFrom-Json
-if ($prepared.participants[0].initiative -ne $bigInitiative) { throw 'Large initiative was not ordered first.' }
+if ($prepared.participants[-1].initiative -ne $bigInitiative) { throw 'Large initiative was not saved.' }
 $prepared = (Expect (Send-Json "$encounterBase/$($encounter.id)/participants" 'POST' `
     @{ revision = $prepared.revision; mobName = 'Goblin'; initiative = $bigInitiative } $admin $campaign) `
     200 'Add same-name mob').Content | ConvertFrom-Json
 if (@($prepared.participants).Count -ne 3 -or $prepared.participants[0].id -eq $prepared.participants[1].id) {
     throw 'Same-name mobs were not saved independently.'
 }
-$secondMobId = $prepared.participants[1].id
-$prepared = (Expect (Send-Json "$encounterBase/$($encounter.id)/participants/$secondMobId/move-tie" `
-    'POST' @{ revision = $prepared.revision; direction = 'up' } $admin $campaign) `
-    200 'Reorder initiative tie').Content | ConvertFrom-Json
-if ($prepared.participants[0].id -ne $secondMobId) { throw 'Initiative tie order was not saved.' }
+$secondMobId = $prepared.participants[-1].id
+if ($prepared.participants[1].position -ge $prepared.participants[2].position) {
+    throw 'Same-initiative mobs did not keep encounter entry order.'
+}
 $null = Expect (Send-Json "$encounterBase/$($encounter.id)/participants/$secondMobId/initiative" `
     'PATCH' @{ revision = $prepared.revision; initiative = '-1.5' } $admin $campaign) `
     400 'Reject fractional initiative edit'
 $prepared = (Expect (Send-Json "$encounterBase/$($encounter.id)/participants/$secondMobId/initiative" `
     'PATCH' @{ revision = $prepared.revision; initiative = '-9' } $admin $campaign) `
     200 'Set negative initiative').Content | ConvertFrom-Json
-if ($prepared.participants[-1].id -ne $secondMobId) { throw 'Negative initiative was not ordered last.' }
+if ($prepared.participants[-1].initiative -ne '-9') { throw 'Negative initiative was not saved.' }
 $null = Expect (Send-Json "$encounterBase/$($encounter.id)/participants/$secondMobId/remove" `
     'POST' @{ revision = 0 } $admin $campaign) 409 'Reject stale removal'
 $prepared = (Expect (Send-Json "$encounterBase/$($encounter.id)/participants/$secondMobId/remove" `
@@ -236,16 +235,22 @@ $null = Expect (Send-Json "$fightBase/next" 'POST' @{ revision = $fight.revision
     404 'Reject other-user Next'
 $fight = (Expect (Send-Json "$fightBase/next" 'POST' @{ revision = $fight.revision } $admin $campaign) `
     200 'First Next').Content | ConvertFrom-Json
-if ($fight.activeParticipantId -ne $fight.participants[1].id -or $fight.round -ne 1 `
-    -or $fight.participants[0].turnCount -ne 1) { throw 'Next did not advance or increment Turn.' }
+if ($fight.activeParticipantId -ne $fight.participants[0].id -or $fight.round -ne 1 `
+    -or @($fight.participants | Where-Object { $_.id -eq $firstActive -and $_.turnCount -eq 1 }).Count -ne 1) {
+    throw 'Next did not rotate the active tile or increment Turn.'
+}
 $fight = (Expect (Send-Json "$fightBase/skip" 'POST' @{ revision = $fight.revision } $admin $campaign) `
     200 'Skip middle participant').Content | ConvertFrom-Json
-if ($fight.activeParticipantId -ne $fight.participants[2].id -or $fight.round -ne 1 `
-    -or $fight.participants[1].turnCount -ne 0) { throw 'Skip changed a counter or wrong active participant.' }
+if ($fight.activeParticipantId -ne $fight.participants[0].id -or $fight.round -ne 1 `
+    -or @($fight.participants | Where-Object { $_.turnCount -ne 0 -and $_.id -ne $firstActive }).Count -ne 0) {
+    throw 'Skip changed a Turn counter or wrong active participant.'
+}
 $fight = (Expect (Send-Json "$fightBase/next" 'POST' @{ revision = $fight.revision } $admin $campaign) `
     200 'Next wraps').Content | ConvertFrom-Json
 if ($fight.activeParticipantId -ne $firstActive -or $fight.round -ne 2 `
-    -or $fight.participants[2].turnCount -ne 1) { throw 'Next wrap did not increment Round and Turn.' }
+    -or @($fight.participants | Where-Object { $_.turnCount -eq 1 }).Count -ne 2) {
+    throw 'Completing all participants did not increment Round and the active Turn.'
+}
 $beforeOrder = @($fight.participants | ForEach-Object { $_.id })
 $reorderedIds = @($beforeOrder[2], $beforeOrder[0], $beforeOrder[1])
 $null = Expect (Send-Json "$fightBase/reorder" 'POST' `
@@ -255,8 +260,7 @@ $reordered = (Expect (Send-Json "$fightBase/reorder" 'POST' `
     @{ revision = $fight.revision; orderedIds = $reorderedIds } $admin $campaign) `
     200 'Reorder Fight').Content | ConvertFrom-Json
 if ($reordered.activeParticipantId -ne $beforeOrder[1] -or $reordered.round -ne 2 `
-    -or $reordered.participants[0].id -ne $beforeOrder[2] `
-    -or $reordered.participants[1].id -ne $beforeOrder[0]) {
+    -or @($reordered.participants | Sort-Object position | ForEach-Object { $_.id })[0] -ne $beforeOrder[2]) {
     throw 'Reorder did not use the old active successor or persist the new order.'
 }
 $noOp = (Expect (Send-Json "$fightBase/reorder" 'POST' `
@@ -278,16 +282,15 @@ if ($fight.activeParticipantId -ne $reorderedIds[2] -or $fight.round -ne 2) {
 }
 $fight = (Expect (Send-Json "$fightBase/next" 'POST' @{ revision = $fight.revision } $admin $campaign) `
     200 'Next after manual selection').Content | ConvertFrom-Json
-if ($fight.activeParticipantId -ne $reorderedIds[0] -or $fight.round -ne 3) {
+if ($fight.activeParticipantId -ne $reorderedIds[0] -or $fight.round -ne 2) {
     throw 'Next did not use the current order after manual selection.'
 }
 $activeBeforeInsert = $fight.activeParticipantId
 $fight = (Expect (Send-Json "$fightBase/participants" 'POST' `
     @{ revision = $fight.revision; mobName = 'Goblin' } $admin $campaign) `
     200 'Add mob during Fight').Content | ConvertFrom-Json
-if ($fight.participants[0].name -ne 'Goblin' -or $fight.participants[0].initiative -ne $null `
-    -or $fight.participants[1].id -ne $activeBeforeInsert `
-    -or $fight.activeParticipantId -ne $activeBeforeInsert -or $fight.round -ne 3) {
+if ($fight.participants[0].id -ne $activeBeforeInsert -or $fight.participants[-1].name -ne 'Goblin' `
+    -or $fight.participants[-1].initiative -ne $null -or $fight.round -ne 2) {
     throw 'Fight addition did not insert before and preserve the active participant.'
 }
 $fightReloaded = (Expect (Invoke-WebRequest $fightBase -WebSession $admin -SkipHttpErrorCheck) `
@@ -302,14 +305,14 @@ $turnSumBeforeMove = ($fight.participants | Measure-Object -Property turnCount -
 $fight = (Expect (Send-Json "$fightBase/reorder" 'POST' `
     @{ revision = $fight.revision; orderedIds = $movedOrder } $admin $campaign) `
     200 'Move active participant').Content | ConvertFrom-Json
-if ($fight.activeParticipantId -ne $expectedSuccessor -or $fight.round -ne 3 `
+if ($fight.activeParticipantId -ne $expectedSuccessor -or $fight.round -ne 2 `
     -or ($fight.participants | Measure-Object -Property turnCount -Sum).Sum -ne $turnSumBeforeMove) {
     throw 'Moving the active participant changed counters or chose the wrong successor.'
 }
 $finished = (Expect (Send-Json "$fightBase/end" 'POST' @{ revision = $fight.revision } $admin $campaign) `
     200 'End encounter').Content | ConvertFrom-Json
 if ($finished.phase -ne 'Finished' -or $finished.activeParticipantId -ne $null `
-    -or $finished.round -ne 3) { throw 'Ending Fight did not preserve final state.' }
+    -or $finished.round -ne 2) { throw 'Ending Fight did not preserve final state.' }
 $null = Expect (Send-Json "$fightBase/next" 'POST' @{ revision = $finished.revision } $admin $campaign) `
     409 'Reject Next after End'
 $null = Expect (Send-Json "$fightBase/participants" 'POST' `
@@ -318,7 +321,7 @@ $null = Expect (Send-Json "$fightBase/participants" 'POST' `
 $finalReload = (Expect (Invoke-WebRequest $fightBase -WebSession $admin -SkipHttpErrorCheck) `
     200 'Reload finished encounter').Content | ConvertFrom-Json
 if ($finalReload.phase -ne 'Finished' -or @($finalReload.participants).Count -ne 4 `
-    -or $finalReload.round -ne 3) { throw 'Finished encounter did not persist.' }
+    -or $finalReload.round -ne 2) { throw 'Finished encounter did not persist.' }
 
 $solo = (Expect (Send-Json $encounterBase 'POST' @{ name = 'Solo' } $admin $campaign) `
     201 'Create single-participant encounter').Content | ConvertFrom-Json
@@ -331,11 +334,54 @@ $solo = (Expect (Send-Json "$soloBase/fight" 'POST' @{ revision = $solo.revision
 $soloId = $solo.activeParticipantId
 $solo = (Expect (Send-Json "$soloBase/skip" 'POST' @{ revision = $solo.revision } $admin $campaign) `
     200 'Skip solo participant').Content | ConvertFrom-Json
-if ($solo.activeParticipantId -ne $soloId -or $solo.round -ne 1 `
+if ($solo.activeParticipantId -ne $soloId -or $solo.round -ne 2 `
     -or $solo.participants[0].turnCount -ne 0) { throw 'Solo Skip changed a counter.' }
 $solo = (Expect (Send-Json "$soloBase/next" 'POST' @{ revision = $solo.revision } $admin $campaign) `
     200 'Next solo participant').Content | ConvertFrom-Json
-if ($solo.activeParticipantId -ne $soloId -or $solo.round -ne 2 `
+if ($solo.activeParticipantId -ne $soloId -or $solo.round -ne 3 `
     -or $solo.participants[0].turnCount -ne 1) { throw 'Solo Next did not increment both counters.' }
+
+$cycle = (Expect (Send-Json $encounterBase 'POST' @{ name = 'Round tracking' } $admin $campaign) `
+    201 'Create round-tracking encounter').Content | ConvertFrom-Json
+$cycleBase = "$encounterBase/$($cycle.id)"
+$cycle = (Expect (Send-Json "$cycleBase/participants" 'POST' `
+    @{ revision = $cycle.revision; mobName = 'Round A'; initiative = '2' } $admin $campaign) `
+    200 'Add Round A').Content | ConvertFrom-Json
+$cycle = (Expect (Send-Json "$cycleBase/participants" 'POST' `
+    @{ revision = $cycle.revision; mobName = 'Round B'; initiative = '1' } $admin $campaign) `
+    200 'Add Round B').Content | ConvertFrom-Json
+$cycle = (Expect (Send-Json "$cycleBase/fight" 'POST' @{ revision = $cycle.revision } $admin $campaign) `
+    200 'Start round-tracking Fight').Content | ConvertFrom-Json
+$roundA = $cycle.participants[0].id
+$cycle = (Expect (Send-Json "$cycleBase/next" 'POST' @{ revision = $cycle.revision } $admin $campaign) `
+    200 'Round A first Next').Content | ConvertFrom-Json
+$cycle = (Expect (Send-Json "$cycleBase/active" 'POST' `
+    @{ revision = $cycle.revision; participantId = $roundA } $admin $campaign) `
+    200 'Select Round A again').Content | ConvertFrom-Json
+$cycle = (Expect (Send-Json "$cycleBase/next" 'POST' @{ revision = $cycle.revision } $admin $campaign) `
+    200 'Round A repeated Next').Content | ConvertFrom-Json
+if ($cycle.round -ne 1 -or @($cycle.participants | Where-Object { $_.id -eq $roundA })[0].turnCount -ne 2) {
+    throw 'Repeated Next counted the same participant twice toward Round.'
+}
+$cycle = (Expect (Send-Json "$cycleBase/participants" 'POST' `
+    @{ revision = $cycle.revision; mobName = 'Round C' } $admin $campaign) `
+    200 'Add participant during Round').Content | ConvertFrom-Json
+$roundC = @($cycle.participants | Where-Object { $_.name -eq 'Round C' })[0].id
+$cycle = (Expect (Send-Json "$cycleBase/next" 'POST' @{ revision = $cycle.revision } $admin $campaign) `
+    200 'Round B Next').Content | ConvertFrom-Json
+if ($cycle.round -ne 1) { throw 'New participant did not join the current Round.' }
+$cycle = (Expect (Send-Json "$cycleBase/active" 'POST' `
+    @{ revision = $cycle.revision; participantId = $roundC } $admin $campaign) `
+    200 'Select Round C').Content | ConvertFrom-Json
+$cycle = (Expect (Send-Json "$cycleBase/skip" 'POST' @{ revision = $cycle.revision } $admin $campaign) `
+    200 'Skip Round C').Content | ConvertFrom-Json
+if ($cycle.round -ne 2 -or @($cycle.participants | Where-Object { $_.id -eq $roundC })[0].turnCount -ne 0) {
+    throw 'Skip did not complete the Round without incrementing individual Turn.'
+}
+$cycleReloaded = (Expect (Invoke-WebRequest $cycleBase -WebSession $admin -SkipHttpErrorCheck) `
+    200 'Reload completed Round').Content | ConvertFrom-Json
+if ($cycleReloaded.round -ne 2 -or $cycleReloaded.activeParticipantId -ne $cycle.activeParticipantId) {
+    throw 'Completed Round did not persist.'
+}
 
 Write-Output 'Campaign, character, Prepare, Fight, persistence, and owner isolation passed.'

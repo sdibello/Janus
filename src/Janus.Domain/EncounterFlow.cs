@@ -2,11 +2,17 @@ namespace Janus.Domain;
 
 public static class EncounterFlow
 {
-    public static TurnAdvance Advance(IReadOnlyList<Guid> order, Guid activeId, bool skip)
+    public static Guid[] StartingAt(IReadOnlyList<Guid> order, Guid activeId)
     {
         var index = IndexOf(order, activeId);
-        var nextIndex = (index + 1) % order.Count;
-        return new TurnAdvance(order[nextIndex], !skip, !skip && nextIndex == 0);
+        return order.Skip(index).Concat(order.Take(index)).ToArray();
+    }
+
+    public static TurnAdvance Advance(IReadOnlyList<Guid> order, Guid activeId)
+    {
+        var index = IndexOf(order, activeId);
+        var rotated = order.Skip(index + 1).Concat(order.Take(index + 1)).ToArray();
+        return new TurnAdvance(rotated[0], rotated);
     }
 
     public static Guid ActiveAfterReorder(IReadOnlyList<Guid> previousOrder, Guid activeId) =>
@@ -24,4 +30,4 @@ public static class EncounterFlow
     }
 }
 
-public sealed record TurnAdvance(Guid NextParticipantId, bool IncrementTurn, bool IncrementRound);
+public sealed record TurnAdvance(Guid NextParticipantId, Guid[] OrderedIds);

@@ -1,12 +1,12 @@
 # Requirements review: outstanding questions
 
-Last reviewed: 2026-09-27.
+Last reviewed: 2026-09-28.
 
 The planned user-facing questionnaire is complete. A consistency review corrected stale contradictions and identified qualifications that must be resolved before affected behavior is finalized. See [REQUIREMENTS-REVIEW.md](REQUIREMENTS-REVIEW.md) and [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md). Technical items below remain open until implemented or validated; proposals are not accepted product decisions.
 
 ## Handoff
 
-Accepted decisions run through 0078. The next executable task is the remaining implementation-plan step 3 cross-product session work. The Windows foundation and encounter Prepare/Fight/HP workflows have been built and smoke-tested with .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
+Accepted decisions run through 0079. The alpha 0.1 encounter workflow in [decision 0079](../decisions/0079-alpha-encounter-workflow.md) supersedes the earlier initiative-timing, tie, fixed-order Round, and Skip rules. The Windows foundation and revised encounter Prepare/Fight/HP workflows have been smoke-tested with .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
 
 Before finalizing the relevant workflows, resolve the remaining review qualifications: browser session restoration without Remember me, identifier collisions, and verification after invitation expiry. Close/reopen checks passed for ordinary and remembered login in headless Chrome and Edge on Windows with default settings; browser session-restoration settings remain untested. The local HP implementation accepts signed decimal Damage/Heal amounts and applies the stated subtraction/addition exactly, without adding a sign restriction. Do not reopen settled encounter rules. Resume with [the implementation plan](IMPLEMENTATION-PLAN.md).
 
@@ -15,8 +15,8 @@ Before finalizing the relevant workflows, resolve the remaining review qualifica
 
 - Only the dungeon master logs in initially. Players watch the existing UI through external screen sharing. A separate presentation view is future work.
 - Every encounter belongs to a campaign; its PCs/NPCs are selected from that campaign. Mobs exist only within their encounter.
-- Prepare records initiative and sets initial order. Fight allows drag-and-drop ordering and adding mobs at any chosen position without initiative.
-- Only Next wrapping from the last participant to the first increments Round; each Next also increments the active participant’s individual Turn counter. Reordering, insertion, or manual active selection changes neither counter.
+- Begin Fight prompts for initiative one participant at a time, retaining partial answers; ties keep encounter entry order. The DM reviews the initial order before confirming Fight.
+- During Fight, Next and Skip move the active tile to the bottom and save that order. Round increments once every current participant has used Next or Skip; only Next increments an individual Turn counter. Reordering, insertion, or manual active selection changes neither counter directly.
 - Adding a participant leaves the active highlight unchanged. After reordering, the active participant becomes the old active participant's successor from the pre-reorder list. The DM can also select any participant active; see decision [0019](../decisions/0019-active-after-reorder.md).
 - Reopening restores saved encounter progress. Finished encounters remain viewable; their UI does not facilitate modification, but immutable storage is not required.
 - HP is optional, current-only, entered separately for each encounter, and never carried between encounters. Returning to the same encounter restores its saved HP and status.
@@ -32,13 +32,13 @@ Sources: [004](004-initiative-and-turn-sequence.md), [005](005-manual-encounter-
 - [x] **Q02 — New mob's first turn:** Resolved by decision [0022](../decisions/0022-place-new-mobs-before-advancing.md). Place the mob in the desired order position, or drag it there before Next. It takes a turn when ordinary traversal reaches it; if placed before the active participant, it is reached after wraparound.
 - [x] **Q03 — Moving the active participant:** Superseded by decision [0019](../decisions/0019-active-after-reorder.md). After any reorder, use the next participant after the old active one in the pre-reorder list; if the active one was last, wrap to the old first. The DM can select any participant active directly. Reordering and manual selection leave Turn unchanged.
 - [x] **Q04 — Cancel or interruption:** The three-choice prompt was removed. Completed reorder/active-selection state is restored on reopen under decision [0013](../decisions/0013-resume-encounters.md).
-- [x] **Q05 — Initial order:** Highest initiative first; the DM resolves tied initiatives manually during Prepare. See decision [0023](../decisions/0023-manual-initiative-ties.md).
+- [x] **Q05 — Initial order:** Highest initiative first; ties keep encounter entry order under decision [0079](../decisions/0079-alpha-encounter-workflow.md), superseding manual Prepare tie ordering.
 - [x] **Q06 — Initiative values:** Whole numbers, positive, negative, or zero, with no application-defined limit. See decision [0024](../decisions/0024-unbounded-whole-number-initiative.md).
-- [x] **Q07 — Starting and finished counter values:** Confirmed. Encounters start at Round 1, each participant starts at Turn 0, and finished encounters retain and display final counts. See decision [0025](../decisions/0025-round-and-individual-turn-counters.md).
+- [x] **Q07 — Starting and finished counter values:** Encounters start at Round 1, each participant starts at Turn 0, and finished encounters retain final counts. Round completion now follows decision [0079](../decisions/0079-alpha-encounter-workflow.md).
 - [x] **Q08 — Adding participants during Fight:** Resolved by decision [0026](../decisions/0026-add-participants-during-fight.md). The DM can add PCs/NPCs from the campaign or encounter-local mobs at any time. Each is inserted immediately before the active participant; the DM may then drag it elsewhere.
-- [x] **Q09 — Removing participants during Fight:** Resolved by decision [0027](../decisions/0027-skip-and-no-removal-during-fight.md). Participants cannot be removed during this phase; use Skip to pass a turn while keeping the participant in the order.
+- [x] **Q09 — Removing participants during Fight:** Decision [0079](../decisions/0079-alpha-encounter-workflow.md) retains no Fight removal. Skip keeps the participant, moves its tile to the bottom, and counts toward Round without increasing its individual Turn.
 - [x] **Q10 — Returning to Prepare:** Resolved by decision [0028](../decisions/0028-fight-transition-is-one-way.md). Once Fight starts, the encounter cannot return to Prepare.
-- [x] **Q11 — Initiative visibility:** Resolved by decision [0029](../decisions/0029-display-initiative-values.md). Display recorded initiative throughout Prepare and Fight; manual order controls Fight progression.
+- [x] **Q11 — Initiative visibility:** Decision [0079](../decisions/0079-alpha-encounter-workflow.md) displays initiative in the Fight-start lightbox and Fight tiles. It never controls ordering after Fight begins.
 - [x] **Q12 — Finished encounter history:** Resolved by decision [0030](../decisions/0030-no-additional-encounter-history.md). Saved encounter contents and final counters are sufficient; no additional event history is needed at this time.
 - [x] **Q13 — Mistakes:** Resolved by decision [0031](../decisions/0031-no-back-button.md). Do not provide a Back/undo-turn button in this phase. The DM can set the intended participant active; counters are not corrected automatically.
 

@@ -181,8 +181,9 @@ if ($mob.currentHp -ne '-3' -or $mob.status -ne 'Unconscious' `
 $encounter = (Expect (Send-Json "$base/participants" 'POST' `
     @{ revision = $encounter.revision; mobName = 'New mob'; currentHp = '-20' } $admin $campaign) `
     200 'Add mob with HP during Fight').Content | ConvertFrom-Json
-if ($encounter.participants[0].name -ne 'New mob' -or $encounter.participants[0].status -ne 'AliveAdjacent' `
-    -or $encounter.participants[0].initiative -ne $null -or $encounter.activeParticipantId -ne $active) {
+$newMob = @($encounter.participants | Where-Object { $_.name -eq 'New mob' })[0]
+if ($encounter.participants[0].id -ne $active -or $newMob.status -ne 'AliveAdjacent' `
+    -or $newMob.initiative -ne $null -or $encounter.activeParticipantId -ne $active) {
     throw 'Fight mob starting HP, status, insertion, or active highlight was incorrect.'
 }
 $reloaded = (Expect (Invoke-WebRequest $base -WebSession $admin -SkipHttpErrorCheck) `

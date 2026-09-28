@@ -16,13 +16,19 @@ async function responseMessage(response: Response): Promise<string> {
         : 'The request could not be completed.')
 }
 
-function CampaignWorkspace() {
+function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (open: boolean) => void }) {
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [encounterId, setEncounterId] = useState<string | null>(null)
   const [selected, setSelected] = useState<CampaignDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    onEncounterOpenChange(encounterId !== null)
+    return () => onEncounterOpenChange(false)
+  }, [encounterId, onEncounterOpenChange])
 
   const loadCampaigns = useCallback(async () => {
     try {
@@ -151,6 +157,13 @@ function CampaignWorkspace() {
     </div>
   }
 
+  if (encounterId) return <section className="encounter-page" aria-label="Encounter">
+    <button type="button" className="back-link" onClick={() => setEncounterId(null)}>← Back to campaign</button>
+    {selected ? <EncounterWorkspace key={selected.id} campaignId={selected.id}
+      characters={selected.characters} selectedId={encounterId} onSelectId={setEncounterId} />
+      : <p>Loading campaign…</p>}
+  </section>
+
   return <section className="account-section" aria-labelledby="campaigns-heading">
     <div className="section-heading"><div>
       <p className="eyebrow">Your stories</p>
@@ -168,7 +181,7 @@ function CampaignWorkspace() {
         {loading ? <p>Loading campaigns…</p> : campaigns.length === 0 ? <p>No campaigns yet.</p> :
           <ul className="campaign-list">{campaigns.map((campaign) => <li key={campaign.id}>
             <button className={selectedId === campaign.id ? 'selected' : ''} type="button" disabled={busy}
-              onClick={() => { setSelected(null); setSelectedId(campaign.id) }}>
+              onClick={() => { setSelected(null); setSelectedId(campaign.id); setEncounterId(null) }}>
               <strong>{campaign.name}</strong>
               <small>Created {new Date(campaign.createdAtUtc).toLocaleDateString()}</small>
             </button>
@@ -185,7 +198,8 @@ function CampaignWorkspace() {
           </form>
           {characterList('Pc', 'PCs')}
           {characterList('Npc', 'NPCs')}
-          <EncounterWorkspace key={selected.id} campaignId={selected.id} characters={selected.characters} />
+          <EncounterWorkspace key={selected.id} campaignId={selected.id}
+            characters={selected.characters} selectedId={null} onSelectId={setEncounterId} />
         </>}
       </div>
     </div>

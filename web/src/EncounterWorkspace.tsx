@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type DragEvent, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react'
 import { campaignApi } from './runtime'
 
 type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
@@ -28,15 +28,27 @@ async function responseMessage(response: Response): Promise<string> {
         : 'The request could not be completed.')
 }
 
-function EncounterWorkspace({ campaignId, characters }: { campaignId: string; characters: Character[] }) {
+function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: {
+  campaignId: string; characters: Character[]; selectedId: string | null
+  onSelectId: (id: string | null) => void
+}) {
   const api = `${campaignApi}/campaigns/${campaignId}/encounters`
   const [encounters, setEncounters] = useState<EncounterSummary[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selected, setSelected] = useState<EncounterDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const [initiativeOpen, setInitiativeOpen] = useState(false)
+  const [initiativeStep, setInitiativeStep] = useState(0)
+  const initiativeDialog = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = initiativeDialog.current
+    if (!dialog) return
+    if (initiativeOpen && !dialog.open) dialog.showModal()
+    if (!initiativeOpen && dialog.open) dialog.close()
+  }, [initiativeOpen])
 
   const loadEncounters = useCallback(async (signal?: AbortSignal) => {
     const response = await fetch(api, { cache: 'no-store', signal })
@@ -107,7 +119,7 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
       const created = await response.json() as EncounterSummary
       form.reset()
       await loadEncounters()
-      setSelectedId(created.id)
+      onSelectId(created.id)
       setMessage('Encounter created in Prepare.')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not create the encounter.')
@@ -128,6 +140,17 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
       currentHp: values.get('currentHp'),
     }, 'Participant added.')
     if (saved) form.reset()
+  }
+
+  async function savePromptedInitiative(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selected) return
+    const participant = selected.participants[initiativeStep]
+    if (!participant) return
+    const initiative = new FormData(event.currentTarget).get('initiative')
+    const saved = await mutate(`${api}/${selected.id}/participants/${participant.id}/initiative`, 'PATCH',
+      { revision: selected.revision, initiative }, 'Initiative saved.')
+    if (saved) setInitiativeStep((step) => step + 1)
   }
 
   async function adjustHp(event: FormEvent<HTMLFormElement>, participantId: string, action: 'damage' | 'heal') {
@@ -168,11 +191,45 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
 
   const available = characters.filter((character) =>
     !selected?.participants.some((participant) => participant.characterId === character.id))
+  const reviewedOrder = selected?.phase === 'Prepare' ? [...selected.participants].sort((left, right) => {
+    if (left.initiative === null) return 1
+    if (right.initiative === null) return -1
+    const first = BigInt(left.initiative)
+    const second = BigInt(right.initiative)
+    return first === second ? left.position - right.position : first > second ? -1 : 1
+  }) : []
+
+  function hpEditor(participant: Participant) {
+    if (!selected || selected.phase === 'Finished') return null
+    return <div className="hp-controls">
+      <form key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
+        event.preventDefault()
+        const currentHp = new FormData(event.currentTarget).get('currentHp')
+        void mutate(`${api}/${selected.id}/participants/${participant.id}/hp`, 'PATCH',
+          { revision: selected.revision, currentHp }, 'HP saved.')
+      }}>
+        <label>Current HP<input name="currentHp" defaultValue={participant.currentHp ?? ''}
+          inputMode="decimal" /></label>
+        <button type="submit" disabled={busy}>Save HP</button>
+      </form>
+      {selected.phase === 'Fight' && participant.currentHp !== null && <>
+        <form onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
+          <label>Damage amount<input name="amount" required inputMode="decimal" /></label>
+          <button type="submit" disabled={busy}>Damage</button>
+        </form>
+        <form onSubmit={(event) => void adjustHp(event, participant.id, 'heal')}>
+          <label>Heal amount<input name="amount" required inputMode="decimal" /></label>
+          <button type="submit" disabled={busy}>Heal</button>
+        </form>
+      </>}
+    </div>
+  }
 
   return <div className="encounter-workspace">
+    {message && <p className="account-message" role="status">{message}</p>}
+    {!selectedId && <>
     <h4>Encounters</h4>
     <p>Prepare and run encounters here. Changes save as you make them.</p>
-    {message && <p className="account-message" role="status">{message}</p>}
     <form onSubmit={(event) => void createEncounter(event)}>
       <label>Encounter name<input name="encounterName" required /></label>
       <button type="submit" disabled={busy}>Create encounter</button>
@@ -180,13 +237,19 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
     {encounters.length === 0 ? <p>No encounters yet.</p> : <ul className="encounter-list">
       {encounters.map((encounter) => <li key={encounter.id}>
         <button type="button" className={selectedId === encounter.id ? 'selected' : ''}
-          disabled={busy} onClick={() => { setSelected(null); setSelectedId(encounter.id) }}>
+          disabled={busy} onClick={() => { setSelected(null); onSelectId(encounter.id) }}>
           {encounter.name} <small>{encounter.phase}</small>
         </button>
       </li>)}
     </ul>}
-    {selected && <div className="encounter-detail">
-      <h4>{selected.name}</h4>
+    </>}
+    {selectedId && !selected && <p>Loading encounter…</p>}
+    {selectedId && selected && <div className="encounter-detail">
+      <div className="encounter-heading">
+        <h2>{selected.name}</h2>
+        {selected.phase === 'Prepare' && <button type="button" disabled={busy || selected.participants.length === 0}
+          onClick={() => { setMessage(''); setInitiativeStep(0); setInitiativeOpen(true) }}>Begin Fight</button>}
+      </div>
       <p>Phase: {selected.phase}. {selected.participants.length} participant{selected.participants.length === 1 ? '' : 's'}.
         {selected.phase !== 'Prepare' && <> Round {selected.round}.</>}</p>
       {selected.phase === 'Fight' && <div className="encounter-controls">
@@ -200,7 +263,8 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
               { revision: selected.revision }, 'Encounter ended.')
         }}>End encounter</button>
       </div>}
-      {selected.phase !== 'Finished' && <>
+      {selected.phase !== 'Finished' && <details className="add-participant" open={selected.phase === 'Prepare'}>
+        <summary>Add a PC, NPC, or mob</summary>
         <h5>Add a campaign character</h5>
         {available.length === 0 ? <p>No available PCs or NPCs in this campaign.</p> :
           <form onSubmit={(event) => void addParticipant(event)}>
@@ -210,7 +274,6 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
                 {character.name} ({character.kind.toUpperCase()})
               </option>)}
             </select></label>
-            {selected.phase === 'Prepare' && <label>Initiative (can be entered later)<input name="initiative" inputMode="numeric" pattern="[+-]?[0-9]+" /></label>}
             <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
             <button type="submit" disabled={busy}>Add character</button>
           </form>}
@@ -218,25 +281,14 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
         <form onSubmit={(event) => void addParticipant(event)}>
           <input type="hidden" name="participantType" value="mob" />
           <label>Mob name<input name="mobName" required /></label>
-          {selected.phase === 'Prepare' && <label>Initiative (can be entered later)<input name="initiative" inputMode="numeric" pattern="[+-]?[0-9]+" /></label>}
           <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
           <button type="submit" disabled={busy}>Add mob</button>
         </form>
-      </>}
-      {selected.phase === 'Prepare' && <div className="encounter-controls">
-        <button type="button" disabled={busy || selected.participants.length === 0
-          || selected.participants.some((participant) => participant.initiative === null)}
-          onClick={() => void mutate(`${api}/${selected.id}/fight`, 'POST',
-            { revision: selected.revision }, 'Fight started.')}>Begin Fight</button>
-        {selected.participants.length > 0 && selected.participants.some((participant) => participant.initiative === null)
-          && <p>Enter initiative for each PC, NPC, and mob in the list below before beginning Fight.</p>}
-      </div>}
-      <h5>{selected.phase === 'Prepare' ? 'Initial order' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
+      </details>}
+      <h5>{selected.phase === 'Prepare' ? 'Participants' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
       {selected.phase === 'Fight' && <p>Drag a participant to reorder, or use Move up and Move down. A move makes the participant who followed the active one before the move active.</p>}
       {selected.participants.length === 0 ? <p>Add a PC, NPC, or mob to prepare the order.</p> :
-        <ol className="encounter-participants">{selected.participants.map((participant, index) => {
-          const previous = selected.participants[index - 1]
-          const next = selected.participants[index + 1]
+        <ol className={`encounter-participants ${selected.phase === 'Fight' ? 'fight-list' : ''}`}>{selected.participants.map((participant, index) => {
           const active = selected.phase === 'Fight' && selected.activeParticipantId === participant.id
           return <li key={participant.id} className={`${active ? 'active' : ''} ${dropTarget === participant.id ? 'drop-target' : ''} ${participant.status === 'Unconscious' ? 'unconscious' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
             draggable={selected.phase === 'Fight' && !busy}
@@ -253,78 +305,81 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
               }
             }}
             onDrop={(event) => dropOn(event, participant.id)}>
-            <div><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
-              {active && <span className="active-label">Active turn</span>}
-            </div>
-            {selected.phase === 'Prepare' && <div className="prepare-initiative">
-              {participant.initiative === null && <p>Initiative needed before Fight</p>}
-              <form key={`${participant.id}-${participant.initiative}`} onSubmit={(event) => {
-                event.preventDefault()
-                const value = new FormData(event.currentTarget).get('initiative')
-                void mutate(`${api}/${selected.id}/participants/${participant.id}/initiative`, 'PATCH',
-                  { revision: selected.revision, initiative: value }, 'Initiative saved.')
-              }}>
-                <label>Initiative for {participant.name} ({participant.kind.toUpperCase()})
-                  <input name="initiative" defaultValue={participant.initiative ?? ''}
-                    inputMode="numeric" pattern="[+-]?[0-9]+" />
-                </label>
-                <button type="submit" disabled={busy}>Save initiative</button>
-              </form>
-            </div>}
-            <p>HP: {participant.currentHp ?? 'Not set'}
-              {participant.status === 'Unconscious' && <span className="hp-status unconscious-label">Unconscious</span>}
-              {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
-            </p>
-            {selected.phase !== 'Finished' && <div className="hp-controls">
-              <form key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
-                event.preventDefault()
-                const currentHp = new FormData(event.currentTarget).get('currentHp')
-                void mutate(`${api}/${selected.id}/participants/${participant.id}/hp`, 'PATCH',
-                  { revision: selected.revision, currentHp }, 'HP saved.')
-              }}>
-                <label>Current HP<input name="currentHp" defaultValue={participant.currentHp ?? ''}
-                  inputMode="decimal" /></label>
-                <button type="submit" disabled={busy}>Save HP</button>
-              </form>
-              {participant.currentHp !== null && <>
-                <form onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
-                  <label>Damage amount<input name="amount" required inputMode="decimal" /></label>
-                  <button type="submit" disabled={busy}>Damage</button>
-                </form>
-                <form onSubmit={(event) => void adjustHp(event, participant.id, 'heal')}>
-                  <label>Heal amount<input name="amount" required inputMode="decimal" /></label>
-                  <button type="submit" disabled={busy}>Heal</button>
-                </form>
-              </>}
-            </div>}
-            {selected.phase === 'Prepare' ? <>
-              <div className="account-actions">
-                <button type="button" disabled={busy || !previous || !participant.initiative || previous.initiative !== participant.initiative}
-                  onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/move-tie`, 'POST',
-                    { revision: selected.revision, direction: 'up' }, 'Tie order changed.')}>Move up</button>
-                <button type="button" disabled={busy || !next || !participant.initiative || next.initiative !== participant.initiative}
-                  onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/move-tie`, 'POST',
-                    { revision: selected.revision, direction: 'down' }, 'Tie order changed.')}>Move down</button>
-                <button type="button" disabled={busy} onClick={() => void mutate(
-                  `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
-                  { revision: selected.revision }, 'Participant removed.')}>Remove</button>
+            {selected.phase === 'Prepare' ? <details className="prepare-row">
+              <summary><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
+                <span>HP: {participant.currentHp ?? 'Not set'}</span>
+                {participant.status && <span className="hp-status">{participant.status === 'AliveAdjacent' ? 'alive adjacent' : 'Unconscious'}</span>}
+              </summary>
+              {hpEditor(participant)}
+              <button type="button" disabled={busy} onClick={() => void mutate(
+                `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
+                { revision: selected.revision }, 'Participant removed.')}>Remove from encounter</button>
+            </details> : <>
+              <div className="fight-tile-heading"><strong>{participant.name}</strong>
+                <small>{participant.kind.toUpperCase()}</small>
+                {active && <span className="active-label">Active turn</span>}
               </div>
-            </> : <>
-              <p>Initiative: {participant.initiative ?? '—'} · Turns completed: {participant.turnCount}</p>
-              {selected.phase === 'Fight' && <div className="account-actions">
-                <button type="button" disabled={busy || index === 0}
-                  onClick={() => moveToIndex(participant.id, index - 1)}>Move up</button>
-                <button type="button" disabled={busy || index === selected.participants.length - 1}
-                  onClick={() => moveToIndex(participant.id, index + 1)}>Move down</button>
-                <button type="button" disabled={busy || active}
-                  onClick={() => void mutate(`${api}/${selected.id}/active`, 'POST',
-                    { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>
-                  Set active
-                </button>
-              </div>}
+              <p className="fight-tile-meta">Initiative: {participant.initiative ?? '—'} · Turns completed: {participant.turnCount}
+                · HP: {participant.currentHp ?? 'Not set'}
+                {participant.status === 'Unconscious' && <span className="hp-status unconscious-label">Unconscious</span>}
+                {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
+              </p>
+              {selected.phase === 'Fight' && <details className="fight-tile-actions">
+                <summary>Manage {participant.name}</summary>
+                {hpEditor(participant)}
+                <div className="account-actions">
+                  <button type="button" disabled={busy || index === 0}
+                    onClick={() => moveToIndex(participant.id, index - 1)}>Move up</button>
+                  <button type="button" disabled={busy || index === selected.participants.length - 1}
+                    onClick={() => moveToIndex(participant.id, index + 1)}>Move down</button>
+                  <button type="button" disabled={busy || active}
+                    onClick={() => void mutate(`${api}/${selected.id}/active`, 'POST',
+                      { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>
+                    Set active
+                  </button>
+                </div>
+              </details>}
             </>}
           </li>
         })}</ol>}
+      {initiativeOpen && selected.phase === 'Prepare' && <dialog ref={initiativeDialog}
+        aria-labelledby="initiative-title" onCancel={(event) => {
+          event.preventDefault()
+          setInitiativeOpen(false)
+        }}>
+        <h3 id="initiative-title">Begin Fight: initiative</h3>
+        {message && <p role="status">{message}</p>}
+        {initiativeStep < selected.participants.length ? <>
+          <p>Participant {initiativeStep + 1} of {selected.participants.length}</p>
+          <form key={selected.participants[initiativeStep].id} onSubmit={(event) => void savePromptedInitiative(event)}>
+            <label>Initiative for {selected.participants[initiativeStep].name}
+              ({selected.participants[initiativeStep].kind.toUpperCase()})
+              <input name="initiative" required autoFocus inputMode="numeric" pattern="[+-]?[0-9]+"
+                defaultValue={selected.participants[initiativeStep].initiative ?? ''} />
+            </label>
+            <div className="dialog-actions">
+              <button type="button" disabled={busy} onClick={() => setInitiativeOpen(false)}>Close and keep progress</button>
+              {initiativeStep > 0 && <button type="button" disabled={busy}
+                onClick={() => setInitiativeStep((step) => step - 1)}>Previous</button>}
+              <button type="submit" disabled={busy}>Save and continue</button>
+            </div>
+          </form>
+        </> : <>
+          <p>Review the initial order before starting Fight. Ties keep encounter entry order.</p>
+          <ol>{reviewedOrder.map((participant) => <li key={participant.id}>
+            {participant.name} ({participant.kind.toUpperCase()}) — {participant.initiative ?? 'Missing'}
+          </li>)}</ol>
+          <div className="dialog-actions">
+            <button type="button" disabled={busy} onClick={() => setInitiativeOpen(false)}>Close and keep progress</button>
+            <button type="button" disabled={busy} onClick={() => setInitiativeStep(selected.participants.length - 1)}>Previous</button>
+            <button type="button" disabled={busy || selected.participants.some((participant) => participant.initiative === null)}
+              onClick={() => void mutate(`${api}/${selected.id}/fight`, 'POST',
+                { revision: selected.revision }, 'Fight started.').then((saved) => {
+                  if (saved) setInitiativeOpen(false)
+                })}>Confirm and begin Fight</button>
+          </div>
+        </>}
+      </dialog>}
     </div>}
   </div>
 }

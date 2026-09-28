@@ -56,21 +56,37 @@ try {
   const preparedPc = page.locator('.encounter-participants > li').filter({ hasText: pcName })
   const preparedNpc = page.locator('.encounter-participants > li').filter({ hasText: npcName })
   await preparedNpc.waitFor()
-  assert.equal(await page.getByRole('button', { name: 'Begin Fight' }).isDisabled(), true)
-  await preparedPc.getByLabel(`Initiative for ${pcName} (PC)`).fill('8')
-  await preparedPc.getByRole('button', { name: 'Save initiative' }).click()
-  await preparedNpc.getByLabel(`Initiative for ${npcName} (NPC)`).fill('15')
-  await preparedNpc.getByRole('button', { name: 'Save initiative' }).click()
-  await page.locator('.encounter-participants > li').first().locator('strong')
-    .filter({ hasText: npcName }).waitFor()
-  assert.equal(await page.getByRole('button', { name: 'Begin Fight' }).isEnabled(), true)
+  const prepareMobForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="mobName"]') })
+  await prepareMobForm.getByLabel('Mob name').fill(mobName)
+  await prepareMobForm.getByRole('button', { name: 'Add mob' }).click()
+  await page.locator('.encounter-participants > li').filter({ hasText: mobName }).waitFor()
+  assert.equal(await preparedPc.locator('details.prepare-row').getAttribute('open'), null)
+  assert.equal(await page.getByRole('heading', { name: 'Local services' }).count(), 0)
+  assert.equal(await page.getByLabel('Character name').count(), 0)
+  await page.getByRole('button', { name: 'Begin Fight' }).click()
+  const prompt = page.getByRole('dialog')
+  await prompt.getByLabel(`Initiative for ${pcName}`).fill('8')
+  await prompt.getByRole('button', { name: 'Save and continue' }).click()
+  await prompt.getByLabel(`Initiative for ${npcName}`).waitFor()
+  await prompt.getByRole('button', { name: 'Close and keep progress' }).click()
 
   await page.reload()
   await page.locator('.campaign-list button').filter({ hasText: campaignName }).click()
   await page.locator('.encounter-list button').filter({ hasText: preparationName }).click()
-  await preparedNpc.getByLabel(`Initiative for ${npcName} (NPC)`).waitFor()
-  assert.equal(await preparedPc.getByLabel(`Initiative for ${pcName} (PC)`).inputValue(), '8')
-  assert.equal(await preparedNpc.getByLabel(`Initiative for ${npcName} (NPC)`).inputValue(), '15')
+  await page.getByRole('button', { name: 'Begin Fight' }).click()
+  assert.equal(await prompt.getByLabel(`Initiative for ${pcName}`).inputValue(), '8')
+  await prompt.getByRole('button', { name: 'Save and continue' }).click()
+  await prompt.getByLabel(`Initiative for ${npcName}`).fill('8')
+  await prompt.getByRole('button', { name: 'Save and continue' }).click()
+  await prompt.getByLabel(`Initiative for ${mobName}`).fill('8')
+  await prompt.getByRole('button', { name: 'Save and continue' }).click()
+  await prompt.getByText(`Review the initial order`).waitFor()
+  assert.equal(await prompt.locator('ol li').first().textContent().then(text => text?.includes(pcName)), true)
+  assert.equal(await prompt.locator('ol li').nth(1).textContent().then(text => text?.includes(npcName)), true)
+  assert.equal(await prompt.locator('ol li').nth(2).textContent().then(text => text?.includes(mobName)), true)
+  await prompt.getByRole('button', { name: 'Confirm and begin Fight' }).click()
+  await preparedPc.locator('.active-label').waitFor()
+  await page.getByRole('button', { name: 'Back to campaign' }).click()
 
   await page.getByLabel('Encounter name').fill(encounterName)
   await page.getByRole('button', { name: 'Create encounter' }).click()
@@ -78,7 +94,6 @@ try {
 
   const characterForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="characterId"]') })
   await characterForm.locator('[name="characterId"]').selectOption({ label: `${pcName} (PC)` })
-  await characterForm.getByLabel('Initiative (can be entered later)').fill('18')
   await characterForm.getByLabel('Starting HP (optional)').fill('10.5')
   await characterForm.getByRole('button', { name: 'Add character' }).click()
   const pc = page.locator('.encounter-participants > li').filter({ hasText: pcName })
@@ -86,7 +101,6 @@ try {
 
   const mobForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="mobName"]') })
   await mobForm.getByLabel('Mob name').fill(mobName)
-  await mobForm.getByLabel('Initiative (can be entered later)').fill('12')
   await mobForm.getByLabel('Starting HP (optional)').fill('1.5')
   await mobForm.getByRole('button', { name: 'Add mob' }).click()
   const mob = page.locator('.encounter-participants > li').filter({ hasText: mobName })
@@ -94,6 +108,11 @@ try {
   assert.equal(await page.locator('.encounter-participants > li').count(), 2)
 
   await page.getByRole('button', { name: 'Begin Fight' }).click()
+  await prompt.getByLabel(`Initiative for ${pcName}`).fill('18')
+  await prompt.getByRole('button', { name: 'Save and continue' }).click()
+  await prompt.getByLabel(`Initiative for ${mobName}`).fill('12')
+  await prompt.getByRole('button', { name: 'Save and continue' }).click()
+  await prompt.getByRole('button', { name: 'Confirm and begin Fight' }).click()
   await pc.locator('.active-label').waitFor()
   await page.getByRole('button', { name: 'Next', exact: true }).click()
   await mob.locator('.active-label').waitFor()
@@ -102,6 +121,7 @@ try {
   await pc.locator('.active-label').waitFor()
   await page.locator('.encounter-detail').getByText('Round 2.', { exact: false }).waitFor()
 
+  await pc.locator('.fight-tile-actions summary').click()
   await pc.getByLabel('Damage amount').fill('20.5')
   await pc.getByRole('button', { name: 'Damage' }).click()
   await pc.locator('.alive-adjacent-label').waitFor()
@@ -109,7 +129,9 @@ try {
   await pc.getByRole('button', { name: 'Heal' }).click()
   await pc.locator('.unconscious-label').waitFor()
 
-  await mob.getByRole('button', { name: 'Move up' }).click()
+  await mob.locator('.fight-tile-actions summary').click()
+  await mob.getByRole('button', { name: 'Move up' }).focus()
+  await page.keyboard.press('Enter')
   await mob.locator('.active-label').waitFor()
   await pc.getByRole('button', { name: 'Set active' }).click()
   await pc.locator('.active-label').waitFor()
@@ -117,12 +139,13 @@ try {
   await mob.locator('.active-label').waitFor()
   await page.locator('.encounter-detail').getByText('Round 2.', { exact: false }).waitFor()
 
+  await page.locator('.add-participant summary').click()
   await mobForm.getByLabel('Mob name').fill(secondMobName)
   await mobForm.getByLabel('Starting HP (optional)').fill('3')
   await mobForm.getByRole('button', { name: 'Add mob' }).click()
-  await page.locator('.encounter-participants > li').first().locator('strong')
+  await page.locator('.encounter-participants > li').last().locator('strong')
     .filter({ hasText: secondMobName }).waitFor()
-  assert.equal(await page.locator('.encounter-participants > li').first().locator('strong').textContent(), secondMobName)
+  assert.equal(await page.locator('.encounter-participants > li').last().locator('strong').textContent(), secondMobName)
   await mob.locator('.active-label').waitFor()
 
   const lateMob = page.locator('.encounter-participants > li').filter({ hasText: secondMobName })
@@ -147,7 +170,7 @@ try {
     .catch(() => null)
   await lateMob.dragTo(pc, {
     sourcePosition: { x: 10, y: 10 },
-    targetPosition: { x: 10, y: pcBounds.height - 5 },
+    targetPosition: { x: 10, y: 5 },
   })
   const reorderResponse = await reordered
   if (!reorderResponse) {
@@ -175,6 +198,8 @@ try {
     await page.locator('.encounter-participants > li').filter({ hasText: pcName })
       .locator('.unconscious-label').waitFor()
     assert.equal(await page.locator('.encounter-participants > li').count(), 3)
+    await page.setViewportSize({ width: 640, height: 900 })
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth), false)
     console.log('Campaign, Fight, HP, drag-and-drop, Skip, insertion, and finished reload passed.')
   }
 } finally {

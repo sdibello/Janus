@@ -43,7 +43,7 @@ npm run dev --prefix web
 
 Open the [access portal](http://localhost:5173/portal.html), verify the first account using its message in the **Local test inbox**, and sign in. Open the [campaign app](http://localhost:5173/) to create campaigns and encounters. On later runs, start only the three terminals. Stop each with Ctrl+C. The SQLite database and local keys are stored outside the repository in your operating system's local application data directory under `Janus`; see [local development](docs/LOCAL-DEVELOPMENT.md) for a custom data directory, account invitations, published hosting, and checks.
 
-The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, encounter preparation, Fight controls, and encounter-specific HP. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
+The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, collapsed encounter preparation, a Fight-start initiative prompt, active-first Fight tiles, and encounter-specific HP. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).
 

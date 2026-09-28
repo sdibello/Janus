@@ -101,6 +101,7 @@ public sealed class EncounterParticipant
     public string? CurrentHp { get; set; }
     public int Position { get; set; }
     public long TurnCount { get; set; }
+    public bool CompletedThisRound { get; set; }
 }
 
 public sealed class CampaignSession

@@ -13,6 +13,7 @@ footer {
 
 .site-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   min-height: 92px;
@@ -62,6 +63,11 @@ footer {
   color: var(--ink);
   border-color: var(--accent);
 }
+
+.header-session { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-left: auto; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 12px; }
+.header-session h3 { margin: 0; font: inherit; font-weight: 700; }
+.header-session button { padding: 7px 10px; }
+.header-session a { color: #1b6c4b; font-weight: 700; }
 
 main {
   flex: 1;
@@ -278,6 +284,15 @@ button:hover {
 .character-list { margin-top: 30px; }
 .character-list h4 { margin-bottom: 10px; }
 .encounter-workspace { margin-top: 40px; padding-top: 26px; border-top: 1px solid var(--border); }
+.encounter-page { padding-top: 28px; }
+.encounter-page .encounter-workspace { margin-top: 0; padding-top: 0; border: 0; }
+.encounter-page .encounter-detail { margin-top: 10px; padding-top: 0; border: 0; }
+.back-link { border: 0; padding-left: 0; color: #1b6c4b; }
+.encounter-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.encounter-heading h2 { overflow-wrap: anywhere; }
+.encounter-heading button { background: #245c4c; color: #fff; }
+.add-participant { margin-top: 24px; padding: 16px 20px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.add-participant > summary { cursor: pointer; font-weight: 700; }
 .encounter-workspace h4 { margin: 0 0 12px; font-size: 20px; }
 .encounter-workspace h5 { margin: 28px 0 0; font-size: 16px; }
 .encounter-list { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 20px 0; }
@@ -296,8 +311,26 @@ button:hover {
 .encounter-participants li.unconscious { margin-left: -24px; padding-left: 20px; border-left: 4px solid #9a6b17; background: #fff2d8; }
 .encounter-participants li.alive-adjacent { margin-left: -24px; padding-left: 20px; border-left: 4px solid #a34138; background: #f9e8e5; }
 .encounter-participants li.drop-target { outline: 2px dashed #245c4c; outline-offset: 2px; }
-.prepare-initiative { margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #f3f8f5; }
-.prepare-initiative p { margin: 0 0 8px; color: #6d4300; font-weight: 700; }
+.prepare-row summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; cursor: pointer; }
+.prepare-row summary span:first-of-type { margin-left: auto; }
+.prepare-row .hp-controls { margin: 12px 0; }
+.fight-list { padding: 0; list-style: none; }
+.fight-list > li { margin-bottom: 12px; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
+.fight-list > li.active { margin-left: 0; padding: 20px; }
+.fight-list > li.unconscious, .fight-list > li.alive-adjacent { margin-left: 0; padding: 20px; }
+.fight-tile-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.fight-tile-heading strong { font-size: 18px; }
+.fight-tile-meta { margin: 10px 0; color: var(--muted); }
+.fight-tile-actions { margin-top: 12px; }
+.fight-tile-actions summary { cursor: pointer; font-weight: 700; }
+.fight-tile-actions .hp-controls { margin: 12px 0; }
+.fight-tile-actions .account-actions { margin-top: 12px; }
+.encounter-detail dialog { width: min(500px, calc(100% - 30px)); padding: 28px; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 24px 80px rgba(24, 45, 49, 0.25); }
+.encounter-detail dialog::backdrop { background: rgba(24, 45, 49, 0.55); }
+.encounter-detail dialog h3 { margin-top: 0; }
+.encounter-detail dialog label { display: block; font-weight: 700; }
+.encounter-detail dialog input { display: block; width: 100%; padding: 10px; margin-top: 8px; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
 .active-label { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; background: #245c4c; color: #fff; font-size: 11px; font-weight: 800; }
 .hp-status { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
 .unconscious-label { background: #f4d27a; color: #4e3509; }
@@ -317,6 +350,7 @@ footer {
   main,
   footer { width: min(100% - 36px, 1120px); }
   .site-header { align-items: flex-start; flex-direction: column; justify-content: center; gap: 12px; padding: 18px 0; }
+  .header-session { width: 100%; margin-left: 0; justify-content: space-between; }
   .site-header nav { gap: 20px; }
   main { padding-top: 20px; }
   .hero-panel { min-height: 0; }
