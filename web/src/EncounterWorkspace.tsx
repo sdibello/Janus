@@ -205,7 +205,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   function hpEditor(participant: Participant) {
     if (!selected || selected.phase === 'Finished') return null
     return <div className="hp-controls">
-      <form className="hp-set-form" key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
+      <form className="hp-field-form" key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
         event.preventDefault()
         const currentHp = new FormData(event.currentTarget).get('currentHp')
         void mutate(`${api}/${selected.id}/participants/${participant.id}/hp`, 'PATCH',
@@ -219,13 +219,19 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
         </div>
       </form>
       {selected.phase === 'Fight' && participant.currentHp !== null && <>
-        <form onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
-          <label>Damage amount<input name="amount" required inputMode="decimal" /></label>
-          <button type="submit" disabled={busy}>Damage</button>
+        <form className="hp-field-form" onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
+          <label htmlFor={`damage-${participant.id}`}>Damage amount</label>
+          <div className="hp-input-line">
+            <input id={`damage-${participant.id}`} name="amount" required inputMode="decimal" />
+            <button type="submit" disabled={busy}>Damage</button>
+          </div>
         </form>
-        <form onSubmit={(event) => void adjustHp(event, participant.id, 'heal')}>
-          <label>Heal amount<input name="amount" required inputMode="decimal" /></label>
-          <button type="submit" disabled={busy}>Heal</button>
+        <form className="hp-field-form" onSubmit={(event) => void adjustHp(event, participant.id, 'heal')}>
+          <label htmlFor={`heal-${participant.id}`}>Heal amount</label>
+          <div className="hp-input-line">
+            <input id={`heal-${participant.id}`} name="amount" required inputMode="decimal" />
+            <button type="submit" disabled={busy}>Heal</button>
+          </div>
         </form>
       </>}
     </div>

@@ -352,8 +352,8 @@ button:hover {
 .alive-adjacent-label { background: #e8aaa3; color: #5c211b; }
 .hp-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
 .hp-controls form { margin: 0; }
-.hp-controls .hp-set-form { display: block; }
-.hp-controls .hp-set-form label { display: block; flex: none; min-width: 0; margin-bottom: 6px; }
+.hp-controls .hp-field-form { display: block; }
+.hp-controls .hp-field-form label { display: block; flex: none; min-width: 0; margin-bottom: 6px; }
 .hp-input-line { display: flex; align-items: center; gap: 8px; }
 .hp-input-line input { width: min(140px, 100%); min-width: 0; padding: 9px 10px; border: 1px solid #bfc9c6; border-radius: 6px; font: inherit; }
 

@@ -89,3 +89,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0079](0079-alpha-encounter-workflow.md) | Accepted | Prompt initiative at Fight start, rotate saved Fight order, and count Rounds by participant completion. |
 | [0080](0080-keep-active-on-reorder-and-show-drop-slot.md) | Accepted | Preview the insertion slot and keep the active participant when reordering. |
 | [0081](0081-active-card-actions-and-hp-save-layout.md) | Accepted | Put Next/Skip on the active card, remove Move buttons, and place Save beside Current HP. |
+| [0082](0082-align-damage-and-heal-controls.md) | Accepted | Place Damage and Heal buttons beside their amount fields, matching Current HP. |
