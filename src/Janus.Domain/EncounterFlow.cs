@@ -15,9 +15,6 @@ public static class EncounterFlow
         return new TurnAdvance(rotated[0], rotated);
     }
 
-    public static Guid ActiveAfterReorder(IReadOnlyList<Guid> previousOrder, Guid activeId) =>
-        previousOrder[(IndexOf(previousOrder, activeId) + 1) % previousOrder.Count];
-
     public static bool IsPermutation(IReadOnlyList<Guid> existing, IReadOnlyList<Guid> proposed) =>
         existing.Count == proposed.Count && proposed.Distinct().Count() == proposed.Count
         && existing.ToHashSet().SetEquals(proposed);

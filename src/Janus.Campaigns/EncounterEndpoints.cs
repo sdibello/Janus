@@ -298,12 +298,10 @@ internal static class EncounterEndpoints
             return InvalidFight();
         if (oldOrder.SequenceEqual(request.OrderedIds))
             return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
-        var successor = EncounterFlow.ActiveAfterReorder(oldOrder, activeId);
         await StagePositionsAsync(data, participants, cancellationToken);
         var byId = participants.ToDictionary(item => item.Id);
         for (var index = 0; index < request.OrderedIds.Length; index++)
             byId[request.OrderedIds[index]].Position = index;
-        encounter.ActiveParticipantId = successor;
         encounter.Revision++;
         try
         {

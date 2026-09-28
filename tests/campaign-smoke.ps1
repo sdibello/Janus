@@ -259,9 +259,9 @@ $null = Expect (Send-Json "$fightBase/reorder" 'POST' `
 $reordered = (Expect (Send-Json "$fightBase/reorder" 'POST' `
     @{ revision = $fight.revision; orderedIds = $reorderedIds } $admin $campaign) `
     200 'Reorder Fight').Content | ConvertFrom-Json
-if ($reordered.activeParticipantId -ne $beforeOrder[1] -or $reordered.round -ne 2 `
+if ($reordered.activeParticipantId -ne $beforeOrder[0] -or $reordered.round -ne 2 `
     -or @($reordered.participants | Sort-Object position | ForEach-Object { $_.id })[0] -ne $beforeOrder[2]) {
-    throw 'Reorder did not use the old active successor or persist the new order.'
+    throw 'Reorder changed the active participant or failed to persist the new order.'
 }
 $noOp = (Expect (Send-Json "$fightBase/reorder" 'POST' `
     @{ revision = $reordered.revision; orderedIds = $reorderedIds } $admin $campaign) `
@@ -271,7 +271,7 @@ if ($noOp.revision -ne $reordered.revision -or $noOp.activeParticipantId -ne $re
 }
 $fight = (Expect (Send-Json "$fightBase/skip" 'POST' @{ revision = $reordered.revision } $admin $campaign) `
     200 'Skip last participant').Content | ConvertFrom-Json
-if ($fight.activeParticipantId -ne $reorderedIds[0] -or $fight.round -ne 2) {
+if ($fight.activeParticipantId -ne $reorderedIds[2] -or $fight.round -ne 2) {
     throw 'Skip from last participant incremented Round.'
 }
 $fight = (Expect (Send-Json "$fightBase/active" 'POST' `
@@ -298,16 +298,14 @@ $fightReloaded = (Expect (Invoke-WebRequest $fightBase -WebSession $admin -SkipH
 if ($fightReloaded.revision -ne $fight.revision -or $fightReloaded.activeParticipantId -ne $activeBeforeInsert `
     -or @($fightReloaded.participants).Count -ne 4) { throw 'Fight state did not persist.' }
 $orderBeforeMove = @($fight.participants | ForEach-Object { $_.id })
-$activeIndex = [array]::IndexOf($orderBeforeMove, $activeBeforeInsert)
-$expectedSuccessor = $orderBeforeMove[($activeIndex + 1) % $orderBeforeMove.Count]
 $movedOrder = @($orderBeforeMove | Where-Object { $_ -ne $activeBeforeInsert }) + @($activeBeforeInsert)
 $turnSumBeforeMove = ($fight.participants | Measure-Object -Property turnCount -Sum).Sum
 $fight = (Expect (Send-Json "$fightBase/reorder" 'POST' `
     @{ revision = $fight.revision; orderedIds = $movedOrder } $admin $campaign) `
     200 'Move active participant').Content | ConvertFrom-Json
-if ($fight.activeParticipantId -ne $expectedSuccessor -or $fight.round -ne 2 `
+if ($fight.activeParticipantId -ne $activeBeforeInsert -or $fight.round -ne 2 `
     -or ($fight.participants | Measure-Object -Property turnCount -Sum).Sum -ne $turnSumBeforeMove) {
-    throw 'Moving the active participant changed counters or chose the wrong successor.'
+    throw 'Moving the active participant changed the active participant or counters.'
 }
 $finished = (Expect (Send-Json "$fightBase/end" 'POST' @{ revision = $fight.revision } $admin $campaign) `
     200 'End encounter').Content | ConvertFrom-Json

@@ -1,7 +1,7 @@
 # 0019: Advance active selection using the pre-reorder list
 
 - Date: 2026-09-25
-- Status: Accepted
+- Status: Superseded by [0080](0080-keep-active-on-reorder-and-show-drop-slot.md)
 - Related specs: [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md)
 - Supersedes: [0012](0012-active-participant-selection.md)
 - Superseded by: None

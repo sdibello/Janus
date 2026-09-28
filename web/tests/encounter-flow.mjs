@@ -131,12 +131,14 @@ try {
 
   await mob.locator('.fight-tile-actions summary').click()
   await mob.getByRole('button', { name: 'Move up' }).focus()
+  const keyboardReorder = page.waitForResponse(response => response.url().endsWith('/reorder'))
   await page.keyboard.press('Enter')
-  await mob.locator('.active-label').waitFor()
-  await pc.getByRole('button', { name: 'Set active' }).click()
+  assert.equal((await keyboardReorder).status(), 200)
   await pc.locator('.active-label').waitFor()
-  await page.getByRole('button', { name: 'Skip' }).click()
+  await mob.getByRole('button', { name: 'Set active' }).click()
   await mob.locator('.active-label').waitFor()
+  await page.getByRole('button', { name: 'Skip' }).click()
+  await pc.locator('.active-label').waitFor()
   await page.locator('.encounter-detail').getByText('Round 2.', { exact: false }).waitFor()
 
   await page.locator('.add-participant summary').click()
@@ -146,7 +148,7 @@ try {
   await page.locator('.encounter-participants > li').last().locator('strong')
     .filter({ hasText: secondMobName }).waitFor()
   assert.equal(await page.locator('.encounter-participants > li').last().locator('strong').textContent(), secondMobName)
-  await mob.locator('.active-label').waitFor()
+  await pc.locator('.active-label').waitFor()
 
   const lateMob = page.locator('.encounter-participants > li').filter({ hasText: secondMobName })
   const pcBounds = await pc.boundingBox()
@@ -168,10 +170,11 @@ try {
   })
   const reordered = page.waitForResponse(response => response.url().endsWith('/reorder'), { timeout: 10000 })
     .catch(() => null)
-  await lateMob.dragTo(pc, {
-    sourcePosition: { x: 10, y: 10 },
-    targetPosition: { x: 10, y: 5 },
-  })
+  await page.mouse.move(lateBounds.x + 10, lateBounds.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(pcBounds.x + 10, pcBounds.y + 5, { steps: 12 })
+  assert.equal(await page.locator('.fight-list > li.drop-before strong').textContent(), mobName)
+  await page.mouse.up()
   const reorderResponse = await reordered
   if (!reorderResponse) {
     const events = await page.evaluate(() => window.__janusDragEvents)
@@ -179,9 +182,21 @@ try {
   }
   assert.equal(reorderResponse.status(), 200)
   await pc.locator('.active-label').waitFor()
+  await page.locator('.encounter-participants > li').nth(1).locator('strong')
+    .filter({ hasText: secondMobName }).waitFor()
+  const lateBoundsAtMiddle = await lateMob.boundingBox()
+  const mobBoundsAtEnd = await mob.boundingBox()
+  assert.ok(lateBoundsAtMiddle && mobBoundsAtEnd)
+  const reorderedAtEnd = page.waitForResponse(response => response.url().endsWith('/reorder'))
+  await page.mouse.move(lateBoundsAtMiddle.x + 10, lateBoundsAtMiddle.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(mobBoundsAtEnd.x + 10, mobBoundsAtEnd.y + mobBoundsAtEnd.height - 5, { steps: 12 })
+  assert.equal(await page.locator('.fight-list > li.drop-end strong').textContent(), mobName)
+  await page.mouse.up()
+  assert.equal((await reorderedAtEnd).status(), 200)
   await page.locator('.encounter-participants > li').last().locator('strong')
     .filter({ hasText: secondMobName }).waitFor()
-  assert.equal(await page.locator('.encounter-participants > li').last().locator('strong').textContent(), secondMobName)
+  await pc.locator('.active-label').waitFor()
 
   if (process.env.JANUS_TEST_STOP_AT_FIGHT === '1') {
     console.log(`Fight saved for restart check: ${campaignName} | ${encounterName} | ${pcName}`)

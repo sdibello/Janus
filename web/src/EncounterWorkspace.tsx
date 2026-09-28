@@ -38,7 +38,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [draggedId, setDraggedId] = useState<string | null>(null)
-  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [initiativeOpen, setInitiativeOpen] = useState(false)
   const [initiativeStep, setInitiativeStep] = useState(0)
   const initiativeDialog = useRef<HTMLDialogElement>(null)
@@ -174,18 +174,21 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       { revision: selected.revision, orderedIds: order }, 'Turn order changed.')
   }
 
-  function dropOn(event: DragEvent<HTMLLIElement>, targetId: string) {
+  function insertionIndexAt(list: HTMLOListElement, clientY: number): number {
+    const tiles = Array.from(list.children)
+    const index = tiles.findIndex((tile) => clientY < tile.getBoundingClientRect().top + tile.getBoundingClientRect().height / 2)
+    return index < 0 ? tiles.length : Math.max(1, index)
+  }
+
+  function dropOnList(event: DragEvent<HTMLOListElement>) {
+    if (!selected || selected.phase !== 'Fight' || busy) return
     event.preventDefault()
-    setDropTarget(null)
     const sourceId = draggedId ?? event.dataTransfer.getData('text/plain')
-    setDraggedId(null)
-    if (!selected || !sourceId || sourceId === targetId) return
     const sourceIndex = selected.participants.findIndex((participant) => participant.id === sourceId)
-    const targetIndex = selected.participants.findIndex((participant) => participant.id === targetId)
-    if (sourceIndex < 0 || targetIndex < 0) return
-    const halfway = event.currentTarget.getBoundingClientRect().top + event.currentTarget.offsetHeight / 2
-    const insertBefore = event.clientY < halfway
-    const insertionIndex = targetIndex + (insertBefore ? 0 : 1)
+    const insertionIndex = insertionIndexAt(event.currentTarget, event.clientY)
+    setDropIndex(null)
+    setDraggedId(null)
+    if (sourceIndex < 0) return
     moveToIndex(sourceId, insertionIndex > sourceIndex ? insertionIndex - 1 : insertionIndex)
   }
 
@@ -286,25 +289,36 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
         </form>
       </details>}
       <h5>{selected.phase === 'Prepare' ? 'Participants' : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
-      {selected.phase === 'Fight' && <p>Drag a participant to reorder, or use Move up and Move down. A move makes the participant who followed the active one before the move active.</p>}
+      {selected.phase === 'Fight' && <p>Drag a participant to the arrow between tiles or at the end, or use Move up and Move down. Reordering keeps the current active participant.</p>}
       {selected.participants.length === 0 ? <p>Add a PC, NPC, or mob to prepare the order.</p> :
-        <ol className={`encounter-participants ${selected.phase === 'Fight' ? 'fight-list' : ''}`}>{selected.participants.map((participant, index) => {
+        <ol className={`encounter-participants ${selected.phase === 'Fight' ? 'fight-list' : ''}`}
+          onDragOver={(event) => {
+            if (selected.phase === 'Fight' && !busy && draggedId) {
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+              setDropIndex(insertionIndexAt(event.currentTarget, event.clientY))
+            }
+          }}
+          onDragLeave={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect()
+            if (event.clientX < bounds.left || event.clientX > bounds.right
+              || event.clientY < bounds.top || event.clientY > bounds.bottom) setDropIndex(null)
+          }}
+          onDrop={dropOnList}>{selected.participants.map((participant, index) => {
           const active = selected.phase === 'Fight' && selected.activeParticipantId === participant.id
-          return <li key={participant.id} className={`${active ? 'active' : ''} ${dropTarget === participant.id ? 'drop-target' : ''} ${participant.status === 'Unconscious' ? 'unconscious' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
+          const marker = selected.phase === 'Fight' && draggedId
+            ? dropIndex === index ? 'drop-before'
+              : dropIndex === selected.participants.length && index === selected.participants.length - 1 ? 'drop-end' : ''
+            : ''
+          return <li key={participant.id} className={`${active ? 'active' : ''} ${marker} ${participant.status === 'Unconscious' ? 'unconscious' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
             draggable={selected.phase === 'Fight' && !busy}
             onDragStart={(event) => {
               setDraggedId(participant.id)
+              setDropIndex(null)
               event.dataTransfer.setData('text/plain', participant.id)
               event.dataTransfer.effectAllowed = 'move'
             }}
-            onDragEnd={() => { setDraggedId(null); setDropTarget(null) }}
-            onDragOver={(event) => {
-              if (selected.phase === 'Fight' && !busy) {
-                event.preventDefault()
-                setDropTarget(participant.id)
-              }
-            }}
-            onDrop={(event) => dropOn(event, participant.id)}>
+            onDragEnd={() => { setDraggedId(null); setDropIndex(null) }}>
             {selected.phase === 'Prepare' ? <details className="prepare-row">
               <summary><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
                 <span>HP: {participant.currentHp ?? 'Not set'}</span>

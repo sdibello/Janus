@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [003](../specs/003-encounters-and-participants.md), [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md), [007](../specs/007-hit-point-tracking.md)
 - Supersedes: [0011](0011-prepare-and-fight.md), [0020](0020-turn-counter-wrap-only.md), [0023](0023-manual-initiative-ties.md), [0025](0025-round-and-individual-turn-counters.md), [0027](0027-skip-and-no-removal-during-fight.md), [0029](0029-display-initiative-values.md)
-- Superseded by: None
+- Superseded by: [0080](0080-keep-active-on-reorder-and-show-drop-slot.md) for the reorder-active rule only
 
 ## Context
 

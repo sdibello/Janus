@@ -310,14 +310,26 @@ button:hover {
 .encounter-participants li.active { margin-left: -24px; padding-left: 20px; border-left: 4px solid #245c4c; background: #e5f4e8; outline: 3px solid #245c4c; outline-offset: 2px; }
 .encounter-participants li.unconscious { margin-left: -24px; padding-left: 20px; border-left: 4px solid #9a6b17; background: #fff2d8; }
 .encounter-participants li.alive-adjacent { margin-left: -24px; padding-left: 20px; border-left: 4px solid #a34138; background: #f9e8e5; }
-.encounter-participants li.drop-target { outline: 2px dashed #245c4c; outline-offset: 2px; }
 .prepare-row summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; cursor: pointer; }
 .prepare-row summary span:first-of-type { margin-left: auto; }
 .prepare-row .hp-controls { margin: 12px 0; }
 .fight-list { padding: 0; list-style: none; }
-.fight-list > li { margin-bottom: 12px; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
+.fight-list > li { position: relative; margin-bottom: 16px; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
 .fight-list > li.active { margin-left: 0; padding: 20px; }
 .fight-list > li.unconscious, .fight-list > li.alive-adjacent { margin-left: 0; padding: 20px; }
+.fight-list > li.drop-before::before, .fight-list > li.drop-end::before {
+  content: ''; position: absolute; left: 15px; right: 4px; height: 3px;
+  background: #245c4c; pointer-events: none; z-index: 2;
+}
+.fight-list > li.drop-before::after, .fight-list > li.drop-end::after {
+  content: ''; position: absolute; left: 4px; border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent; border-left: 11px solid #245c4c;
+  pointer-events: none; z-index: 2;
+}
+.fight-list > li.drop-before::before { top: -10px; }
+.fight-list > li.drop-before::after { top: -16px; }
+.fight-list > li.drop-end::before { bottom: -10px; }
+.fight-list > li.drop-end::after { bottom: -16px; }
 .fight-tile-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .fight-tile-heading strong { font-size: 18px; }
 .fight-tile-meta { margin: 10px 0; color: var(--muted); }

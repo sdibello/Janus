@@ -8,8 +8,8 @@
 
 | Area | Correction | Authority |
 | --- | --- | --- |
-| Reorder highlight | Moving any participant selects the former active participant's pre-reorder successor; removed conflicting non-active-move example and duplicate acceptance line | 0019 |
-| Insertion | New participants first appear immediately before active; later drag is a separate reorder with its own active-selection effect | 0026 |
+| Reorder highlight | Historical review: selected the former active participant's pre-reorder successor. Decision 0080 now keeps the active participant and previews the insertion slot. | 0019, 0080 |
+| Insertion | New participants first appear immediately before active; later drag is a separate reorder that now preserves the active selection. | 0026, 0080 |
 | Fight removal | Removed stale undecided wording and restricted mob removal to Prepare | 0027 |
 | Skip | Added Skip to the list of actions changing the active participant; counters retain their established behavior | 0027 |
 | Character references | Replaced tests expecting deletion of referenced characters with rejection tests; current character values still appear in encounters | 0032, 0033 |
