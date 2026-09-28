@@ -19,6 +19,9 @@ internal static class EncounterEndpoints
         encounters.MapPatch("/{encounterId:guid}/participants/{participantId:guid}/initiative", SetInitiativeAsync);
         encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/move-tie", MoveTieAsync);
         encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/remove", RemoveParticipantAsync);
+        encounters.MapPatch("/{encounterId:guid}/participants/{participantId:guid}/hp", SetHpAsync);
+        encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/damage", DamageAsync);
+        encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/heal", HealAsync);
         encounters.MapPost("/{encounterId:guid}/fight", BeginFightAsync);
         encounters.MapPost("/{encounterId:guid}/next", NextAsync);
         encounters.MapPost("/{encounterId:guid}/skip", SkipAsync);
@@ -101,10 +104,13 @@ internal static class EncounterEndpoints
         }
         if (!TryInitiative(request.Initiative, out var initiative))
             return Results.BadRequest(new { message = "Initiative must be a whole number." });
+        if (!TryHp(request.CurrentHp, out var currentHp))
+            return Results.BadRequest(new { message = "HP must be a finite decimal number." });
         var participant = new EncounterParticipant
         {
             Id = Guid.NewGuid(), EncounterId = encounterId, CharacterId = request.CharacterId,
             MobName = isMob ? request.MobName!.Trim() : null, Initiative = initiative,
+            CurrentHp = currentHp,
         };
         if (encounter.Phase == EncounterPhase.Prepare)
         {
@@ -381,6 +387,78 @@ internal static class EncounterEndpoints
         return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
     }
 
+    private static async Task<IResult> SetHpAsync(
+        Guid campaignId, Guid encounterId, Guid participantId, HpRequest request,
+        HttpContext context, CampaignAccessService access, CampaignDataContext data,
+        CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (encounter.Phase == EncounterPhase.Finished) return FinishedOnly();
+        if (request.Revision != encounter.Revision) return Stale();
+        var participant = await data.Participants.SingleOrDefaultAsync(item =>
+            item.Id == participantId && item.EncounterId == encounterId, cancellationToken);
+        if (participant is null) return Results.NotFound();
+        if (!TryHp(request.CurrentHp, out var currentHp))
+            return Results.BadRequest(new { message = "HP must be a finite decimal number." });
+        if (participant.CurrentHp != currentHp)
+        {
+            participant.CurrentHp = currentHp;
+            encounter.Revision++;
+            try { await data.SaveChangesAsync(cancellationToken); }
+            catch (DbUpdateConcurrencyException) { return Stale(); }
+        }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
+    private static Task<IResult> DamageAsync(
+        Guid campaignId, Guid encounterId, Guid participantId, HpAmountRequest request,
+        HttpContext context, CampaignAccessService access, CampaignDataContext data,
+        CancellationToken cancellationToken) =>
+        AdjustHpAsync(campaignId, encounterId, participantId, request, context, access,
+            data, heal: false, cancellationToken);
+
+    private static Task<IResult> HealAsync(
+        Guid campaignId, Guid encounterId, Guid participantId, HpAmountRequest request,
+        HttpContext context, CampaignAccessService access, CampaignDataContext data,
+        CancellationToken cancellationToken) =>
+        AdjustHpAsync(campaignId, encounterId, participantId, request, context, access,
+            data, heal: true, cancellationToken);
+
+    private static async Task<IResult> AdjustHpAsync(
+        Guid campaignId, Guid encounterId, Guid participantId, HpAmountRequest request,
+        HttpContext context, CampaignAccessService access, CampaignDataContext data,
+        bool heal, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (encounter.Phase == EncounterPhase.Finished) return FinishedOnly();
+        if (request.Revision != encounter.Revision) return Stale();
+        var participant = await data.Participants.SingleOrDefaultAsync(item =>
+            item.Id == participantId && item.EncounterId == encounterId, cancellationToken);
+        if (participant is null) return Results.NotFound();
+        if (participant.CurrentHp is null)
+            return Results.Conflict(new { message = "Set current HP before using Damage or Heal." });
+        if (!ExactDecimal.TryParse(request.Amount, out var amount))
+            return Results.BadRequest(new { message = "Enter a finite decimal amount." });
+        if (!ExactDecimal.TryParse(participant.CurrentHp, out var previous)) return InvalidHp();
+        var updated = heal ? previous.Add(amount) : previous.Subtract(amount);
+        if (participant.CurrentHp != updated.ToString())
+        {
+            participant.CurrentHp = updated.ToString();
+            encounter.Revision++;
+            try { await data.SaveChangesAsync(cancellationToken); }
+            catch (DbUpdateConcurrencyException) { return Stale(); }
+        }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
     private static async Task StagePositionsAsync(
         CampaignDataContext data, IEnumerable<EncounterParticipant> participants,
         CancellationToken cancellationToken)
@@ -407,7 +485,10 @@ internal static class EncounterEndpoints
                 item.Id, item.CharacterId,
                 Name = item.CharacterId is { } characterId ? characters[characterId].Name : item.MobName!,
                 Kind = item.CharacterId is { } id ? characters[id].Kind.ToString() : "Mob",
-                item.Initiative, item.CurrentHp, item.Position, item.TurnCount,
+                item.Initiative, item.CurrentHp,
+                Status = item.CurrentHp is { } hp && ExactDecimal.TryParse(hp, out var value)
+                    ? value.Status : null,
+                item.Position, item.TurnCount,
             }).ToArray(),
         };
     }
@@ -429,6 +510,15 @@ internal static class EncounterEndpoints
         if (!BigInteger.TryParse(trimmed, NumberStyles.AllowLeadingSign,
                 CultureInfo.InvariantCulture, out var value)) return false;
         canonical = value.ToString(CultureInfo.InvariantCulture);
+        return true;
+    }
+
+    private static bool TryHp(string? input, out string? canonical)
+    {
+        canonical = null;
+        if (string.IsNullOrWhiteSpace(input)) return true;
+        if (!ExactDecimal.TryParse(input, out var value)) return false;
+        canonical = value.ToString();
         return true;
     }
 
@@ -471,12 +561,19 @@ internal static class EncounterEndpoints
         message = "The active participant could not be found. Reload this encounter.",
     });
 
+    private static IResult InvalidHp() => Results.Conflict(new
+    {
+        message = "Saved HP could not be read. Reload this encounter.",
+    });
+
     private sealed record EncounterNameRequest(string? Name);
     private sealed record AddParticipantRequest(long Revision, Guid? CharacterId, string? MobName,
-        string? Initiative);
+        string? Initiative, string? CurrentHp);
     private sealed record InitiativeRequest(long Revision, string? Initiative);
     private sealed record MoveTieRequest(long Revision, string? Direction);
     private sealed record RevisionRequest(long Revision);
     private sealed record ReorderRequest(long Revision, Guid[]? OrderedIds);
     private sealed record SetActiveRequest(long Revision, Guid ParticipantId);
+    private sealed record HpRequest(long Revision, string? CurrentHp);
+    private sealed record HpAmountRequest(long Revision, string? Amount);
 }

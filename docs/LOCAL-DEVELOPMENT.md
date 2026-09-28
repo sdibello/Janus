@@ -38,7 +38,7 @@ Then start the identity host and Vite as shown below. Open <http://localhost:517
 
 Signed-in users can change their password from the portal after entering the current password. From the sign-in form, **Forgot password?** accepts the account's verified email address and places a reset link in the local test inbox. The response is the same when the email address is unknown. Each reset link can be used once within one hour. A reset signs out existing identity sessions; a password change keeps the current identity session and signs out other identity sessions.
 
-Open <http://localhost:5173/> to establish a separate campaign session through OpenID Connect. The page first tries a one-time silent sign-in; if the shared identity cookie is valid and the user has a campaign grant, no password prompt or button click is needed. Otherwise select **Sign in**. Once signed in, create campaigns and add, reclassify, or remove their PCs and NPCs. Within a campaign, create an encounter, add its PCs/NPCs and individual mobs, enter or edit whole-number initiative, and move tied entries up or down. Once every participant has initiative, choose **Begin Fight**. During Fight use Next, Skip, drag-and-drop or Move up/down, Set active, add participants, and End encounter. Finished encounters remain available to view. Changes save immediately. **Sign out of campaigns** removes only the campaign session; leaving and returning to the page can restore it from the still-valid shared login. The current campaign session is a browser-session cookie with an eight-hour maximum. Remember me across products remains future work.
+Open <http://localhost:5173/> to establish a separate campaign session through OpenID Connect. The page first tries a one-time silent sign-in; if the shared identity cookie is valid and the user has a campaign grant, no password prompt or button click is needed. Otherwise select **Sign in**. Once signed in, create campaigns and add, reclassify, or remove their PCs and NPCs. Within a campaign, create an encounter, add its PCs/NPCs and individual mobs, enter or edit whole-number initiative, and move tied entries up or down. Starting HP is optional for every participant. Once every participant has initiative, choose **Begin Fight**. During Fight use Next, Skip, drag-and-drop or Move up/down, Set active, add participants, and End encounter. Use **Save HP** to set or clear current HP; Damage subtracts its entered amount, and Heal adds its entered amount. Both accept signed decimal amounts and preserve exact values. HP below zero displays Unconscious until it reaches -10, then alive adjacent. Finished encounters remain available to view. Changes save immediately. **Sign out of campaigns** removes only the campaign session; leaving and returning to the page can restore it from the still-valid shared login. The current campaign session is a browser-session cookie with an eight-hour maximum. Remember me across products remains future work.
 
 ## Manage product access
 
@@ -74,7 +74,7 @@ npm run build --prefix web
 npm run lint --prefix web
 ```
 
-The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, full password compromise screening, a second product client, and encounter HP workflows remain implementation work. OpenID Connect campaign sign-in and campaign/encounter APIs have been smoke-tested on Windows; Remember me across products and the full password-driven session lifecycle are not yet complete.
+The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, full password compromise screening, a second product client, Fedora validation, and browser interaction checks remain implementation work. OpenID Connect campaign sign-in and campaign/encounter/HP APIs have been smoke-tested on Windows; Remember me across products and the full password-driven session lifecycle are not yet complete.
 
 After setup and email verification, run `tests/oidc-smoke.ps1` against a disposable database to check campaign sign-in, local logout, and password-free return. Its optional `-ExerciseRevocation` switch revokes the signed-in user's campaign grant, so use it only on disposable data with a shared administrator account:
 
@@ -86,6 +86,12 @@ On disposable data, `tests/campaign-smoke.ps1` checks campaign and character cre
 
 ```powershell
 ./tests/campaign-smoke.ps1 -AdminIdentifier admin -AdminPassword (Read-Host 'Admin password' -AsSecureString)
+```
+
+`tests/hp-smoke.ps1` exercises exact decimal HP, Damage, Heal, status boundaries, saved Fight/Finished values, and cross-user denial on the same kind of disposable database:
+
+```powershell
+./tests/hp-smoke.ps1 -AdminIdentifier admin -AdminPassword (Read-Host 'Admin password' -AsSecureString)
 ```
 
 For a repeatable account API smoke test, create a fresh isolated database, apply the identity migration, and run `--setup-admin` as above. Start the identity host with the same `Janus__DataDirectory`, then run `tests/account-smoke.ps1` with the administrator identifier, email, and password. The script requires PowerShell 7 and consumes the new database's local verification message. For example, PowerShell can prompt for the password without putting it on the command line:

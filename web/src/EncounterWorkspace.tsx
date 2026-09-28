@@ -9,6 +9,7 @@ type Participant = {
   kind: 'Pc' | 'Npc' | 'Mob'
   initiative: string | null
   currentHp: string | null
+  status: 'Unconscious' | 'AliveAdjacent' | null
   position: number
   turnCount: number
 }
@@ -123,7 +124,18 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
       characterId: type === 'character' ? values.get('characterId') : null,
       mobName: type === 'mob' ? values.get('mobName') : null,
       initiative: values.get('initiative'),
+      currentHp: values.get('currentHp'),
     }, 'Participant added.')
+    if (saved) form.reset()
+  }
+
+  async function adjustHp(event: FormEvent<HTMLFormElement>, participantId: string, action: 'damage' | 'heal') {
+    event.preventDefault()
+    if (!selected) return
+    const form = event.currentTarget
+    const amount = new FormData(form).get('amount')
+    const saved = await mutate(`${api}/${selected.id}/participants/${participantId}/${action}`, 'POST',
+      { revision: selected.revision, amount }, action === 'damage' ? 'Damage applied.' : 'Healing applied.')
     if (saved) form.reset()
   }
 
@@ -198,6 +210,7 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
               </option>)}
             </select></label>
             {selected.phase === 'Prepare' && <label>Initiative (can be entered later)<input name="initiative" inputMode="numeric" pattern="[+-]?[0-9]+" /></label>}
+            <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
             <button type="submit" disabled={busy}>Add character</button>
           </form>}
         <h5>Add an encounter-only mob</h5>
@@ -205,6 +218,7 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
           <input type="hidden" name="participantType" value="mob" />
           <label>Mob name<input name="mobName" required /></label>
           {selected.phase === 'Prepare' && <label>Initiative (can be entered later)<input name="initiative" inputMode="numeric" pattern="[+-]?[0-9]+" /></label>}
+          <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
           <button type="submit" disabled={busy}>Add mob</button>
         </form>
       </>}
@@ -223,7 +237,7 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
           const previous = selected.participants[index - 1]
           const next = selected.participants[index + 1]
           const active = selected.phase === 'Fight' && selected.activeParticipantId === participant.id
-          return <li key={participant.id} className={`${active ? 'active' : ''} ${dropTarget === participant.id ? 'drop-target' : ''}`}
+          return <li key={participant.id} className={`${active ? 'active' : ''} ${dropTarget === participant.id ? 'drop-target' : ''} ${participant.status === 'Unconscious' ? 'unconscious' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
             draggable={selected.phase === 'Fight' && !busy}
             onDragStart={(event) => {
               setDraggedId(participant.id)
@@ -241,6 +255,32 @@ function EncounterWorkspace({ campaignId, characters }: { campaignId: string; ch
             <div><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
               {active && <span className="active-label">Active turn</span>}
             </div>
+            <p>HP: {participant.currentHp ?? 'Not set'}
+              {participant.status === 'Unconscious' && <span className="hp-status unconscious-label">Unconscious</span>}
+              {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
+            </p>
+            {selected.phase !== 'Finished' && <div className="hp-controls">
+              <form key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
+                event.preventDefault()
+                const currentHp = new FormData(event.currentTarget).get('currentHp')
+                void mutate(`${api}/${selected.id}/participants/${participant.id}/hp`, 'PATCH',
+                  { revision: selected.revision, currentHp }, 'HP saved.')
+              }}>
+                <label>Current HP<input name="currentHp" defaultValue={participant.currentHp ?? ''}
+                  inputMode="decimal" /></label>
+                <button type="submit" disabled={busy}>Save HP</button>
+              </form>
+              {participant.currentHp !== null && <>
+                <form onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
+                  <label>Damage amount<input name="amount" required inputMode="decimal" /></label>
+                  <button type="submit" disabled={busy}>Damage</button>
+                </form>
+                <form onSubmit={(event) => void adjustHp(event, participant.id, 'heal')}>
+                  <label>Heal amount<input name="amount" required inputMode="decimal" /></label>
+                  <button type="submit" disabled={busy}>Heal</button>
+                </form>
+              </>}
+            </div>}
             {selected.phase === 'Prepare' ? <>
               <form key={`${participant.id}-${participant.initiative}`} onSubmit={(event) => {
                 event.preventDefault()

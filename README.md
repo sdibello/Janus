@@ -15,7 +15,7 @@ Janus provides campaign and encounter management for dungeon masters, with share
 
 ## Getting started
 
-Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database, set up the first administrator, and start the two backend hosts and Vite. The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, encounter preparation, and Fight controls. HP tracking and the second product client are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
+Follow [local development](docs/LOCAL-DEVELOPMENT.md) to create the SQLite database, set up the first administrator, and start the two backend hosts and Vite. The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, encounter preparation, Fight controls, and encounter-specific HP. The second product client and local release validation are still under development. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).
 

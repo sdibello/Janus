@@ -6,9 +6,9 @@ The planned user-facing questionnaire is complete. A consistency review correcte
 
 ## Handoff
 
-Accepted decisions run through 0078. The next executable task is implementation-plan step 6: encounter-specific HP and status presentation. The Windows foundation and encounter Prepare/Fight workflows have been built and smoke-tested with .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
+Accepted decisions run through 0078. The next executable task is the remaining implementation-plan step 3 cross-product session work. The Windows foundation and encounter Prepare/Fight/HP workflows have been built and smoke-tested with .NET SDK 10.0.202, Node 24.14.1, and npm 11.11.0. Fedora has not been tested. Cloud choices remain deferred.
 
-Before finalizing the relevant workflows, resolve the review qualifications: browser session restoration without Remember me, Damage/Heal sign validation, identifier collisions, and verification after invitation expiry. Do not reopen settled encounter rules. Resume with [implementation-plan step 6](IMPLEMENTATION-PLAN.md).
+Before finalizing the relevant workflows, resolve the remaining review qualifications: browser session restoration without Remember me, identifier collisions, and verification after invitation expiry. The local HP implementation accepts signed decimal Damage/Heal amounts and applies the stated subtraction/addition exactly, without adding a sign restriction. Do not reopen settled encounter rules. Resume with [the implementation plan](IMPLEMENTATION-PLAN.md).
 
 
 ## Confirmed context: do not ask again
@@ -116,4 +116,4 @@ Deferred cloud follow-up: once the local application is working, select the clou
 
 This consolidated list removes duplicates and does not reopen confirmed answers. HP is optional and encounter-specific; missing HP prevents arithmetic Damage and Heal actions, while zero HP leaves encounter membership and turn progression unchanged.
 
-All specs remain Draft. Prior accepted product decisions still apply; proposed edge cases must not be treated as approved merely because they appear in an acceptance example. The local identity, campaign, and encounter Prepare/Fight foundations now have executable smoke tests; HP remains implementation work.
+All specs remain Draft. Prior accepted product decisions still apply; proposed edge cases must not be treated as approved merely because they appear in an acceptance example. The local identity, campaign, and encounter Prepare/Fight/HP foundations now have executable smoke tests; browser and Fedora validation remain.

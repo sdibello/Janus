@@ -292,9 +292,16 @@ button:hover {
 .encounter-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
 .encounter-controls p { margin: 0; }
 .encounter-participants li[draggable='true'] { cursor: grab; }
-.encounter-participants li.active { margin-left: -24px; padding-left: 20px; border-left: 4px solid #245c4c; background: #e5f4e8; }
+.encounter-participants li.active { margin-left: -24px; padding-left: 20px; border-left: 4px solid #245c4c; background: #e5f4e8; outline: 3px solid #245c4c; outline-offset: 2px; }
+.encounter-participants li.unconscious { margin-left: -24px; padding-left: 20px; border-left: 4px solid #9a6b17; background: #fff2d8; }
+.encounter-participants li.alive-adjacent { margin-left: -24px; padding-left: 20px; border-left: 4px solid #a34138; background: #f9e8e5; }
 .encounter-participants li.drop-target { outline: 2px dashed #245c4c; outline-offset: 2px; }
 .active-label { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; background: #245c4c; color: #fff; font-size: 11px; font-weight: 800; }
+.hp-status { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+.unconscious-label { background: #f4d27a; color: #4e3509; }
+.alive-adjacent-label { background: #e8aaa3; color: #5c211b; }
+.hp-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.hp-controls form { margin: 0; }
 
 footer {
   padding: 28px 0 32px;

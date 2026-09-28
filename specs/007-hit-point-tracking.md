@@ -80,11 +80,11 @@ Included is automatic Unconscious status with a colored participant treatment fo
 
 ## Validation
 
-When implemented, exercise optional HP entry, direct editing, Damage, and Heal across all participant categories, including duplicate-name mobs, non-active participants, and mobs added during Fight. Check negative-value persistence, Unconscious labeling and status color (once chosen during UI prototyping), active-highlight coexistence, and restored status. Cover missing HP, 0, -1, -9, -10, -11, and -20, including changes that cross directly from positive HP to below -10. Verify upward transitions from -14 to -5, -5 to 0, and directly from -14 to 5, including status restoration after reopening. The local foundation exists; HP workflows and executable tests have not been implemented yet.
+Exercise optional HP entry, direct editing, Damage, and Heal across all participant categories, including duplicate-name mobs, non-active participants, and mobs added during Fight. Check negative-value persistence, Unconscious labeling and status color, active-highlight coexistence, and restored status. Cover missing HP, 0, fractional negatives, -9, -10, -14, and -20, including changes that cross directly from positive HP to below -10. Verify upward transitions from -14 to -5, -5 to 0, and directly from below -10 to positive HP. The Windows API smoke test now covers exact arithmetic, these status boundaries, saved Fight/Finished values, and cross-user denial. Browser color/keyboard interaction and process-restart checks remain.
 
 ## Open questions
 
-- Status colors will be selected during UI prototyping. Status text must remain clear and the active-turn highlight independently recognizable.
+- The current UI prototype uses amber for Unconscious and muted red for alive adjacent. Review these exact colors during browser validation; status text and the separate active-turn outline must remain clear.
 
 ## Future enhancements
 
