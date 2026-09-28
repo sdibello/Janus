@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { identityApi } from './runtime'
 
 const minimumIntervalMs = 5 * 60 * 1000
 let lastSentAt = 0
@@ -14,7 +15,7 @@ export default function useSessionActivity(enabled: boolean) {
       if (now - lastSentAt < minimumIntervalMs) return
 
       pending = true
-      void fetch('/api/identity/account/activity', { method: 'POST', keepalive: true })
+      void fetch(`${identityApi}/account/activity`, { method: 'POST', credentials: 'include', keepalive: true })
         .then(() => { lastSentAt = now })
         .catch(() => { /* The next interaction can retry. */ })
         .finally(() => { pending = false })

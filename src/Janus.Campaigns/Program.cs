@@ -99,8 +99,15 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddHttpClient("identity-access", client => client.BaseAddress = new Uri(identityBaseUrl));
 builder.Services.AddScoped<CampaignAccessService>();
 builder.Services.AddAuthorization();
+var identityOrigin = new Uri(identityBaseUrl).GetLeftPart(UriPartial.Authority);
+builder.Services.AddCors(options => options.AddPolicy("identity-browser", policy => policy
+    .WithOrigins(identityOrigin).AllowAnyHeader().WithMethods("GET")));
 
 var app = builder.Build();
+app.UseRouting();
+app.UseCors();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.Use(async (context, next) =>
 {
     if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method)
@@ -134,7 +141,7 @@ app.MapGet("/health", async (CampaignDataContext data, CancellationToken cancell
     {
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
-});
+}).RequireCors("identity-browser");
 
 app.MapGet("/auth/login", () => Results.Challenge(
     new AuthenticationProperties { RedirectUri = webBaseUrl.TrimEnd('/') + "/" },

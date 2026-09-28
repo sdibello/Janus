@@ -29,6 +29,10 @@ builder.Services.AddDataProtection()
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 builder.Services.AddAuthorization();
+var campaignOrigin = new Uri(builder.Configuration["Janus:CampaignBaseUrl"] ?? "http://localhost:5199")
+    .GetLeftPart(UriPartial.Authority);
+builder.Services.AddCors(options => options.AddPolicy("campaign-browser", policy => policy
+    .WithOrigins(campaignOrigin).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -146,6 +150,7 @@ if (args.Contains("--setup-admin", StringComparer.Ordinal))
 await OpenIdConnectEndpoints.RegisterLocalClientAsync(app);
 
 app.UseRouting();
+app.UseCors();
 app.Use(async (context, next) =>
 {
     if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method))
@@ -162,6 +167,7 @@ app.Use(async (context, next) =>
                 .GetLeftPart(UriPartial.Authority);
             var requestOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
             if (!string.Equals(origin.ToString(), portalOrigin, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(origin.ToString(), campaignOrigin, StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(origin.ToString(), requestOrigin, StringComparison.OrdinalIgnoreCase))
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
@@ -174,6 +180,8 @@ app.Use(async (context, next) =>
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStaticFiles();
+app.MapGet("/", () => Results.Redirect("/portal.html"));
 
 app.MapGet("/health", async (IdentityDataContext data, CancellationToken cancellationToken) =>
 {
@@ -188,7 +196,7 @@ app.MapGet("/health", async (IdentityDataContext data, CancellationToken cancell
     {
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
-});
+}).RequireCors("campaign-browser");
 
 app.MapAccountEndpoints();
 app.MapAccountPasswordEndpoints();

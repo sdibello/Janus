@@ -26,7 +26,8 @@ public static class AccountEndpoints
             return Results.Ok(new { message = "Signed out." });
         }).RequireAuthorization();
         app.MapGet("/account/me", MeAsync).RequireAuthorization();
-        app.MapPost("/account/activity", RecordActivityAsync).RequireAuthorization();
+        app.MapPost("/account/activity", RecordActivityAsync).RequireAuthorization()
+            .RequireCors("campaign-browser");
         app.MapGet("/products", async (IdentityDataContext data) =>
             Results.Ok(await data.Products.OrderBy(product => product.Name)
                 .Select(product => new { product.Id, product.Name }).ToListAsync()));

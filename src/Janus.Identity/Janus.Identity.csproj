@@ -14,4 +14,12 @@
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.7.1" />
   </ItemGroup>
 
+  <ItemGroup Condition="Exists('../../web/dist')">
+    <Content Include="../../web/dist/**/*" Exclude="../../web/dist/index.html" Link="wwwroot/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="RequireWebBuild" BeforeTargets="Publish">
+    <Error Condition="!Exists('../../web/dist/portal.html')" Text="Run npm run build --prefix web before publishing Janus Identity." />
+  </Target>
+
 </Project>

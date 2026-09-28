@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import EncounterWorkspace from './EncounterWorkspace'
+import { campaignApi } from './runtime'
 
 type CampaignSummary = { id: string; name: string; createdAtUtc: string }
 type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
 type CampaignDetail = CampaignSummary & { characters: Character[] }
 
-const api = '/api/campaigns/campaigns'
+const api = `${campaignApi}/campaigns`
 
 async function responseMessage(response: Response): Promise<string> {
   const body = await response.json().catch(() => ({})) as { message?: string }

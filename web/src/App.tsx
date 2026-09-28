@@ -3,16 +3,15 @@ import './App.css'
 import AccountPortal from './AccountPortal'
 import CampaignWorkspace from './CampaignWorkspace'
 import useSessionActivity from './useSessionActivity'
+import { campaignApi, campaignOrigin, campaignPage, identityApi, portalPage } from './runtime'
 
 type ServiceName = 'identity' | 'campaigns'
 type ServiceState = 'checking' | 'ready' | 'unavailable'
 type CampaignProfile = { userId: string; userName: string; email: string; productId: string }
 type CampaignSession = { state: 'checking' | 'signed-out' | 'ready' | 'denied' | 'unavailable'; profile?: CampaignProfile }
-const campaignOrigin = import.meta.env.VITE_CAMPAIGN_ORIGIN ?? 'http://localhost:5199'
-
 const services: { name: ServiceName; label: string; path: string }[] = [
-  { name: 'identity', label: 'Accounts', path: '/api/identity/health' },
-  { name: 'campaigns', label: 'Campaign data', path: '/api/campaigns/health' },
+  { name: 'identity', label: 'Accounts', path: `${identityApi}/health` },
+  { name: 'campaigns', label: 'Campaign data', path: `${campaignApi}/health` },
 ]
 
 function App({ page }: { page: 'campaigns' | 'portal' }) {
@@ -27,7 +26,7 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
 
   const checkCampaignSession = useCallback(async (trySilentSignIn = false) => {
     try {
-      const response = await fetch('/api/campaigns/auth/me', { cache: 'no-store' })
+      const response = await fetch(`${campaignApi}/auth/me`, { cache: 'no-store' })
       if (response.ok) {
         setCampaignSession({ state: 'ready', profile: await response.json() as CampaignProfile })
       } else if (response.status === 401 && trySilentSignIn && !signInFailed && !silentSignInTried) {
@@ -68,7 +67,7 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
 
   async function signOutCampaign() {
     try {
-      const response = await fetch('/api/campaigns/auth/logout', { method: 'POST' })
+      const response = await fetch(`${campaignApi}/auth/logout`, { method: 'POST' })
       if (response.ok) setCampaignSession({ state: 'signed-out' })
       else setCampaignSession({ state: 'unavailable' })
     } catch {
@@ -81,15 +80,15 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Janus home">
+        <a className="brand" href={campaignPage} aria-label="Janus home">
           <span className="brand-mark" aria-hidden="true">J</span>
           <span>JANUS</span>
         </a>
         <nav aria-label="Primary navigation">
-          <a className={!isPortal ? 'active' : ''} href="/" aria-current={!isPortal ? 'page' : undefined}>
+          <a className={!isPortal ? 'active' : ''} href={campaignPage} aria-current={!isPortal ? 'page' : undefined}>
             Campaigns
           </a>
-          <a className={isPortal ? 'active' : ''} href="/portal.html" aria-current={isPortal ? 'page' : undefined}>
+          <a className={isPortal ? 'active' : ''} href={portalPage} aria-current={isPortal ? 'page' : undefined}>
             Access portal
           </a>
         </nav>
@@ -131,7 +130,7 @@ function App({ page }: { page: 'campaigns' | 'portal' }) {
             {campaignSession.state === 'denied' && <>
               <h3>Campaign access required</h3>
               <p>Your account is signed in, but it does not currently have campaign access.</p>
-              <a href="/portal.html">Request access in the portal</a>
+              <a href={portalPage}>Request access in the portal</a>
             </>}
             {campaignSession.state === 'unavailable' && <>
               <p>We could not check your campaign session.</p>

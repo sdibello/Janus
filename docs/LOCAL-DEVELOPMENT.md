@@ -1,6 +1,6 @@
 # Local development
 
-The local application has two ASP.NET Core hosts, two React entry pages, and EF Core migrations in one SQLite file. The portal handles invitation-based accounts; the campaign page signs in through the shared identity host and supports campaign, character, and encounter preparation workflows.
+The local application has two ASP.NET Core hosts, two React entry pages, and EF Core migrations in one SQLite file. The portal handles invitation-based accounts; the campaign page signs in through the shared identity host and supports campaign, character, and encounter workflows. Vite serves the pages while developing; published hosts can serve the built pages themselves.
 
 ## Requirements
 
@@ -74,7 +74,39 @@ npm run build --prefix web
 npm run lint --prefix web
 ```
 
-The web build writes both pages to `web/dist/`. Static hosting from the ASP.NET Core hosts, full password compromise screening, Fedora validation, and browser interaction checks remain implementation work. OpenID Connect campaign sign-in, campaign/encounter/HP APIs, shared sign-in across two products, Remember me cookie renewal, and the identity password lifecycle have been smoke-tested on Windows. A browser-close check and automated cross-product password revocation check remain.
+The web build writes both pages to `web/dist/`. The ASP.NET Core publish commands copy each page and shared assets into its host. Full password compromise screening, Fedora validation, and browser interaction checks remain implementation work. OpenID Connect campaign sign-in, campaign/encounter/HP APIs, shared sign-in across two products, Remember me cookie renewal, and the identity password lifecycle have been smoke-tested on Windows. A browser-close check and automated cross-product password revocation check remain.
+
+## Run published pages without Vite
+
+Build the frontend first, then publish each host from the repository root:
+
+```powershell
+npm run build --prefix web
+dotnet publish src/Janus.Identity/Janus.Identity.csproj -o .local/publish/identity
+dotnet publish src/Janus.Campaigns/Janus.Campaigns.csproj -o .local/publish/campaigns
+```
+
+Use the same absolute data directory for both hosts. In an Identity terminal, run from `.local/publish/identity`:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT='Development'
+$env:ASPNETCORE_URLS='http://localhost:5186'
+$env:Janus__DataDirectory='D:\git\Janus\.local\your-data'
+$env:Janus__PortalBaseUrl='http://localhost:5186'
+dotnet Janus.Identity.dll
+```
+
+In a Campaigns terminal, run from `.local/publish/campaigns` with the same data directory:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT='Development'
+$env:ASPNETCORE_URLS='http://localhost:5199'
+$env:Janus__DataDirectory='D:\git\Janus\.local\your-data'
+$env:Janus__WebBaseUrl='http://localhost:5199'
+dotnet Janus.Campaigns.dll
+```
+
+Open <http://localhost:5186/portal.html> for accounts and <http://localhost:5199/> for campaigns. Replace the example data path with the absolute path used during setup. The compiled frontend defaults to these local origins; set `VITE_IDENTITY_ORIGIN` and `VITE_CAMPAIGN_ORIGIN` before building if ports change. Identity still requires Development for local certificates; production hosting needs a certificate and email-delivery setup.
 
 For the Development-only second product test, start `dotnet run --project tests/Janus.SessionProof --launch-profile http` in a fourth terminal, using the same `Janus__DataDirectory`. It listens on port 5201 and stores proof-only data-protection keys in `proof-keys/`. On disposable data, run:
 

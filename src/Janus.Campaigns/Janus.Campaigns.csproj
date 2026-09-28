@@ -13,4 +13,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.12" />
   </ItemGroup>
 
+  <ItemGroup Condition="Exists('../../web/dist')">
+    <Content Include="../../web/dist/**/*" Exclude="../../web/dist/portal.html" Link="wwwroot/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="RequireWebBuild" BeforeTargets="Publish">
+    <Error Condition="!Exists('../../web/dist/index.html')" Text="Run npm run build --prefix web before publishing Janus Campaigns." />
+  </Target>
+
 </Project>

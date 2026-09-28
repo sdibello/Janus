@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type DragEvent, type FormEvent } from 'react'
+import { campaignApi } from './runtime'
 
 type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
 type EncounterSummary = { id: string; name: string; phase: 'Prepare' | 'Fight' | 'Finished'; round: number; revision: number }
@@ -28,7 +29,7 @@ async function responseMessage(response: Response): Promise<string> {
 }
 
 function EncounterWorkspace({ campaignId, characters }: { campaignId: string; characters: Character[] }) {
-  const api = `/api/campaigns/campaigns/${campaignId}/encounters`
+  const api = `${campaignApi}/campaigns/${campaignId}/encounters`
   const [encounters, setEncounters] = useState<EncounterSummary[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selected, setSelected] = useState<EncounterDetail | null>(null)

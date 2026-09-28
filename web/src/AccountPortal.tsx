@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState, type FormEvent } from 'react'
 import useSessionActivity from './useSessionActivity'
+import { identityApi, identityOrigin } from './runtime'
 
 type Account = {
   id: string
@@ -28,7 +29,7 @@ type MailMessage = {
   createdAtUtc: string
 }
 
-const api = '/api/identity'
+const api = identityApi
 
 function readLink() {
   const query = new URLSearchParams(window.location.search)
@@ -180,9 +181,9 @@ function AccountPortal() {
     if (result.ok) {
       if (returnTo) {
         try {
-          const identityOrigin = new URL(import.meta.env.VITE_IDENTITY_ORIGIN ?? 'http://localhost:5186').origin
-          const target = new URL(returnTo, identityOrigin)
-          if (target.origin === identityOrigin && target.pathname === '/connect/authorize') {
+          const origin = new URL(identityOrigin).origin
+          const target = new URL(returnTo, origin)
+          if (target.origin === origin && target.pathname === '/connect/authorize') {
             window.location.assign(target.href)
             return
           }
