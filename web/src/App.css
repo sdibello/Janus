@@ -293,6 +293,8 @@ button:hover {
 .encounter-heading button { background: #245c4c; color: #fff; }
 .add-participant { margin-top: 24px; padding: 16px 20px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
 .add-participant h3 { margin: 0; font-size: 20px; }
+.add-participant-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.add-participant-dialog { margin: 0; padding: 0; border: 0; }
 .add-participant form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
 .add-participant form label { flex: 1 1 180px; margin: 0; font-size: 13px; font-weight: 700; }
 .add-participant input:not([type='hidden']), .add-participant select { display: block; width: 100%; min-height: 40px; padding: 9px 10px; margin-top: 6px; border: 1px solid #bfc9c6; border-radius: 6px; background: #fff; font: inherit; }
@@ -313,7 +315,14 @@ button:hover {
 .encounter-detail { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
 .held-section, .prepare-active-section { margin-top: 24px; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: #f5f7f6; }
 .held-section h5, .prepare-active-section h5 { margin: 0; }
-.held-section p { margin: 8px 0 12px; }
+.encounter-section-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.held-section .encounter-section-heading { flex-wrap: nowrap; }
+.encounter-section-heading h5 { margin: 0; }
+.section-help { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid #aab8b2; border-radius: 50%; color: #51625b; font-size: 12px; font-weight: 700; cursor: help; }
+.section-help:focus-visible { outline: 2px solid #245c4c; outline-offset: 2px; }
+.hold-empty { color: var(--muted); font-size: 13px; }
+.turn-order-heading { margin-top: 24px; }
+.turn-order-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 8px; }
 .held-list { list-style: none; padding: 0; margin: 0; }
 .held-list li { padding: 10px 0; border-top: 1px solid var(--border); }
 .held-list li[draggable='true'] { cursor: grab; }
@@ -392,6 +401,7 @@ button:hover {
 .quick-hp-form button[value='heal']:hover:not(:disabled) { background: #cdebd5; }
 .quick-hp-form button:disabled { opacity: .55; cursor: not-allowed; }
 .encounter-detail dialog { width: min(500px, calc(100% - 30px)); padding: 28px; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 24px 80px rgba(24, 45, 49, 0.25); }
+.encounter-detail dialog.add-participant-lightbox { width: min(760px, calc(100% - 30px)); }
 .encounter-detail dialog::backdrop { background: rgba(24, 45, 49, 0.55); }
 .encounter-detail dialog h3 { margin-top: 0; }
 .encounter-detail dialog label { display: block; font-weight: 700; }

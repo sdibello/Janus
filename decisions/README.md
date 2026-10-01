@@ -94,3 +94,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0084](0084-encounter-hold-list.md) | Accepted | Save held participants outside the turn sequence and release them into Fight by drag and drop. |
 | [0085](0085-non-active-fight-card-actions.md) | Partially superseded | Show direct HP adjustments and actions on non-active Fight cards; 0086 unifies all Fight cards. |
 | [0086](0086-compact-unified-fight-cards.md) | Accepted | Use compact Fight cards with inline current HP and adjustment controls on every card. |
+| [0087](0087-fight-section-headers-and-add-dialog.md) | Accepted | Put Fight help in header icons and open participant addition from the Turn order heading. |

@@ -48,8 +48,17 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [prepareSelectedId, setPrepareSelectedId] = useState<string | null>(null)
   const [editingHpIds, setEditingHpIds] = useState<string[]>([])
   const [conditionParticipantId, setConditionParticipantId] = useState<string | null>(null)
+  const [addParticipantOpen, setAddParticipantOpen] = useState(false)
   const initiativeDialog = useRef<HTMLDialogElement>(null)
   const conditionDialog = useRef<HTMLDialogElement>(null)
+  const addParticipantDialog = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = addParticipantDialog.current
+    if (!dialog) return
+    if (addParticipantOpen && !dialog.open) dialog.showModal()
+    if (!addParticipantOpen && dialog.open) dialog.close()
+  }, [addParticipantOpen])
 
   useEffect(() => {
     const dialog = conditionDialog.current
@@ -155,7 +164,10 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       currentHp: values.get('currentHp'),
       isHeld: values.get('isHeld') === 'on',
     }, 'Participant added.')
-    if (saved) form.reset()
+    if (saved) {
+      form.reset()
+      if (selected.phase === 'Fight') setAddParticipantOpen(false)
+    }
   }
 
   async function addAllParticipants() {
@@ -274,6 +286,43 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     </form>
   }
 
+  function addParticipantPanel(inDialog: boolean) {
+    return <div className={`add-participant${inDialog ? ' add-participant-dialog' : ''}`}>
+      <div className="add-participant-heading">
+        <h3 id={inDialog ? 'add-participant-title' : undefined}>Add a PC, NPC, or mob</h3>
+        {inDialog && <button type="button" disabled={busy}
+          onClick={() => setAddParticipantOpen(false)}>Close</button>}
+      </div>
+      {inDialog && message && <p role="status">{message}</p>}
+      <h5>Add a campaign character</h5>
+      {selected?.phase === 'Prepare' && <button type="button" disabled={busy || available.length === 0}
+        onClick={() => void addAllParticipants()}>Add All</button>}
+      {available.length === 0 ? <p>No available PCs or NPCs in this campaign.</p> :
+        <form onSubmit={(event) => void addParticipant(event)}>
+          <input type="hidden" name="participantType" value="character" />
+          <label>PC or NPC<select name="characterId" required>
+            {available.map((character) => <option key={character.id} value={character.id}>
+              {character.name} ({character.kind.toUpperCase()})
+            </option>)}
+          </select></label>
+          <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
+          <label className="hold-checkbox"><input type="checkbox" name="isHeld" /> Add to Hold</label>
+          <button type="submit" disabled={busy}>Add character</button>
+        </form>}
+      <h5>Add an encounter-only mob</h5>
+      <form onSubmit={(event) => void addParticipant(event)}>
+        <input type="hidden" name="participantType" value="mob" />
+        <label>Mob name<input name="mobName" required /></label>
+        <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
+        <label className="hold-checkbox"><input type="checkbox" name="isHeld" /> Add to Hold</label>
+        <button type="submit" disabled={busy}>Add mob</button>
+      </form>
+    </div>
+  }
+
+  const holdHelp = `Held participants wait outside the turn order and do not affect Round or Turn counts.${selected?.phase === 'Fight' ? ' Drag one into the turn order to release them.' : ''}`
+  const turnOrderHelp = 'Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.'
+
   return <div className="encounter-workspace">
     {message && <p className="account-message" role="status">{message}</p>}
     {!selectedId && <>
@@ -308,45 +357,15 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       </div>
       <p>Phase: {selected.phase}. {activeParticipants.length} active, {heldParticipants.length} held.
         {selected.phase !== 'Prepare' && <> Round {selected.round}.</>}</p>
-      {selected.phase === 'Fight' && <div className="encounter-controls">
-        <button type="button" disabled={busy} onClick={() => {
-          if (window.confirm('End this encounter? It cannot return to Fight.'))
-            void mutate(`${api}/${selected.id}/end`, 'POST',
-              { revision: selected.revision }, 'Encounter ended.')
-        }}>End encounter</button>
-      </div>}
-      {selected.phase !== 'Finished' && <div className="add-participant">
-        <h3>Add a PC, NPC, or mob</h3>
-        <h5>Add a campaign character</h5>
-        {selected.phase === 'Prepare' && <button type="button" disabled={busy || available.length === 0}
-          onClick={() => void addAllParticipants()}>Add All</button>}
-        {available.length === 0 ? <p>No available PCs or NPCs in this campaign.</p> :
-          <form onSubmit={(event) => void addParticipant(event)}>
-            <input type="hidden" name="participantType" value="character" />
-            <label>PC or NPC<select name="characterId" required>
-              {available.map((character) => <option key={character.id} value={character.id}>
-                {character.name} ({character.kind.toUpperCase()})
-              </option>)}
-            </select></label>
-            <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
-            <label className="hold-checkbox"><input type="checkbox" name="isHeld" /> Add to Hold</label>
-            <button type="submit" disabled={busy}>Add character</button>
-          </form>}
-        <h5>Add an encounter-only mob</h5>
-        <form onSubmit={(event) => void addParticipant(event)}>
-          <input type="hidden" name="participantType" value="mob" />
-          <label>Mob name<input name="mobName" required /></label>
-          <label>Starting HP (optional)<input name="currentHp" inputMode="decimal" /></label>
-          <label className="hold-checkbox"><input type="checkbox" name="isHeld" /> Add to Hold</label>
-          <button type="submit" disabled={busy}>Add mob</button>
-        </form>
-      </div>}
+      {selected.phase === 'Prepare' && addParticipantPanel(false)}
       <section className="held-section" aria-label="Hold list">
-        <h5>Hold ({heldParticipants.length})</h5>
-        <p>Held participants wait outside the turn order and do not affect Round or Turn counts.
-          {selected.phase === 'Fight' && ' Drag one into the turn order to release them.'}</p>
-        {heldParticipants.length === 0 ? <p>No participants on Hold.</p> :
-          <ul className="held-list">{heldParticipants.map((participant) => <li key={participant.id}
+        <div className="encounter-section-heading">
+          <h5>Hold ({heldParticipants.length})</h5>
+          <span className="section-help" role="img" tabIndex={0} title={holdHelp}
+            aria-label={holdHelp}>?</span>
+          {heldParticipants.length === 0 && <span className="hold-empty">No participants on Hold.</span>}
+        </div>
+        {heldParticipants.length > 0 && <ul className="held-list">{heldParticipants.map((participant) => <li key={participant.id}
             draggable={selected.phase === 'Fight' && !busy}
             onDragStart={(event) => {
               setDraggedId(participant.id)
@@ -374,8 +393,21 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       </section>
       <section className={selected.phase === 'Prepare' ? 'prepare-active-section' : undefined}
         aria-label={selected.phase === 'Prepare' ? 'Active participants' : undefined}>
-      <h5>{selected.phase === 'Prepare' ? `Active (${activeParticipants.length})` : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
-      {selected.phase === 'Fight' && <p>Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.</p>}
+      <div className="encounter-section-heading turn-order-heading">
+        <h5>{selected.phase === 'Prepare' ? `Active (${activeParticipants.length})` : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
+        {selected.phase === 'Fight' && <>
+          <span className="section-help" role="img" tabIndex={0} title={turnOrderHelp}
+            aria-label={turnOrderHelp}>?</span>
+          <div className="turn-order-actions">
+            <button type="button" disabled={busy} onClick={() => setAddParticipantOpen(true)}>Add Participant</button>
+            <button type="button" disabled={busy} onClick={() => {
+              if (window.confirm('End this encounter? It cannot return to Fight.'))
+                void mutate(`${api}/${selected.id}/end`, 'POST',
+                  { revision: selected.revision }, 'Encounter ended.')
+            }}>End encounter</button>
+          </div>
+        </>}
+      </div>
       {activeParticipants.length === 0 ? <div className={`empty-active-list ${draggedId && selected.phase === 'Fight' ? 'drop-ready' : ''}`}
         onDragOver={(event) => {
           if (selected.phase === 'Fight' && !busy && draggedId) { event.preventDefault(); event.dataTransfer.dropEffect = 'move' }
@@ -505,6 +537,14 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           </li>
         })}</ol>}
       </section>
+      {selected.phase === 'Fight' && addParticipantOpen && <dialog ref={addParticipantDialog}
+        className="add-participant-lightbox" aria-labelledby="add-participant-title"
+        onCancel={(event) => {
+          event.preventDefault()
+          setAddParticipantOpen(false)
+        }}>
+        {addParticipantPanel(true)}
+      </dialog>}
       {initiativeOpen && selected.phase === 'Prepare' && <dialog ref={initiativeDialog}
         aria-labelledby="initiative-title" onCancel={(event) => {
           event.preventDefault()
