@@ -13,7 +13,7 @@
 
 ## Fight
 
-- Manage opens when its participant becomes active and closes when that turn completes or a different participant becomes active. Inactive participants can open their own Manage area.
+- The active participant keeps its open Actions area for current HP, Damage, Heal, Set active, and Hold. Non-active Fight cards show a single HP adjustment field with Damage and Heal on the left, and Set active and Hold on the right, without a collapsible area. See [decision 0085](../decisions/0085-non-active-fight-card-actions.md).
 - Set active is disabled on the active participant. Initiative is hidden in Fight, though its saved value remains available for the initial order.
 - The DM can apply Invisible, Grappled, and Prone to any participant in Fight via a status dialog. Multiple statuses may coexist. Each appears in a right-aligned bubble with an × removal control. Reapplying an existing status has no effect. Adding or removing a status does not change active participant, order, or counters.
 - Each applied status starts at 0 turns and shows the number of that participant's **Next** actions while applied. Skip does not increase it. Status and count survive reopening; status bubbles are shown only in Fight, and finished encounters offer no editing controls. Removing and reapplying starts a new count at 0. No game-mechanical effects are automated.

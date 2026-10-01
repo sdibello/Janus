@@ -35,7 +35,7 @@ Included is automatic Unconscious status with a colored participant treatment fo
 - R9: The dungeon master can enter a damage amount for a participant with current HP. Applying Damage subtracts that amount from current HP and saves the result, including negative results. For example, 5 HP with 8 damage becomes -3 HP. The dungeon master can also apply Heal, which adds the entered amount to current HP. Both controls apply to the selected participant, not necessarily the active one.
 - R9a: During Prepare, participant rows start collapsed and expose only optional current HP editing when expanded. Damage and Heal controls appear during Fight, not Prepare. Finished encounters retain viewing-only HP display.
 - R9b: Place the direct HP Save button immediately after its Current HP input in Prepare and Fight, with the button label **Save**. This layout does not change when or how HP is saved.
-- R9c: During Fight, place each Damage and Heal button immediately after its own amount input, using the same label-above, input-and-button layout as Current HP. This layout does not change HP arithmetic or availability.
+- R9c: During Fight, the active card retains separate labeled Damage and Heal amount inputs with buttons beside each input. A non-active card shows one HP adjustment input shared by its Damage and Heal buttons; either successful action clears that input. Neither layout changes HP arithmetic or availability. See [decision 0085](../decisions/0085-non-active-fight-card-actions.md).
 - R10: Damage and Heal controls are unavailable until current HP is supplied for that participant. Do not silently treat missing HP as zero or introduce a separate accumulated-damage total. This does not block any encounter operation unrelated to HP.
 - R11: Apply Unconscious automatically for HP strictly between -10 and 0. At HP <= -10, show the status alive adjacent instead of Unconscious. Preserve the actual HP value without clamping; do not substitute a Dead label. Missing HP and zero do not trigger these rules.
 - R12: Wrap or visually surround the qualifying participant entry with a distinct color treatment and show its status text. Keep the active-turn indicator independently recognizable, including when a status-marked participant is active. Select exact status colors during UI prototyping.
@@ -64,7 +64,7 @@ Included is automatic Unconscious status with a colored participant treatment fo
 - [ ] PCs, NPCs, and mobs can be added without HP, and an encounter with missing HP values can enter Fight and advance turns.
 - [ ] A Prepare participant row starts collapsed; expanding it allows HP entry but does not show Damage or Heal. Those actions become available in Fight once HP is set.
 - [ ] The Current HP input and its adjacent Save button appear together in both Prepare and Fight; no Save HP label remains.
-- [ ] In Fight, Damage amount and Heal amount each show a label above an input with the matching action button immediately beside it, aligned with Current HP.
+- [ ] In Fight, the active card shows labeled Damage and Heal inputs with adjacent buttons. Each non-active card has one adjustment input with Damage and Heal buttons; either successful action clears the input.
 - [ ] An unspecified HP value remains unspecified after reopening Janus and is visually distinct from zero.
 - [ ] A participant at 20 HP becomes 13 HP after applying 7 damage; applying another 3 damage produces 10 HP.
 - [ ] Damage affects only the selected participant, including when same-name mobs exist or another participant is active.
