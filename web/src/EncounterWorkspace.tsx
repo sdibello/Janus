@@ -46,6 +46,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [initiativeOpen, setInitiativeOpen] = useState(false)
   const [initiativeStep, setInitiativeStep] = useState(0)
   const [prepareSelectedId, setPrepareSelectedId] = useState<string | null>(null)
+  const [editingHpIds, setEditingHpIds] = useState<string[]>([])
   const [conditionParticipantId, setConditionParticipantId] = useState<string | null>(null)
   const initiativeDialog = useRef<HTMLDialogElement>(null)
   const conditionDialog = useRef<HTMLDialogElement>(null)
@@ -193,6 +194,15 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     if (saved) form.reset()
   }
 
+  async function saveCurrentHp(event: FormEvent<HTMLFormElement>, participantId: string) {
+    event.preventDefault()
+    if (!selected) return
+    const currentHp = new FormData(event.currentTarget).get('currentHp')
+    const saved = await mutate(`${api}/${selected.id}/participants/${participantId}/hp`, 'PATCH',
+      { revision: selected.revision, currentHp }, 'HP saved.')
+    if (saved) setEditingHpIds((ids) => ids.filter((id) => id !== participantId))
+  }
+
   function moveToIndex(participantId: string, targetIndex: number) {
     if (!selected || selected.phase !== 'Fight' || busy) return
     const order = selected.participants.filter((participant) => !participant.isHeld).map((participant) => participant.id)
@@ -240,14 +250,10 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   }) : []
 
   function hpEditor(participant: Participant) {
-    if (!selected || selected.phase === 'Finished') return null
+    if (!selected || selected.phase !== 'Prepare') return null
     return <div className="hp-controls">
-      <form className="hp-field-form" key={`${participant.id}-hp-${participant.currentHp}`} onSubmit={(event) => {
-        event.preventDefault()
-        const currentHp = new FormData(event.currentTarget).get('currentHp')
-        void mutate(`${api}/${selected.id}/participants/${participant.id}/hp`, 'PATCH',
-          { revision: selected.revision, currentHp }, 'HP saved.')
-      }}>
+      <form className="hp-field-form" key={`${participant.id}-hp-${participant.currentHp}`}
+        onSubmit={(event) => void saveCurrentHp(event, participant.id)}>
         <label htmlFor={`hp-${participant.id}`}>Current HP</label>
         <div className="hp-input-line">
           <input id={`hp-${participant.id}`} name="currentHp" defaultValue={participant.currentHp ?? ''}
@@ -255,23 +261,17 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           <button type="submit" disabled={busy}>Save</button>
         </div>
       </form>
-      {selected.phase === 'Fight' && participant.currentHp !== null && <>
-        <form className="hp-field-form" onSubmit={(event) => void adjustHp(event, participant.id, 'damage')}>
-          <label htmlFor={`damage-${participant.id}`}>Damage amount</label>
-          <div className="hp-input-line">
-            <input id={`damage-${participant.id}`} name="amount" required inputMode="decimal" />
-            <button type="submit" disabled={busy}>Damage</button>
-          </div>
-        </form>
-        <form className="hp-field-form" onSubmit={(event) => void adjustHp(event, participant.id, 'heal')}>
-          <label htmlFor={`heal-${participant.id}`}>Heal amount</label>
-          <div className="hp-input-line">
-            <input id={`heal-${participant.id}`} name="amount" required inputMode="decimal" />
-            <button type="submit" disabled={busy}>Heal</button>
-          </div>
-        </form>
-      </>}
     </div>
+  }
+
+  function fightAdjustment(participant: Participant) {
+    if (!selected) return null
+    return <form className="quick-hp-form" onSubmit={(event) => void adjustHp(event, participant.id)}>
+      <input name="amount" required inputMode="decimal"
+        aria-label={`HP adjustment for ${participant.name}`} />
+      <button type="submit" value="damage" disabled={busy || participant.currentHp === null}>Damage</button>
+      <button type="submit" value="heal" disabled={busy || participant.currentHp === null}>Heal</button>
+    </form>
   }
 
   return <div className="encounter-workspace">
@@ -444,9 +444,11 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               </div>
               {prepareSelectedId === participant.id && hpEditor(participant)}
             </div> : <>
-              <div className="fight-tile-heading"><strong>{participant.name}</strong>
-                {selected.phase === 'Fight' && <span className="fight-turn-count">Turns completed: {participant.turnCount}</span>}
-                <small>{participant.kind.toUpperCase()}</small>
+              <div className="fight-tile-heading">
+                <span className={`participant-kind-icon ${participant.kind.toLowerCase()}`}
+                  title={participant.kind.toUpperCase()}>{participant.kind.toUpperCase()}</span>
+                <strong>{participant.name}</strong>
+                {selected.phase === 'Fight' && <span className="fight-turn-count">Turn: {participant.turnCount}</span>}
                 {active && <span className="active-label">Active turn</span>}
                 {selected.phase === 'Fight' && <div className="condition-actions">
                   {participant.conditions.map((condition) => <span className="condition-bubble" key={condition.kind}>
@@ -454,28 +456,6 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                     <button type="button" aria-label={`Remove ${condition.kind} from ${participant.name}`}
                       disabled={busy} onClick={() => void setCondition(participant, condition.kind, false)}>×</button>
                   </span>)}
-                  <button type="button" className="condition-picker" aria-label={`Manage statuses for ${participant.name}`}
-                    disabled={busy} onClick={() => setConditionParticipantId(participant.id)} title="Add a status">✦</button>
-                </div>}
-              </div>
-              <p className="fight-tile-meta">{selected.phase === 'Finished' && <>Turns completed: {participant.turnCount} · </>}
-                HP: {participant.currentHp ?? 'Not set'}
-                {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
-                {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
-                {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
-              </p>
-              {active && <div className="active-turn-controls" role="group" aria-label={`Turn actions for ${participant.name}`}>
-                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/next`, 'POST',
-                  { revision: selected.revision }, 'Turn completed.')}>Next</button>
-                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
-                  { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
-              </div>}
-              {selected.phase === 'Fight' && active && <details className="fight-tile-actions" open>
-                <summary onClick={(event) => {
-                  event.preventDefault()
-                }}>actions</summary>
-                {hpEditor(participant)}
-                <div className="account-actions">
                   <button type="button" disabled={busy || active}
                     onClick={() => void mutate(`${api}/${selected.id}/active`, 'POST',
                       { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>
@@ -484,25 +464,42 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                   <button type="button" disabled={busy}
                     onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/hold`, 'POST',
                       { revision: selected.revision }, 'Participant moved to Hold.')}>Hold</button>
-                </div>
-              </details>}
-              {selected.phase === 'Fight' && !active && <div className="non-active-actions">
-                <form className="quick-hp-form" onSubmit={(event) => void adjustHp(event, participant.id)}>
-                  <input name="amount" required inputMode="decimal"
-                    aria-label={`HP adjustment for ${participant.name}`} />
-                  <button type="submit" value="damage" disabled={busy || participant.currentHp === null}>Damage</button>
-                  <button type="submit" value="heal" disabled={busy || participant.currentHp === null}>Heal</button>
-                </form>
-                <div className="account-actions">
-                  <button type="button" disabled={busy}
-                    onClick={() => void mutate(`${api}/${selected.id}/active`, 'POST',
-                      { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>
-                    Set active
-                  </button>
-                  <button type="button" disabled={busy}
-                    onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/hold`, 'POST',
-                      { revision: selected.revision }, 'Participant moved to Hold.')}>Hold</button>
-                </div>
+                  <button type="button" className="condition-picker" aria-label={`Manage statuses for ${participant.name}`}
+                    disabled={busy} onClick={() => setConditionParticipantId(participant.id)} title="Add a status">✦</button>
+                </div>}
+              </div>
+              {selected.phase === 'Fight' ? <div className="fight-hp-row">
+                {participant.currentHp !== null && !editingHpIds.includes(participant.id)
+                  ? <div className="fight-current-hp-display">
+                    <span>HP: {participant.currentHp}</span>
+                    <button type="button" className="hp-edit-button" disabled={busy}
+                      aria-label={`Edit current HP for ${participant.name}`} title="Edit current HP"
+                      onClick={() => setEditingHpIds((ids) => [...ids, participant.id])}>✎</button>
+                  </div>
+                  : <form className="fight-current-hp-form" key={`${participant.id}-fight-hp-${participant.currentHp}`}
+                    onSubmit={(event) => void saveCurrentHp(event, participant.id)}>
+                    <label htmlFor={`fight-hp-${participant.id}`}>HP:</label>
+                    <input id={`fight-hp-${participant.id}`} name="currentHp"
+                      aria-label={`Current HP for ${participant.name}`} defaultValue={participant.currentHp ?? ''}
+                      placeholder="Not set" inputMode="decimal" />
+                    <button type="submit" disabled={busy}>Save</button>
+                    {participant.currentHp !== null && <button type="button" disabled={busy}
+                      onClick={() => setEditingHpIds((ids) => ids.filter((id) => id !== participant.id))}>Cancel</button>}
+                  </form>}
+                {fightAdjustment(participant)}
+                {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
+                {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
+                {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
+              </div> : <p className="fight-tile-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}
+                {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
+                {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
+                {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
+              </p>}
+              {active && <div className="active-turn-controls" role="group" aria-label={`Turn actions for ${participant.name}`}>
+                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/next`, 'POST',
+                  { revision: selected.revision }, 'Turn completed.')}>Next</button>
+                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
+                  { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
               </div>}
             </>}
           </li>

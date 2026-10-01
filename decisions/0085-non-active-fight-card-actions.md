@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [007](../specs/007-hit-point-tracking.md), [008](../specs/008-encounter-conditions-and-layout.md)
 - Supersedes: The inactive Manage control in spec 008 and the two-input Fight layout in spec 007 for non-active participants
-- Superseded by: None
+- Superseded by: [0086](0086-compact-unified-fight-cards.md) for the active-card and control-placement rules
 
 ## Context
 

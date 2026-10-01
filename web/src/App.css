@@ -346,9 +346,9 @@ button:hover {
 .prepare-row-select span { font-weight: 400; }
 .prepare-row .hp-controls { margin: 12px 0; }
 .fight-list { padding: 0; list-style: none; }
-.fight-list > li { position: relative; margin-bottom: 16px; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
-.fight-list > li.active { margin-left: 0; padding: 20px; }
-.fight-list > li.disabled-hp, .fight-list > li.dying, .fight-list > li.alive-adjacent { margin-left: 0; padding: 20px; }
+.fight-list > li { position: relative; margin-bottom: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
+.fight-list > li.active { margin-left: 0; padding: 12px; }
+.fight-list > li.disabled-hp, .fight-list > li.dying, .fight-list > li.alive-adjacent { margin-left: 0; padding: 12px; }
 .fight-list > li.drop-before::before, .fight-list > li.drop-end::before {
   content: ''; position: absolute; left: 15px; right: 4px; height: 3px;
   background: #245c4c; pointer-events: none; z-index: 2;
@@ -364,6 +364,10 @@ button:hover {
 .fight-list > li.drop-end::after { bottom: -16px; }
 .fight-tile-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .fight-tile-heading strong { font-size: 18px; }
+.participant-kind-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 4px; border-radius: 6px; font-size: 10px; font-weight: 800; line-height: 1; }
+.participant-kind-icon.pc { background: #dcefe3; color: #245c4c; }
+.participant-kind-icon.npc { background: #e9e4f7; color: #554782; }
+.participant-kind-icon.mob { background: #faead4; color: #805022; }
 .fight-turn-count { color: var(--muted); font-size: 12px; font-weight: 400; }
 .condition-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
 .condition-bubble { display: inline-flex; align-items: center; gap: 4px; padding: 3px 5px 3px 9px; border-radius: 999px; background: #e8e6f6; color: #40366e; font-size: 11px; font-weight: 800; }
@@ -371,17 +375,22 @@ button:hover {
 .condition-picker { padding: 5px 9px; font-size: 17px; }
 .condition-choices { display: flex; flex-wrap: wrap; gap: 8px; }
 .fight-tile-meta { margin: 10px 0; color: var(--muted); }
-.active-turn-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.fight-hp-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.fight-current-hp-display { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); white-space: nowrap; }
+.fight-current-hp-display .hp-edit-button { padding: 4px 6px; border: 0; font-size: 16px; line-height: 1; }
+.fight-list .fight-current-hp-form { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; }
+.fight-list .fight-current-hp-form label { flex: none; min-width: 0; color: var(--muted); white-space: nowrap; }
+.fight-current-hp-form input { width: 86px; min-width: 0; padding: 9px 10px; border: 1px solid #bfc9c6; border-radius: 6px; font: inherit; }
+.active-turn-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
 .active-turn-controls button:first-child { background: #245c4c; color: #fff; border-color: #245c4c; }
 .active-turn-controls button:first-child:hover { background: #194637; }
-.fight-tile-actions { margin-top: 12px; }
-.fight-tile-actions summary { cursor: pointer; font-weight: 700; }
-.fight-tile-actions .hp-controls { margin: 12px 0; }
-.fight-tile-actions .account-actions { margin-top: 12px; }
-.non-active-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 .fight-list .quick-hp-form { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; }
 .quick-hp-form input { width: min(140px, 100%); min-width: 0; padding: 9px 10px; border: 1px solid #bfc9c6; border-radius: 6px; font: inherit; }
-.non-active-actions .account-actions { margin-left: auto; }
+.quick-hp-form button[value='damage'] { background: #ffe1de; border-color: #d99a94; color: #7b2925; }
+.quick-hp-form button[value='damage']:hover:not(:disabled) { background: #fbd0cb; }
+.quick-hp-form button[value='heal'] { background: #e3f4e8; border-color: #98cba6; color: #245c35; }
+.quick-hp-form button[value='heal']:hover:not(:disabled) { background: #cdebd5; }
+.quick-hp-form button:disabled { opacity: .55; cursor: not-allowed; }
 .encounter-detail dialog { width: min(500px, calc(100% - 30px)); padding: 28px; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 24px 80px rgba(24, 45, 49, 0.25); }
 .encounter-detail dialog::backdrop { background: rgba(24, 45, 49, 0.55); }
 .encounter-detail dialog h3 { margin-top: 0; }
