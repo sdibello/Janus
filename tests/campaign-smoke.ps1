@@ -80,6 +80,18 @@ $npc = (Expect (Send-Json "$campaign/campaigns/$($first.id)/characters" 'POST' `
 if ($pc.id -eq $npc.id -or $pc.kind -ne 'Pc' -or $npc.kind -ne 'Npc') {
     throw 'Duplicate-name characters were not saved separately by kind.'
 }
+$null = Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)/name" `
+    'PATCH' @{ name = '  ' } $admin $campaign) 400 'Reject blank character rename'
+$renamedPc = (Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)/name" `
+    'PATCH' @{ name = '  Echo corrected  ' } $admin $campaign) 200 'Rename PC').Content | ConvertFrom-Json
+if ($renamedPc.id -ne $pc.id -or $renamedPc.name -ne 'Echo corrected' -or $renamedPc.kind -ne 'Pc') {
+    throw 'PC rename changed its identity or classification, or failed to trim the name.'
+}
+$renamedNpc = (Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($npc.id)/name" `
+    'PATCH' @{ name = 'Echo corrected' } $admin $campaign) 200 'Rename NPC to duplicate name').Content | ConvertFrom-Json
+if ($renamedNpc.id -ne $npc.id -or $renamedNpc.name -ne $renamedPc.name) {
+    throw 'NPC rename failed or duplicate names were rejected.'
+}
 $changed = (Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)/kind" `
     'PATCH' @{ kind = 'Npc' } $admin $campaign) 200 'Reclassify PC').Content | ConvertFrom-Json
 if ($changed.id -ne $pc.id -or $changed.kind -ne 'Npc') { throw 'Reclassification created or returned the wrong character.' }
@@ -88,6 +100,7 @@ $null = Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($npc.id
 $updated = (Expect (Invoke-WebRequest "$campaign/campaigns/$($first.id)" -WebSession $admin -SkipHttpErrorCheck) `
     200 'Updated campaign view').Content | ConvertFrom-Json
 if ($updated.characters.Count -ne 1 -or $updated.characters[0].id -ne $pc.id `
+    -or $updated.characters[0].name -ne 'Echo corrected' `
     -or $updated.createdAtUtc -ne $first.createdAtUtc) {
     throw 'Character changes altered the wrong records or creation date.'
 }
@@ -95,6 +108,8 @@ $null = Expect (Send-Json "$campaign/campaigns/$($second.id)/characters" 'POST' 
     @{ name = 'Other campaign NPC'; kind = 'Npc' } $admin $campaign) 201 'Second-campaign character'
 $null = Expect (Send-Json "$campaign/campaigns/$($second.id)/characters/$($pc.id)/kind" `
     'PATCH' @{ kind = 'Pc' } $admin $campaign) 404 'Cross-campaign reclassification'
+$null = Expect (Send-Json "$campaign/campaigns/$($second.id)/characters/$($pc.id)/name" `
+    'PATCH' @{ name = 'Intruder' } $admin $campaign) 404 'Cross-campaign rename'
 $null = Expect (Send-Json "$campaign/campaigns/$($second.id)/characters/$($pc.id)" `
     'DELETE' @{} $admin $campaign) 404 'Cross-campaign removal'
 $unchanged = (Expect (Invoke-WebRequest "$campaign/campaigns/$($first.id)" -WebSession $admin -SkipHttpErrorCheck) `
@@ -126,6 +141,8 @@ $null = Expect (Send-Json "$campaign/campaigns/$($first.id)/characters" 'POST' `
     @{ name = 'Intruder'; kind = 'Pc' } $other $campaign) 404 'Other-user character addition'
 $null = Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)/kind" `
     'PATCH' @{ kind = 'Pc' } $other $campaign) 404 'Other-user reclassification'
+$null = Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)/name" `
+    'PATCH' @{ name = 'Intruder' } $other $campaign) 404 'Other-user rename'
 $null = Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)" `
     'DELETE' @{} $other $campaign) 404 'Other-user removal'
 $otherList = (Expect (Invoke-WebRequest "$campaign/campaigns" -WebSession $other -SkipHttpErrorCheck) `
@@ -152,6 +169,15 @@ $prepared = (Expect (Invoke-WebRequest "$encounterBase/$($encounter.id)" -WebSes
     -SkipHttpErrorCheck) 200 'Reload Prepare').Content | ConvertFrom-Json
 if (@($prepared.participants).Count -ne 1 -or $prepared.participants[0].characterId -ne $pc.id) {
     throw 'Prepare participant did not persist.'
+}
+$renamedInEncounter = (Expect (Send-Json "$campaign/campaigns/$($first.id)/characters/$($pc.id)/name" `
+    'PATCH' @{ name = 'Encounter corrected' } $admin $campaign) 200 'Rename linked NPC').Content | ConvertFrom-Json
+$preparedAfterRename = (Expect (Invoke-WebRequest "$encounterBase/$($encounter.id)" -WebSession $admin `
+    -SkipHttpErrorCheck) 200 'Reload renamed encounter').Content | ConvertFrom-Json
+if ($renamedInEncounter.id -ne $pc.id -or $preparedAfterRename.participants[0].name -ne 'Encounter corrected' `
+    -or $preparedAfterRename.participants[0].id -ne $prepared.participants[0].id `
+    -or $preparedAfterRename.revision -ne $prepared.revision) {
+    throw 'Rename did not update the linked encounter name while preserving participation.'
 }
 $null = Expect (Send-Json "$encounterBase/$($encounter.id)/participants" 'POST' `
     @{ revision = $prepared.revision; characterId = $pc.id } $admin $campaign) `

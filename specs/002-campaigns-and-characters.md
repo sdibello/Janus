@@ -11,7 +11,7 @@ Users need to create campaigns and maintain a list of player characters (PCs) an
 
 ## Scope
 
-Included: creating campaigns, viewing a user's campaigns, and adding, viewing, reclassifying, and removing entries in each campaign's PC and NPC lists. Character renaming, campaign renaming, archiving, and deletion are deferred beyond the current scope.
+Included: creating campaigns, viewing a user's campaigns, and adding, viewing, renaming, reclassifying, and removing entries in each campaign's PC and NPC lists. Campaign renaming, archiving, and deletion are deferred beyond the current scope.
 
 HP tracking is included through [spec 007](007-hit-point-tracking.md) at the encounter level. Campaign character records do not supply HP defaults or carry HP between encounters. Full character sheets, other statistics, game rules, session tracking, shared campaign editing, and campaign deletion are outside this draft. Unconscious and alive adjacent statuses are included under spec 007; other statuses and spell effects are deferred.
 
@@ -29,7 +29,7 @@ HP tracking is included through [spec 007](007-hit-point-tracking.md) at the enc
 
 - R6: The user can add a PC or NPC to a selected campaign with a nonblank name and classification of PC or NPC. Duplicate names are allowed. Each PC/NPC belongs to exactly one campaign and cannot be reused in another campaign. Optional current HP is entered separately for each encounter under spec 007; it is not maintained on the campaign character. No full character sheet is required.
 - R7: The campaign view clearly distinguishes PCs from NPCs, whether displayed as separate lists or as a labeled combined list.
-- R8: The user can maintain the lists by changing a character's PC/NPC classification and removing it. Character names cannot be changed in the current scope. An entry cannot be removed while it is included in any encounter; once it is no longer included in any encounter, it can be removed from the campaign.
+- R8: The user can maintain the lists by editing a character's name, changing its PC/NPC classification, and removing it. A renamed character keeps its identity, classification, and encounter memberships. The new name must be nonblank after trimming; duplicate names remain allowed. An entry cannot be removed while it is included in any encounter; once it is no longer included in any encounter, it can be removed from the campaign. See [decision 0088](../decisions/0088-campaign-character-renaming-and-prepare-badges.md).
 - R9: Editing a character entry updates the existing entry rather than creating a duplicate. Changing its classification moves it to the appropriate list.
 - R10: Removing an entry removes it from that campaign's list. Changes in one campaign must not alter another campaign's lists.
 
@@ -47,6 +47,7 @@ HP tracking is included through [spec 007](007-hit-point-tracking.md) at the enc
 - [ ] The user adds a named PC and a named NPC to a campaign and can distinguish them in the campaign view.
 - [ ] A blank or whitespace-only character name is rejected without adding an entry; duplicate character names are allowed.
 - [ ] Changing a PC to an NPC, or vice versa, updates its classification without duplication.
+- [ ] A PC or NPC can be renamed without replacing its record; the new name appears in the campaign and all linked encounters. Blank names are rejected, duplicate names are allowed, and another campaign's or user's characters cannot be renamed.
 - [ ] Removing an entry makes it disappear from the selected campaign's list only when it is not included in any encounter; a referenced character cannot be removed.
 - [ ] Adding, reclassifying, or removing an entry in one campaign leaves another campaign's lists unchanged.
 - [ ] Campaign and character changes remain present after logout and login.
@@ -55,6 +56,6 @@ HP tracking is included through [spec 007](007-hit-point-tracking.md) at the enc
 
 ## Validation
 
-Walk through campaign creation and the add/reclassify/remove character flow. Test persistence, empty lists, and blank-name validation. Use two campaigns and two user accounts to check campaign isolation and unauthorized direct requests. `tests/campaign-smoke.ps1` now exercises the API with those cases against a disposable SQLite database. A separate disposable-data check inserted an encounter reference and confirmed character removal returns 409. Browser interaction and Fedora validation remain.
+Walk through campaign creation and the add/rename/reclassify/remove character flow. Test persistence, empty lists, and blank-name validation. Use two campaigns and two user accounts to check campaign isolation and unauthorized direct requests. `tests/campaign-smoke.ps1` exercises the API with those cases against a disposable SQLite database. A separate disposable-data check inserted an encounter reference and confirmed character removal returns 409. Browser interaction and Fedora validation remain.
 
 ## Open questions

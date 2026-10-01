@@ -24,6 +24,7 @@ function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null)
 
   useEffect(() => {
     onEncounterOpenChange(encounterId !== null)
@@ -125,6 +126,26 @@ function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (
     } finally { setBusy(false) }
   }
 
+  async function changeName(event: FormEvent<HTMLFormElement>, character: Character) {
+    event.preventDefault()
+    if (!selectedId) return
+    const name = new FormData(event.currentTarget).get('characterName')
+    setBusy(true)
+    setMessage('')
+    try {
+      const response = await fetch(`${api}/${selectedId}/characters/${character.id}/name`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (!response.ok) throw new Error(await responseMessage(response))
+      await loadSelected(selectedId)
+      setEditingCharacterId(null)
+      setMessage('Character name changed.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not change the character name.')
+    } finally { setBusy(false) }
+  }
+
   async function removeCharacter(character: Character) {
     if (!selectedId || !window.confirm(`Remove ${character.name} from this campaign?`)) return
     setBusy(true)
@@ -145,13 +166,27 @@ function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (
       <h4>{title}</h4>
       {entries.length === 0 ? <p>No {title.toLowerCase()} yet.</p> : <ul className="account-list">
         {entries.map((character) => <li key={character.id}>
-          <span>{character.name}</span>
-          <span className="account-actions">
-            <button type="button" disabled={busy} onClick={() => void changeKind(character)}>
-              Make {kind === 'Pc' ? 'NPC' : 'PC'}
-            </button>
-            <button type="button" disabled={busy} onClick={() => void removeCharacter(character)}>Remove</button>
-          </span>
+          {editingCharacterId === character.id ? <form className="character-rename-form"
+            onSubmit={(event) => void changeName(event, character)}>
+            <label htmlFor={`character-name-${character.id}`}>Character name</label>
+            <input id={`character-name-${character.id}`} name="characterName"
+              defaultValue={character.name} required autoFocus />
+            <button type="submit" disabled={busy}>Save name</button>
+            <button type="button" disabled={busy} onClick={() => setEditingCharacterId(null)}>Cancel</button>
+            {message && <span className="character-rename-error" role="status">{message}</span>}
+          </form> : <>
+            <span>{character.name}</span>
+            <span className="account-actions">
+              <button type="button" disabled={busy} onClick={() => {
+                setMessage('')
+                setEditingCharacterId(character.id)
+              }}>Edit name</button>
+              <button type="button" disabled={busy} onClick={() => void changeKind(character)}>
+                Make {kind === 'Pc' ? 'NPC' : 'PC'}
+              </button>
+              <button type="button" disabled={busy} onClick={() => void removeCharacter(character)}>Remove</button>
+            </span>
+          </>}
         </li>)}
       </ul>}
     </div>
@@ -181,7 +216,7 @@ function CampaignWorkspace({ onEncounterOpenChange }: { onEncounterOpenChange: (
         {loading ? <p>Loading campaigns…</p> : campaigns.length === 0 ? <p>No campaigns yet.</p> :
           <ul className="campaign-list">{campaigns.map((campaign) => <li key={campaign.id}>
             <button className={selectedId === campaign.id ? 'selected' : ''} type="button" disabled={busy}
-              onClick={() => { setSelected(null); setSelectedId(campaign.id); setEncounterId(null) }}>
+              onClick={() => { setSelected(null); setSelectedId(campaign.id); setEncounterId(null); setEditingCharacterId(null) }}>
               <strong>{campaign.name}</strong>
               <small>Created {new Date(campaign.createdAtUtc).toLocaleDateString()}</small>
             </button>

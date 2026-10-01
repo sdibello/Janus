@@ -283,6 +283,12 @@ button:hover {
 .campaign-list small { margin-top: 5px; color: var(--muted); font-weight: 400; }
 .character-list { margin-top: 30px; }
 .character-list h4 { margin-bottom: 10px; }
+.character-rename-form { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; width: 100%; }
+.account-card .character-rename-form label { flex: 1 1 180px; margin: 0; }
+.character-rename-form input { flex: 1 1 180px; }
+.account-card .character-rename-form input { width: auto; min-width: 140px; margin: 0; }
+.character-rename-form button { white-space: nowrap; }
+.character-rename-error { flex-basis: 100%; color: #8a3028; font-size: 13px; }
 .encounter-workspace { margin-top: 40px; padding-top: 26px; border-top: 1px solid var(--border); }
 .encounter-page { padding-top: 28px; }
 .encounter-page .encounter-workspace { margin-top: 0; padding-top: 0; border: 0; }
@@ -327,8 +333,7 @@ button:hover {
 .held-list li { padding: 10px 0; border-top: 1px solid var(--border); }
 .held-list li[draggable='true'] { cursor: grab; }
 .held-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.held-row span { color: var(--muted); margin-right: auto; }
-.held-row small { color: var(--muted); }
+.held-row .held-meta { color: var(--muted); margin-right: auto; }
 .prepare-active-section .encounter-participants { list-style: none; padding: 0; margin: 12px 0 0; }
 .prepare-active-section .encounter-participants > li { padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 0; }
 .prepare-active-section .prepare-row { padding: 0; border: 0; background: transparent; }
@@ -351,8 +356,9 @@ button:hover {
 .prepare-row { border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
 .prepare-row.selected { background: #e5f4e8; border-color: #245c4c; }
 .prepare-row-main { display: flex; align-items: center; gap: 8px; }
-.prepare-row-select { flex: 1; display: grid; grid-template-columns: minmax(100px, 2fr) 55px minmax(100px, 1fr) auto; align-items: center; gap: 8px; text-align: left; border: 0; }
-.prepare-row-select span { font-weight: 400; }
+.prepare-row-select { flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; text-align: left; border: 0; }
+.prepare-row-select strong { margin-right: auto; overflow-wrap: anywhere; }
+.prepare-row-select span:not(.participant-kind-icon) { font-weight: 400; }
 .prepare-row .hp-controls { margin: 12px 0; }
 .fight-list { padding: 0; list-style: none; }
 .fight-list > li { position: relative; margin-bottom: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(26, 47, 48, 0.04); }
@@ -439,6 +445,4 @@ footer {
   .account-grid { grid-template-columns: 1fr; }
   .campaign-grid { grid-template-columns: 1fr; }
   .account-list li { align-items: flex-start; flex-direction: column; }
-  .prepare-row-select { grid-template-columns: 1fr auto; }
-  .prepare-row-select span { grid-column: 1 / -1; }
 }

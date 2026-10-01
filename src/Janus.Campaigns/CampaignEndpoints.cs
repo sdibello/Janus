@@ -14,6 +14,7 @@ internal static class CampaignEndpoints
         campaigns.MapPost("/", CreateAsync);
         campaigns.MapGet("/{campaignId:guid}", GetAsync);
         campaigns.MapPost("/{campaignId:guid}/characters", AddCharacterAsync);
+        campaigns.MapPatch("/{campaignId:guid}/characters/{characterId:guid}/name", ChangeNameAsync);
         campaigns.MapPatch("/{campaignId:guid}/characters/{characterId:guid}/kind", ChangeKindAsync);
         campaigns.MapDelete("/{campaignId:guid}/characters/{characterId:guid}", RemoveCharacterAsync);
     }
@@ -109,6 +110,24 @@ internal static class CampaignEndpoints
         return Results.Ok(new { character.Id, character.Name, character.Kind });
     }
 
+    private static async Task<IResult> ChangeNameAsync(
+        Guid campaignId, Guid characterId, CharacterNameRequest request, HttpContext context,
+        CampaignAccessService access, CampaignDataContext data, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        if (!await OwnsCampaignAsync(data, campaignId, session.Profile.UserId, cancellationToken))
+            return Results.NotFound();
+        var character = await data.Characters.SingleOrDefaultAsync(item =>
+            item.Id == characterId && item.CampaignId == campaignId, cancellationToken);
+        if (character is null) return Results.NotFound();
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Results.BadRequest(new { message = "A nonblank character name is required." });
+        character.Name = request.Name.Trim();
+        await data.SaveChangesAsync(cancellationToken);
+        return Results.Ok(new { character.Id, character.Name, character.Kind });
+    }
+
     private static async Task<IResult> RemoveCharacterAsync(
         Guid campaignId, Guid characterId, HttpContext context,
         CampaignAccessService access, CampaignDataContext data, CancellationToken cancellationToken)
@@ -156,5 +175,6 @@ internal static class CampaignEndpoints
 
     private sealed record CampaignNameRequest(string? Name);
     private sealed record CharacterRequest(string? Name, string? Kind);
+    private sealed record CharacterNameRequest(string? Name);
     private sealed record CharacterKindRequest(string? Kind);
 }

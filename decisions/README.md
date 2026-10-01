@@ -41,7 +41,7 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0031](0031-no-back-button.md) | Accepted | No Back/undo-turn control; use set-active to correct who acts next. |
 | [0032](0032-campaign-character-ownership-and-current-values.md) | Accepted | PCs/NPCs belong to one campaign; encounters display current character values rather than snapshots. |
 | [0033](0033-removal-ownership-and-duplicate-names.md) | Accepted | Block removal of referenced characters; restrict management to the creating DM; allow duplicate names. |
-| [0034](0034-no-duplicate-participants-and-deferred-maintenance.md) | Accepted | No repeated PC/NPCs in encounters; multiple mobs are individual entries; defer rename/archive/delete. |
+| [0034](0034-no-duplicate-participants-and-deferred-maintenance.md) | Partially superseded | No repeated PC/NPCs in encounters; multiple mobs are individual entries; 0088 allows PC/NPC renaming. |
 | [0035](0035-hp-edit-damage-and-heal.md) | Accepted | Set HP directly; Damage subtracts, Heal adds; both need current HP; decide status colors in prototyping. |
 | [0036](0036-username-email-and-verification.md) | Accepted | Sign in with username or email; use email for resets and require verification before access. |
 | [0037](0037-invitation-only-registration.md) | Accepted | New users need an invitation to create an account; open registration is disabled. |
@@ -95,3 +95,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0085](0085-non-active-fight-card-actions.md) | Partially superseded | Show direct HP adjustments and actions on non-active Fight cards; 0086 unifies all Fight cards. |
 | [0086](0086-compact-unified-fight-cards.md) | Accepted | Use compact Fight cards with inline current HP and adjustment controls on every card. |
 | [0087](0087-fight-section-headers-and-add-dialog.md) | Accepted | Put Fight help in header icons and open participant addition from the Turn order heading. |
+| [0088](0088-campaign-character-renaming-and-prepare-badges.md) | Accepted | Rename existing campaign PCs/NPCs and reuse Fight type badges in Prepare. |

@@ -286,6 +286,11 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     </form>
   }
 
+  function kindBadge(participant: Participant) {
+    return <span className={`participant-kind-icon ${participant.kind.toLowerCase()}`}
+      title={participant.kind.toUpperCase()}>{participant.kind.toUpperCase()}</span>
+  }
+
   function addParticipantPanel(inDialog: boolean) {
     return <div className={`add-participant${inDialog ? ' add-participant-dialog' : ''}`}>
       <div className="add-participant-heading">
@@ -374,8 +379,8 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               event.dataTransfer.effectAllowed = 'move'
             }}
             onDragEnd={() => { setDraggedId(null); setDropIndex(null) }}>
-            <div className="held-row"><strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
-              <span>Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}</span>
+            <div className="held-row">{kindBadge(participant)}<strong>{participant.name}</strong>
+              <span className="held-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}</span>
               {selected.phase === 'Prepare' && <>
                 <button type="button" disabled={busy}
                   onClick={() => setPrepareSelectedId((id) => id === participant.id ? null : participant.id)}>
@@ -463,7 +468,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               <div className="prepare-row-main">
                 <button type="button" className="prepare-row-select" aria-expanded={prepareSelectedId === participant.id}
                   onClick={() => setPrepareSelectedId((id) => id === participant.id ? null : participant.id)}>
-                  <strong>{participant.name}</strong> <small>{participant.kind.toUpperCase()}</small>
+                  {kindBadge(participant)}<strong>{participant.name}</strong>
                   <span>HP: {participant.currentHp ?? 'Not set'}</span>
                   {participant.status && <span className="hp-status">{participant.status === 'AliveAdjacent' ? 'alive adjacent' : participant.status}</span>}
                 </button>
@@ -477,8 +482,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               {prepareSelectedId === participant.id && hpEditor(participant)}
             </div> : <>
               <div className="fight-tile-heading">
-                <span className={`participant-kind-icon ${participant.kind.toLowerCase()}`}
-                  title={participant.kind.toUpperCase()}>{participant.kind.toUpperCase()}</span>
+                {kindBadge(participant)}
                 <strong>{participant.name}</strong>
                 {selected.phase === 'Fight' && <span className="fight-turn-count">Turn: {participant.turnCount}</span>}
                 {active && <span className="active-label">Active turn</span>}

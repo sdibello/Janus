@@ -10,6 +10,7 @@
 - The add-participant card remains open. Its fields and buttons use the same form styling as the Fight cards.
 - **Add All** adds every campaign PC and NPC absent from this encounter. It does not set HP or disturb existing participants. PCs are appended first, then NPCs, each by name; repeated use adds nothing.
 - Participants appear as rows with an inline Remove button. Selecting a row reveals its optional Current HP editor. Only one row is selected at a time.
+- Active and held Prepare rows show the same small PC, NPC, or Mob badge used in Fight, immediately before the participant name. There is no separate type label beside the name. See [decision 0088](../decisions/0088-campaign-character-renaming-and-prepare-badges.md).
 
 ## Fight
 

@@ -12,6 +12,7 @@ if (!identifier || !password) {
 const suffix = process.env.JANUS_TEST_SUFFIX ?? Date.now().toString(36)
 const campaignName = `Browser campaign ${suffix}`
 const pcName = `Browser PC ${suffix}`
+const pcTypoName = `Browser PC typo ${suffix}`
 const npcName = `Browser NPC ${suffix}`
 const preparationName = `Initiative check ${suffix}`
 const mobName = `Browser mob ${suffix}`
@@ -37,8 +38,13 @@ try {
   await page.getByRole('button', { name: 'Create campaign' }).click()
   await page.getByRole('heading', { name: campaignName, exact: true }).waitFor()
 
-  await page.getByLabel('Character name').fill(pcName)
+  await page.getByLabel('Character name').fill(pcTypoName)
   await page.getByRole('button', { name: 'Add character' }).first().click()
+  const campaignPc = page.locator('.character-list').first().locator('li').first()
+  await campaignPc.getByText(pcTypoName, { exact: true }).waitFor()
+  await campaignPc.getByRole('button', { name: 'Edit name' }).click()
+  await campaignPc.getByLabel('Character name').fill(pcName)
+  await campaignPc.getByRole('button', { name: 'Save name' }).click()
   await page.locator('.character-list').getByText(pcName, { exact: true }).waitFor()
   await page.getByLabel('Character name').fill(npcName)
   await page.getByLabel('Type').selectOption('Npc')
@@ -55,7 +61,12 @@ try {
   const prepareMobForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="mobName"]') })
   await prepareMobForm.getByLabel('Mob name').fill(mobName)
   await prepareMobForm.getByRole('button', { name: 'Add mob' }).click()
-  await page.locator('.encounter-participants > li').filter({ hasText: mobName }).waitFor()
+  const preparedMob = page.locator('.encounter-participants > li').filter({ hasText: mobName })
+  await preparedMob.waitFor()
+  assert.equal(await preparedPc.locator('.participant-kind-icon').textContent(), 'PC')
+  assert.equal(await preparedNpc.locator('.participant-kind-icon').textContent(), 'NPC')
+  assert.equal(await preparedMob.locator('.participant-kind-icon').textContent(), 'MOB')
+  assert.equal(await preparedPc.locator('small').count(), 0)
   assert.equal(await preparedPc.locator('.hp-input-line').count(), 0)
   await preparedPc.locator('.prepare-row-select').click()
   assert.equal(await preparedPc.locator('.hp-input-line > button').textContent(), 'Save')
