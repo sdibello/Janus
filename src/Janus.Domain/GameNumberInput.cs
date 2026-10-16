@@ -29,7 +29,9 @@ public static class GameNumberInput
         if (input.Trim().Length == 0) return true;
         if (!ExactDecimal.TryParse(input, out var value)) return false;
         canonical = value.ToString();
-        return true;
+        if (canonical.Length <= NumericInputLimits.MaxCharacters) return true;
+        canonical = null;
+        return false;
     }
 
     public static bool TryAdjustHp(ExactDecimal previous, ExactDecimal amount, bool heal,

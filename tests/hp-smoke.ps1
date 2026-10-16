@@ -75,6 +75,9 @@ $null = Expect (Send-Json "$base/participants/$($pcEntry.id)/initiative" 'PATCH'
 $null = Expect (Send-Json "$base/participants/$($pcEntry.id)/hp" 'PATCH' `
     @{ revision = $encounter.revision; currentHp = $tooLong } $admin $campaign) `
     400 'Reject oversized HP'
+$null = Expect (Send-Json "$base/participants/$($pcEntry.id)/hp" 'PATCH' `
+    @{ revision = $encounter.revision; currentHp = '.' + ('1' * 4095) } $admin $campaign) `
+    400 'Reject HP whose canonical form exceeds resource budget'
 $null = Expect (Send-Json "$base/participants/$($pcEntry.id)/damage" 'POST' `
     @{ revision = $encounter.revision; amount = '1' } $admin $campaign) 409 'Reject damage without HP'
 $encounter = (Expect (Send-Json "$base/participants" 'POST' `

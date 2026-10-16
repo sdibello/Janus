@@ -58,6 +58,12 @@ Check(GameNumberInput.TryInitiative(new string('9', max), out var largeInitiativ
 Check(!GameNumberInput.TryInitiative(new string('9', max + 1), out _)
     && !GameNumberInput.TryHp(new string('9', max + 1), out _),
     "Oversized encounter numeric input was accepted.");
+Check(!GameNumberInput.TryHp("." + new string('1', max - 1), out _),
+    "HP input whose canonical form exceeds the budget was accepted.");
+Check(GameNumberInput.TryHp("." + new string('1', max - 2), out var canonicalFraction)
+    && canonicalFraction?.Length == max
+    && ExactDecimal.TryParse(canonicalFraction, out _),
+    "HP at the canonical representation budget cannot be read back.");
 Check(ExactDecimal.TryParse("1", out var one)
     && !GameNumberInput.TryAdjustHp(large, one, heal: true, out _)
     && GameNumberInput.TryAdjustHp(large, one, heal: false, out var lower)
