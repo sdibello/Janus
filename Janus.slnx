@@ -5,6 +5,7 @@
     <Project Path="src/Janus.Identity/Janus.Identity.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Janus.EncounterChecks/Janus.EncounterChecks.csproj" />
     <Project Path="tests/Janus.SessionProof/Janus.SessionProof.csproj" />
   </Folder>
 </Solution>

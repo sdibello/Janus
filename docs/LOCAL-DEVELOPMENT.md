@@ -78,6 +78,8 @@ Open <http://localhost:5173> for the campaign page or <http://localhost:5173/por
 
 ## Build checks
 
+The refactor branch proposes a 4096-character resource budget for each initiative or HP input and for the exact result of Damage or Heal. Oversized values are rejected without rounding; see [decision 0089](../decisions/0089-numeric-representation-budget.md). Run `dotnet run --project tests/Janus.EncounterChecks` for focused encounter transition and numeric-boundary checks.
+
 ```sh
 dotnet build Janus.slnx
 npm run build --prefix web

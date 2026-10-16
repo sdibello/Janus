@@ -1,46 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react'
-import { campaignApi } from './runtime'
-
-type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
-type EncounterSummary = { id: string; name: string; phase: 'Prepare' | 'Fight' | 'Finished'; round: number; revision: number }
-type ConditionKind = 'Invisible' | 'Grappled' | 'Prone'
-const conditionKinds: ConditionKind[] = ['Invisible', 'Grappled', 'Prone']
-type Participant = {
-  id: string
-  characterId: string | null
-  name: string
-  kind: 'Pc' | 'Npc' | 'Mob'
-  initiative: string | null
-  currentHp: string | null
-  status: 'Disabled' | 'Dying' | 'AliveAdjacent' | null
-  conditions: { kind: ConditionKind; turnCount: number }[]
-  position: number
-  isHeld: boolean
-  turnCount: number
-}
-type EncounterDetail = EncounterSummary & {
-  campaignId: string
-  activeParticipantId: string | null
-  participants: Participant[]
-}
-
-async function responseMessage(response: Response): Promise<string> {
-  const body = await response.json().catch(() => ({})) as { message?: string }
-  return body.message ?? (response.status === 401 ? 'Your session ended. Reload to sign in again.'
-    : response.status === 403 ? 'Campaign access is no longer available.'
-      : response.status === 404 ? 'This encounter is no longer available.'
-        : 'The request could not be completed.')
-}
+import { useState, type DragEvent, type FormEvent } from 'react'
+import { AddParticipantDialog, ConditionDialog, InitiativeDialog } from './EncounterDialogs'
+import useEncounterData, { type Character, type ConditionKind, type Participant } from './useEncounterData'
 
 function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: {
   campaignId: string; characters: Character[]; selectedId: string | null
   onSelectId: (id: string | null) => void
 }) {
-  const api = `${campaignApi}/campaigns/${campaignId}/encounters`
-  const [encounters, setEncounters] = useState<EncounterSummary[]>([])
-  const [selected, setSelected] = useState<EncounterDetail | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState('')
+  const { api, encounters, selected, setSelected, busy, message, setMessage, mutate, createEncounter } =
+    useEncounterData(campaignId, selectedId, characters, onSelectId)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [initiativeOpen, setInitiativeOpen] = useState(false)
@@ -49,107 +16,6 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [editingHpIds, setEditingHpIds] = useState<string[]>([])
   const [conditionParticipantId, setConditionParticipantId] = useState<string | null>(null)
   const [addParticipantOpen, setAddParticipantOpen] = useState(false)
-  const initiativeDialog = useRef<HTMLDialogElement>(null)
-  const conditionDialog = useRef<HTMLDialogElement>(null)
-  const addParticipantDialog = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    const dialog = addParticipantDialog.current
-    if (!dialog) return
-    if (addParticipantOpen && !dialog.open) dialog.showModal()
-    if (!addParticipantOpen && dialog.open) dialog.close()
-  }, [addParticipantOpen])
-
-  useEffect(() => {
-    const dialog = conditionDialog.current
-    if (!dialog) return
-    if (conditionParticipantId && !dialog.open) dialog.showModal()
-    if (!conditionParticipantId && dialog.open) dialog.close()
-  }, [conditionParticipantId])
-
-  useEffect(() => {
-    const dialog = initiativeDialog.current
-    if (!dialog) return
-    if (initiativeOpen && !dialog.open) dialog.showModal()
-    if (!initiativeOpen && dialog.open) dialog.close()
-  }, [initiativeOpen])
-
-  const loadEncounters = useCallback(async (signal?: AbortSignal) => {
-    const response = await fetch(api, { cache: 'no-store', signal })
-    if (!response.ok) throw new Error(await responseMessage(response))
-    setEncounters(await response.json() as EncounterSummary[])
-  }, [api])
-
-  const loadSelected = useCallback(async (id: string, signal?: AbortSignal) => {
-    const response = await fetch(`${api}/${id}`, { cache: 'no-store', signal })
-    if (!response.ok) throw new Error(await responseMessage(response))
-    setSelected(await response.json() as EncounterDetail)
-  }, [api])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    void Promise.resolve().then(() => loadEncounters(controller.signal)).catch((error: unknown) => {
-      if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : 'Could not load encounters.')
-    })
-    return () => controller.abort()
-  }, [loadEncounters])
-
-  useEffect(() => {
-    if (!selectedId) return
-    const controller = new AbortController()
-    void Promise.resolve().then(() => loadSelected(selectedId, controller.signal)).catch((error: unknown) => {
-      if (!controller.signal.aborted) {
-        setSelected(null)
-        setMessage(error instanceof Error ? error.message : 'Could not load the encounter.')
-      }
-    })
-    return () => controller.abort()
-  }, [selectedId, characters, loadSelected])
-
-  async function mutate(url: string, method: string, body: object, success: string): Promise<boolean> {
-    if (!selected) return false
-    setBusy(true)
-    setMessage('')
-    try {
-      const response = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-      })
-      if (!response.ok) throw new Error(await responseMessage(response))
-      const updated = await response.json() as EncounterDetail
-      setSelected(updated)
-      setEncounters((previous) => previous.map((item) => item.id === updated.id
-        ? { id: updated.id, name: updated.name, phase: updated.phase,
-          round: updated.round, revision: updated.revision } : item))
-      setMessage(success)
-      return true
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not save the encounter.')
-      await loadSelected(selected.id).catch(() => undefined)
-      return false
-    } finally { setBusy(false) }
-  }
-
-  async function createEncounter(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = event.currentTarget
-    const name = String(new FormData(form).get('encounterName') ?? '')
-    setBusy(true)
-    setMessage('')
-    try {
-      const response = await fetch(api, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
-      })
-      if (!response.ok) throw new Error(await responseMessage(response))
-      const created = await response.json() as EncounterSummary
-      form.reset()
-      await loadEncounters()
-      onSelectId(created.id)
-      setMessage('Encounter created in Prepare.')
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not create the encounter.')
-    } finally { setBusy(false) }
-  }
-
   async function addParticipant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected) return
@@ -253,14 +119,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const heldParticipants = selected?.participants.filter((participant) => participant.isHeld) ?? []
   const available = characters.filter((character) =>
     !selected?.participants.some((participant) => participant.characterId === character.id))
-  const reviewedOrder = selected?.phase === 'Prepare' ? [...activeParticipants].sort((left, right) => {
-    if (left.initiative === null) return 1
-    if (right.initiative === null) return -1
-    const first = BigInt(left.initiative)
-    const second = BigInt(right.initiative)
-    return first === second ? left.position - right.position : first > second ? -1 : 1
-  }) : []
-
+  const conditionParticipant = selected?.participants.find((participant) => participant.id === conditionParticipantId)
   function hpEditor(participant: Participant) {
     if (!selected || selected.phase !== 'Prepare') return null
     return <div className="hp-controls">
@@ -541,68 +400,23 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           </li>
         })}</ol>}
       </section>
-      {selected.phase === 'Fight' && addParticipantOpen && <dialog ref={addParticipantDialog}
-        className="add-participant-lightbox" aria-labelledby="add-participant-title"
-        onCancel={(event) => {
-          event.preventDefault()
-          setAddParticipantOpen(false)
-        }}>
+      {selected.phase === 'Fight' && addParticipantOpen && <AddParticipantDialog
+        onClose={() => setAddParticipantOpen(false)}>
         {addParticipantPanel(true)}
-      </dialog>}
-      {initiativeOpen && selected.phase === 'Prepare' && <dialog ref={initiativeDialog}
-        aria-labelledby="initiative-title" onCancel={(event) => {
-          event.preventDefault()
-          setInitiativeOpen(false)
-        }}>
-        <h3 id="initiative-title">Begin Fight: initiative</h3>
-        {message && <p role="status">{message}</p>}
-        {initiativeStep < activeParticipants.length ? <>
-          <p>Participant {initiativeStep + 1} of {activeParticipants.length}</p>
-          <form key={activeParticipants[initiativeStep].id} onSubmit={(event) => void savePromptedInitiative(event)}>
-            <label>Initiative for {activeParticipants[initiativeStep].name}
-              ({activeParticipants[initiativeStep].kind.toUpperCase()})
-              <input name="initiative" required autoFocus inputMode="numeric" pattern="[+-]?[0-9]+"
-                defaultValue={activeParticipants[initiativeStep].initiative ?? ''} />
-            </label>
-            <div className="dialog-actions">
-              <button type="button" disabled={busy} onClick={() => setInitiativeOpen(false)}>Close and keep progress</button>
-              {initiativeStep > 0 && <button type="button" disabled={busy}
-                onClick={() => setInitiativeStep((step) => step - 1)}>Previous</button>}
-              <button type="submit" disabled={busy}>Save and continue</button>
-            </div>
-          </form>
-        </> : <>
-          <p>Review the initial order before starting Fight. Ties keep encounter entry order.</p>
-          <ol>{reviewedOrder.map((participant) => <li key={participant.id}>
-            {participant.name} ({participant.kind.toUpperCase()}) — {participant.initiative ?? 'Missing'}
-          </li>)}</ol>
-          <div className="dialog-actions">
-            <button type="button" disabled={busy} onClick={() => setInitiativeOpen(false)}>Close and keep progress</button>
-            <button type="button" disabled={busy} onClick={() => setInitiativeStep(activeParticipants.length - 1)}>Previous</button>
-            <button type="button" disabled={busy || activeParticipants.some((participant) => participant.initiative === null)}
-              onClick={() => void mutate(`${api}/${selected.id}/fight`, 'POST',
-                { revision: selected.revision }, 'Fight started.').then((saved) => {
-                  if (saved) setInitiativeOpen(false)
-                })}>Confirm and begin Fight</button>
-          </div>
-        </>}
-      </dialog>}
-      {selected.phase === 'Fight' && conditionParticipantId && <dialog ref={conditionDialog}
-        aria-labelledby="condition-title" onCancel={(event) => {
-          event.preventDefault()
-          setConditionParticipantId(null)
-        }}>
-        <h3 id="condition-title">Statuses for {selected.participants.find((item) => item.id === conditionParticipantId)?.name}</h3>
-        <p>Add a status to this participant. Its count starts at 0 and increases only when they use Next.</p>
-        <div className="condition-choices">{conditionKinds.map((kind) => {
-          const participant = selected.participants.find((item) => item.id === conditionParticipantId)
-          if (!participant) return null
-          const applied = participant.conditions.some((condition) => condition.kind === kind)
-          return <button type="button" key={kind} disabled={busy || applied}
-            onClick={() => void setCondition(participant, kind, true)}>{kind}{applied ? ' ✓' : ''}</button>
-        })}</div>
-        <div className="dialog-actions"><button type="button" onClick={() => setConditionParticipantId(null)}>Done</button></div>
-      </dialog>}
+      </AddParticipantDialog>}
+      {initiativeOpen && selected.phase === 'Prepare' && <InitiativeDialog
+        participants={activeParticipants} step={initiativeStep} setStep={setInitiativeStep}
+        message={message} busy={busy} onSave={(event) => void savePromptedInitiative(event)}
+        onClose={() => setInitiativeOpen(false)} onConfirm={() => {
+          void mutate(`${api}/${selected.id}/fight`, 'POST',
+            { revision: selected.revision }, 'Fight started.').then((saved) => {
+              if (saved) setInitiativeOpen(false)
+            })
+        }} />}
+      {selected.phase === 'Fight' && conditionParticipant &&
+        <ConditionDialog participant={conditionParticipant}
+          busy={busy} onClose={() => setConditionParticipantId(null)}
+          onAdd={(kind) => void setCondition(conditionParticipant, kind, true)} />}
     </div>}
   </div>
 }
