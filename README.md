@@ -45,6 +45,38 @@ Open the [access portal](http://localhost:5173/portal.html), verify the first ac
 
 After pulling a version with new database migrations, rerun the relevant `dotnet ef database update` command before starting Janus. For the alpha encounter update, rerun the `CampaignDataContext` command above. It upgrades the existing local database without recreating your account or campaigns. If `Janus__DataDirectory` is set, use the same value for the migration command and the running hosts.
 
+## Run with Docker (local development)
+
+Install Docker with the Compose plugin and use Linux containers. Run these commands from the repository root. Docker builds the frontend and both .NET hosts; you do not need Node.js or the .NET SDK on the host for this path.
+
+```sh
+docker compose build
+docker compose run --rm --no-deps identity --migrate
+docker compose run --rm --no-deps campaigns --migrate
+docker compose run --rm --no-deps identity --setup-admin
+docker compose up -d
+```
+
+The setup command prompts for the first administrator's username, email, and password in an interactive terminal. Start the hosts before opening the verification link. Docker's port forwarding does not satisfy the local inbox endpoint's loopback check, so retrieve the newest verification message for the email address you entered with:
+
+```sh
+docker compose run --rm --no-deps identity --show-local-message admin@example.com
+```
+
+Replace `admin@example.com` with your email address. Open the printed link in your browser, select **Verify email**, then sign in at the [access portal](http://localhost:5186/portal.html). Open the [campaign app](http://localhost:5199/) to create campaigns and encounters. Use the same command to read a new user's verification or password-reset message. Keep these links private.
+
+The two containers share the `janus-data` named volume for SQLite, local signing certificates, and data-protection keys. `docker compose down` stops and removes the containers but keeps that volume; `docker compose up -d` starts them again. After pulling changes with database migrations, stop Janus, rebuild, and run both migration commands above in order before restarting it:
+
+```sh
+docker compose down
+docker compose build
+docker compose run --rm --no-deps identity --migrate
+docker compose run --rm --no-deps campaigns --migrate
+docker compose up -d
+```
+
+The Compose configuration binds ports 5186 and 5199 to your machine's loopback interface. `Janus__IdentityBaseUrl` is the browser-facing identity address; `Janus__IdentityInternalBaseUrl` lets Campaigns contact Identity on the Compose network. This configuration uses Development-only local certificates and a test inbox. Production hosting still needs certificate and email-delivery configuration, plus a deployment database decision. See [decision 0090](decisions/0090-local-docker-compose.md).
+
 The access portal supports invitation-based registration, email verification, sign-in, password management, and product access administration. The campaign page uses a separate shared-identity session and supports campaigns, PC/NPC lists, collapsed encounter preparation, a Fight-start initiative prompt, active-first Fight tiles, and encounter-specific HP. New requirements and decisions use the [spec template](specs/TEMPLATE.md) and [decision template](decisions/TEMPLATE.md).
 
 The frontend uses React with TypeScript; the backend API uses ASP.NET Core with C#. See [decision 0063](decisions/0063-react-typescript-and-aspnet-core.md).

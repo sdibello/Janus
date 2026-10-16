@@ -264,6 +264,32 @@ public static class AccountEndpoints
         Console.WriteLine("Administrator created. Open the local test inbox to verify the email, then sign in.");
     }
 
+    public static async Task ShowLocalMessageAsync(WebApplication app, string[] args)
+    {
+        if (!app.Environment.IsDevelopment())
+            throw new InvalidOperationException("The local message command is available only in Development.");
+        var index = Array.IndexOf(args, "--show-local-message");
+        if (index < 0 || index + 1 >= args.Length || string.IsNullOrWhiteSpace(args[index + 1]))
+            throw new InvalidOperationException("Provide the recipient email after --show-local-message.");
+
+        await using var scope = app.Services.CreateAsyncScope();
+        var data = scope.ServiceProvider.GetRequiredService<IdentityDataContext>();
+        var recipient = args[index + 1];
+        var message = await data.LocalMailMessages.AsNoTracking()
+            .Where(item => item.Recipient == recipient)
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .Select(item => new { item.Subject, item.ActionUrl })
+            .FirstOrDefaultAsync();
+        if (message is null)
+        {
+            Console.WriteLine($"No local message found for {recipient}.");
+            return;
+        }
+
+        Console.WriteLine(message.Subject);
+        Console.WriteLine(message.ActionUrl);
+    }
+
     private static async Task CaptureVerificationAsync(
         IdentityDataContext data, UserManager<JanusUser> users, JanusUser user, IConfiguration configuration)
     {

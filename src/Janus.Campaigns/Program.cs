@@ -21,6 +21,7 @@ Directory.CreateDirectory(dataDirectory);
 var databasePath = Path.Combine(dataDirectory, "janus.db");
 var connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath }.ToString();
 var identityBaseUrl = builder.Configuration["Janus:IdentityBaseUrl"] ?? "http://localhost:5186";
+var identityInternalBaseUrl = builder.Configuration["Janus:IdentityInternalBaseUrl"] ?? identityBaseUrl;
 var webBaseUrl = builder.Configuration["Janus:WebBaseUrl"] ?? "http://localhost:5173";
 const string campaignCookie = CampaignAccessService.CookieScheme;
 
@@ -61,6 +62,9 @@ builder.Services.AddAuthentication(options =>
     .AddOpenIdConnect(options =>
     {
         options.Authority = identityBaseUrl;
+        if (identityInternalBaseUrl != identityBaseUrl)
+            options.BackchannelHttpHandler = new IdentityBackchannelHandler(
+                new Uri(identityBaseUrl), new Uri(identityInternalBaseUrl));
         options.ClientId = "janus-campaigns";
         options.ResponseType = OpenIdConnectResponseType.Code;
         options.ResponseMode = OpenIdConnectResponseMode.Query;
@@ -96,7 +100,11 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         };
     });
-builder.Services.AddHttpClient("identity-access", client => client.BaseAddress = new Uri(identityBaseUrl));
+builder.Services.AddHttpClient("identity-access", client =>
+{
+    client.BaseAddress = new Uri(identityInternalBaseUrl);
+    client.DefaultRequestHeaders.Host = new Uri(identityBaseUrl).Authority;
+});
 builder.Services.AddScoped<CampaignAccessService>();
 builder.Services.AddAuthorization();
 var identityOrigin = new Uri(identityBaseUrl).GetLeftPart(UriPartial.Authority);
@@ -104,6 +112,12 @@ builder.Services.AddCors(options => options.AddPolicy("identity-browser", policy
     .WithOrigins(identityOrigin).AllowAnyHeader().WithMethods("GET")));
 
 var app = builder.Build();
+if (args.Contains("--migrate", StringComparer.Ordinal))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<CampaignDataContext>().Database.MigrateAsync();
+    return;
+}
 app.UseRouting();
 app.UseCors();
 app.UseDefaultFiles();

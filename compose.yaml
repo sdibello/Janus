@@ -1,0 +1,35 @@
+services:
+  identity:
+    build:
+      context: .
+      target: identity
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Janus__DataDirectory: /data
+      Janus__PortalBaseUrl: http://localhost:5186
+      Janus__CampaignBaseUrl: http://localhost:5199
+      Janus__CampaignClientRedirectUri: http://localhost:5199/signin-oidc
+    ports:
+      - "127.0.0.1:5186:5186"
+    volumes:
+      - janus-data:/data
+
+  campaigns:
+    build:
+      context: .
+      target: campaigns
+    depends_on:
+      - identity
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Janus__DataDirectory: /data
+      Janus__IdentityBaseUrl: http://localhost:5186
+      Janus__IdentityInternalBaseUrl: http://identity:5186
+      Janus__WebBaseUrl: http://localhost:5199
+    ports:
+      - "127.0.0.1:5199:5199"
+    volumes:
+      - janus-data:/data
+
+volumes:
+  janus-data:
