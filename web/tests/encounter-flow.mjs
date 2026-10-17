@@ -17,11 +17,19 @@ const npcName = `Browser NPC ${suffix}`
 const preparationName = `Initiative check ${suffix}`
 const mobName = `Browser mob ${suffix}`
 const secondMobName = `Late mob ${suffix}`
-const encounterName = `Browser encounter ${suffix}`
+let encounterName = `Browser encounter ${suffix}`
 const browser = await chromium.launch({
   channel: process.env.JANUS_TEST_BROWSER_CHANNEL ?? 'chrome',
   headless: true,
 })
+
+async function renameEncounter(page, submittedName, expectedName) {
+  const detail = page.locator('.encounter-detail')
+  await detail.getByRole('button', { name: 'Edit name' }).click()
+  await detail.getByLabel('Encounter name').fill(submittedName)
+  await detail.getByRole('button', { name: 'Save name' }).click()
+  await detail.getByRole('heading', { name: expectedName, exact: true }).waitFor()
+}
 
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 3200 } })
@@ -101,6 +109,19 @@ try {
   await page.getByLabel('Encounter name').fill(encounterName)
   await page.getByRole('button', { name: 'Create encounter' }).click()
   await page.locator('.encounter-detail').getByRole('heading', { name: encounterName }).waitFor()
+  const initialEncounterName = encounterName
+  await page.locator('.encounter-detail').getByRole('button', { name: 'Edit name' }).click()
+  await page.getByLabel('Encounter name').fill('Unsaved encounter name')
+  await page.locator('.encounter-detail').getByRole('button', { name: 'Cancel' }).click()
+  await page.locator('.encounter-detail').getByRole('heading', { name: initialEncounterName, exact: true }).waitFor()
+  await page.locator('.encounter-detail').getByRole('button', { name: 'Edit name' }).click()
+  await page.getByLabel('Encounter name').fill('   ')
+  await page.locator('.encounter-detail').getByRole('button', { name: 'Save name' }).click()
+  await page.getByRole('status').getByText('Encounter name is required.').waitFor()
+  encounterName = `Prepared encounter ${suffix}`
+  await page.getByLabel('Encounter name').fill(`  ${encounterName}  `)
+  await page.locator('.encounter-detail').getByRole('button', { name: 'Save name' }).click()
+  await page.locator('.encounter-detail').getByRole('heading', { name: encounterName, exact: true }).waitFor()
 
   const characterForm = page.locator('.encounter-detail form').filter({ has: page.locator('[name="characterId"]') })
   await characterForm.locator('[name="characterId"]').selectOption({ label: `${pcName} (PC)` })
@@ -124,6 +145,9 @@ try {
   await prompt.getByRole('button', { name: 'Save and continue' }).click()
   await prompt.getByRole('button', { name: 'Confirm and begin Fight' }).click()
   await pc.locator('.active-label').waitFor()
+  const fightEncounterName = `Fight encounter ${suffix}`
+  await renameEncounter(page, fightEncounterName, fightEncounterName)
+  encounterName = fightEncounterName
   assert.equal(await page.locator('.encounter-detail > .add-participant').count(), 0)
   assert.equal(await page.getByRole('heading', { name: 'Turn order' }).locator('..')
     .getByRole('button', { name: 'End encounter' }).count(), 1)
@@ -288,18 +312,60 @@ try {
     await page.getByRole('button', { name: 'End encounter' }).click()
     await page.locator('.encounter-detail').getByText('Phase: Finished.', { exact: false }).waitFor()
     assert.equal(await page.locator('.encounter-detail').getByRole('button', { name: 'Save', exact: true }).count(), 0)
+    assert.equal(await page.locator('.encounter-detail').getByRole('button', { name: 'Edit name' }).count(), 1)
+    const finishedEncounterName = `Finished encounter ${suffix}`
+    await renameEncounter(page, finishedEncounterName, finishedEncounterName)
+    encounterName = finishedEncounterName
 
     await page.reload()
     await page.locator('.campaign-list button').filter({ hasText: campaignName }).click()
     await page.locator('.finished-group summary').click()
+    const sourceDetailResponse = page.waitForResponse(response =>
+      response.request().method() === 'GET' &&
+      /\/campaigns\/[^/]+\/encounters\/[^/]+$/.test(new URL(response.url()).pathname))
     await page.locator('.encounter-list button').filter({ hasText: encounterName }).click()
+    const sourceDetail = await sourceDetailResponse
+    const source = await sourceDetail.json()
     await page.locator('.encounter-detail').getByText('Phase: Finished.', { exact: false }).waitFor()
     await page.locator('.encounter-participants > li').filter({ hasText: pcName })
       .locator('.dying-label').waitFor()
     assert.equal(await page.locator('.encounter-participants > li').count(), 3)
     await page.setViewportSize({ width: 640, height: 900 })
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth), false)
-    console.log('Campaign, Fight, HP, drag-and-drop, Skip, insertion, and finished reload passed.')
+
+    const duplicateDetailResponse = page.waitForResponse(response =>
+      response.request().method() === 'GET' &&
+      /\/campaigns\/[^/]+\/encounters\/[^/]+$/.test(new URL(response.url()).pathname))
+    await page.getByRole('button', { name: `Duplicate ${encounterName}` }).click()
+    const duplicateDetail = await duplicateDetailResponse
+    const copied = await duplicateDetail.json()
+    await page.locator('.encounter-detail').getByRole('heading', { name: `Copy of ${encounterName}` }).waitFor()
+    await page.locator('.encounter-detail').getByText('Phase: Prepare.', { exact: false }).waitFor()
+    assert.equal(copied.phase, 'Prepare')
+    assert.equal(copied.round, 1)
+    assert.equal(copied.activeParticipantId, null)
+    assert.equal(copied.participants.length, 3)
+    const roster = (participants) => participants.map(participant =>
+      participant.characterId ? `character:${participant.characterId}` : `mob:${participant.name}`).sort()
+    assert.deepEqual(roster(copied.participants), roster(source.participants))
+    assert.equal(copied.participants.every(participant =>
+      !source.participants.some(sourceParticipant => sourceParticipant.id === participant.id)), true)
+    assert.equal(copied.participants.every((participant, index) =>
+      participant.initiative === null && participant.currentHp === null && participant.status === null &&
+      participant.position === index && !participant.isHeld && participant.turnCount === 0 &&
+      participant.conditions.length === 0), true)
+    const renamedCopy = `Renamed copy ${suffix}`
+    await renameEncounter(page, renamedCopy, renamedCopy)
+    await page.getByRole('button', { name: 'Back to campaign' }).click()
+    await page.locator('.encounter-list-actions').filter({ hasText: renamedCopy })
+      .getByRole('button', { name: `${renamedCopy} Prepare` }).waitFor()
+    await page.locator('.finished-group summary').click()
+    await page.locator('.encounter-list-actions').filter({ hasText: encounterName })
+      .getByRole('button', { name: new RegExp(`^${encounterName} Finished$`) }).click()
+    await page.locator('.encounter-detail').getByText('Phase: Finished.', { exact: false }).waitFor()
+    await page.locator('.encounter-participants > li').filter({ hasText: pcName })
+      .locator('.dying-label').waitFor()
+    console.log('Campaign, encounter rename/duplication, Fight, HP, drag-and-drop, Skip, insertion, and finished reload passed.')
   }
 } finally {
   await browser.close()

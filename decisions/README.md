@@ -96,3 +96,7 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0086](0086-compact-unified-fight-cards.md) | Accepted | Use compact Fight cards with inline current HP and adjustment controls on every card. |
 | [0087](0087-fight-section-headers-and-add-dialog.md) | Accepted | Put Fight help in header icons and open participant addition from the Turn order heading. |
 | [0088](0088-campaign-character-renaming-and-prepare-badges.md) | Accepted | Rename existing campaign PCs/NPCs and reuse Fight type badges in Prepare. |
+| [0089](0089-numeric-representation-budget.md) | Proposed on refactor branch | Bound exact initiative and HP representations to keep parsing and arithmetic work predictable. |
+| [0090](0090-local-docker-compose.md) | Accepted for local development | Run Identity and Campaigns in separate Compose containers with shared local data and explicit migrations. |
+| [0091](0091-duplicate-encounters-from-campaign-list.md) | Accepted | Duplicate any encounter from the campaign list as a fresh Prepare encounter with participant membership only. |
+| [0092](0092-rename-encounters-in-any-phase.md) | Accepted | Allow encounter-name edits in every phase while keeping Finished encounter state otherwise read-only. |

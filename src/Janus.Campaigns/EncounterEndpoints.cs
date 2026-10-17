@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Numerics;
 using Janus.Campaigns.Persistence;
 using Janus.Domain;
 using Microsoft.Data.Sqlite;
@@ -15,6 +13,8 @@ internal static class EncounterEndpoints
         encounters.MapGet("/", ListAsync);
         encounters.MapPost("/", CreateAsync);
         encounters.MapGet("/{encounterId:guid}", GetAsync);
+        encounters.MapPost("/{encounterId:guid}/duplicate", DuplicateAsync);
+        encounters.MapPatch("/{encounterId:guid}/name", ChangeNameAsync);
         encounters.MapPost("/{encounterId:guid}/participants", AddParticipantAsync);
         encounters.MapPost("/{encounterId:guid}/participants/add-all", AddAllParticipantsAsync);
         encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/conditions", AddConditionAsync);
@@ -82,6 +82,68 @@ internal static class EncounterEndpoints
             : Results.Ok(await DetailAsync(data, encounter, cancellationToken));
     }
 
+    private static async Task<IResult> DuplicateAsync(
+        Guid campaignId, Guid encounterId, HttpContext context, CampaignAccessService access,
+        CampaignDataContext data, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var source = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .AsNoTracking().SingleOrDefaultAsync(cancellationToken);
+        if (source is null) return Results.NotFound();
+
+        var characters = await data.Characters.AsNoTracking()
+            .Where(item => item.CampaignId == campaignId).ToDictionaryAsync(item => item.Id, cancellationToken);
+        var sourceParticipants = await data.Participants.AsNoTracking()
+            .Where(item => item.EncounterId == encounterId).ToListAsync(cancellationToken);
+        var duplicate = new Encounter
+        {
+            Id = Guid.NewGuid(), CampaignId = campaignId, Name = $"Copy of {source.Name}",
+            Phase = EncounterPhase.Prepare, Round = 1,
+        };
+        data.Encounters.Add(duplicate);
+        var orderedParticipants = sourceParticipants
+            .OrderBy(item => item.CharacterId is { } characterId ? characters[characterId].Name : item.MobName ?? "",
+                StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.CharacterId)
+            .ThenBy(item => item.Id);
+        var position = 0;
+        foreach (var sourceParticipant in orderedParticipants)
+        {
+            data.Participants.Add(new EncounterParticipant
+            {
+                Id = Guid.NewGuid(), EncounterId = duplicate.Id, CharacterId = sourceParticipant.CharacterId,
+                MobName = sourceParticipant.MobName, Position = position++,
+            });
+        }
+        await data.SaveChangesAsync(cancellationToken);
+        return Results.Created($"/campaigns/{campaignId}/encounters/{duplicate.Id}",
+            new { duplicate.Id, duplicate.Name, duplicate.Phase, duplicate.Round, duplicate.Revision });
+    }
+
+    private static async Task<IResult> ChangeNameAsync(
+        Guid campaignId, Guid encounterId, EncounterNameUpdateRequest request, HttpContext context,
+        CampaignAccessService access, CampaignDataContext data, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (request.Revision != encounter.Revision) return Stale();
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Results.BadRequest(new { message = "Encounter name is required." });
+        var name = request.Name.Trim();
+        if (encounter.Name != name)
+        {
+            encounter.Name = name;
+            encounter.Revision++;
+            try { await data.SaveChangesAsync(cancellationToken); }
+            catch (DbUpdateConcurrencyException) { return Stale(); }
+        }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
     private static async Task<IResult> AddParticipantAsync(
         Guid campaignId, Guid encounterId, AddParticipantRequest request, HttpContext context,
         CampaignAccessService access, CampaignDataContext data, CancellationToken cancellationToken)
@@ -106,10 +168,10 @@ internal static class EncounterEndpoints
                     && item.CharacterId == request.CharacterId, cancellationToken))
                 return Results.Conflict(new { message = "This character is already in the encounter." });
         }
-        if (!TryInitiative(request.Initiative, out var initiative))
-            return Results.BadRequest(new { message = "Initiative must be a whole number." });
-        if (!TryHp(request.CurrentHp, out var currentHp))
-            return Results.BadRequest(new { message = "HP must be a finite decimal number." });
+        if (!GameNumberInput.TryInitiative(request.Initiative, out var initiative))
+            return Results.BadRequest(new { message = "Initiative must be a whole number of at most 4096 characters." });
+        if (!GameNumberInput.TryHp(request.CurrentHp, out var currentHp))
+            return Results.BadRequest(new { message = "HP must be a finite decimal number of at most 4096 characters." });
         var participant = new EncounterParticipant
         {
             Id = Guid.NewGuid(), EncounterId = encounterId, CharacterId = request.CharacterId,
@@ -268,8 +330,8 @@ internal static class EncounterEndpoints
         var participant = await data.Participants.SingleOrDefaultAsync(item =>
             item.Id == participantId && item.EncounterId == encounterId, cancellationToken);
         if (participant is null) return Results.NotFound();
-        if (!TryInitiative(request.Initiative, out var initiative))
-            return Results.BadRequest(new { message = "Initiative must be a whole number." });
+        if (!GameNumberInput.TryInitiative(request.Initiative, out var initiative))
+            return Results.BadRequest(new { message = "Initiative must be a whole number of at most 4096 characters." });
         if (participant.Initiative != initiative)
         {
             participant.Initiative = initiative;
@@ -321,14 +383,9 @@ internal static class EncounterEndpoints
             return Results.BadRequest(new { message = "Add a participant before starting Fight." });
         if (activeParticipants.Any(item => item.Initiative is null))
             return Results.BadRequest(new { message = "Every participant needs initiative before Fight." });
-        var ordered = OrderForPrepare(activeParticipants).Concat(participants.Where(item => item.IsHeld)
-            .OrderBy(item => item.Position)).ToList();
+        var ordered = EncounterStateTransitions.InitialOrder(participants);
         await StagePositionsAsync(data, participants, cancellationToken);
-        for (var index = 0; index < ordered.Count; index++) ordered[index].Position = index;
-        foreach (var participant in participants) participant.CompletedThisRound = false;
-        encounter.Phase = EncounterPhase.Fight;
-        encounter.ActiveParticipantId = ordered[0].Id;
-        encounter.Round = 1;
+        EncounterStateTransitions.BeginFight(encounter, participants, ordered);
         encounter.Revision++;
         try
         {
@@ -366,19 +423,8 @@ internal static class EncounterEndpoints
             .OrderBy(item => item.Position).ToListAsync(cancellationToken);
         var active = participants.SingleOrDefault(item => item.Id == encounter.ActiveParticipantId);
         if (active is null) return InvalidFight();
-        var advance = EncounterFlow.Advance(participants.Select(item => item.Id).ToArray(), active.Id);
         await StagePositionsAsync(data, participants, cancellationToken);
-        var byId = participants.ToDictionary(item => item.Id);
-        for (var index = 0; index < advance.OrderedIds.Length; index++)
-            byId[advance.OrderedIds[index]].Position = index;
-        encounter.ActiveParticipantId = advance.NextParticipantId;
-        if (!skip) active.TurnCount++;
-        active.CompletedThisRound = true;
-        if (participants.All(item => item.CompletedThisRound))
-        {
-            encounter.Round++;
-            foreach (var participant in participants) participant.CompletedThisRound = false;
-        }
+        EncounterStateTransitions.Advance(encounter, participants, active, skip);
         encounter.Revision++;
         try
         {
@@ -411,9 +457,7 @@ internal static class EncounterEndpoints
         if (oldOrder.SequenceEqual(request.OrderedIds))
             return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
         await StagePositionsAsync(data, participants, cancellationToken);
-        var byId = participants.ToDictionary(item => item.Id);
-        for (var index = 0; index < request.OrderedIds.Length; index++)
-            byId[request.OrderedIds[index]].Position = index;
+        EncounterStateTransitions.Reorder(participants, request.OrderedIds);
         encounter.Revision++;
         try
         {
@@ -442,17 +486,8 @@ internal static class EncounterEndpoints
         var participant = participants.SingleOrDefault(item => item.Id == participantId);
         if (participant is null) return Results.NotFound();
         if (participant.IsHeld) return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
-        var active = participants.Where(item => !item.IsHeld && item.Id != participantId).ToList();
-        var held = participants.Where(item => item.IsHeld).Append(participant).ToList();
-        var successorId = active.FirstOrDefault(item => item.Position > participant.Position)?.Id
-            ?? active.FirstOrDefault()?.Id;
         await StagePositionsAsync(data, participants, cancellationToken);
-        participant.IsHeld = true;
-        participant.CompletedThisRound = false;
-        var ordered = active.Concat(held).ToArray();
-        for (var index = 0; index < ordered.Length; index++) ordered[index].Position = index;
-        if (encounter.ActiveParticipantId == participantId)
-            encounter.ActiveParticipantId = successorId;
+        EncounterStateTransitions.Hold(encounter, participants, participant);
         encounter.Revision++;
         try
         {
@@ -491,15 +526,8 @@ internal static class EncounterEndpoints
         if (request.TargetIndex < 0 || request.TargetIndex > active.Count
             || (encounter.Phase == EncounterPhase.Fight && active.Count > 0 && request.TargetIndex == 0))
             return Results.BadRequest(new { message = "Choose a valid position in the active list." });
-        var held = participants.Where(item => item.IsHeld && item.Id != participantId).ToList();
         await StagePositionsAsync(data, participants, cancellationToken);
-        participant.IsHeld = false;
-        participant.CompletedThisRound = false;
-        active.Insert(request.TargetIndex, participant);
-        var ordered = active.Concat(held).ToArray();
-        for (var index = 0; index < ordered.Length; index++) ordered[index].Position = index;
-        if (encounter.Phase == EncounterPhase.Fight && encounter.ActiveParticipantId is null)
-            encounter.ActiveParticipantId = participant.Id;
+        EncounterStateTransitions.Release(encounter, participants, participant, request.TargetIndex);
         encounter.Revision++;
         try
         {
@@ -568,8 +596,8 @@ internal static class EncounterEndpoints
         var participant = await data.Participants.SingleOrDefaultAsync(item =>
             item.Id == participantId && item.EncounterId == encounterId, cancellationToken);
         if (participant is null) return Results.NotFound();
-        if (!TryHp(request.CurrentHp, out var currentHp))
-            return Results.BadRequest(new { message = "HP must be a finite decimal number." });
+        if (!GameNumberInput.TryHp(request.CurrentHp, out var currentHp))
+            return Results.BadRequest(new { message = "HP must be a finite decimal number of at most 4096 characters." });
         if (participant.CurrentHp != currentHp)
         {
             participant.CurrentHp = currentHp;
@@ -612,12 +640,13 @@ internal static class EncounterEndpoints
         if (participant.CurrentHp is null)
             return Results.Conflict(new { message = "Set current HP before using Damage or Heal." });
         if (!ExactDecimal.TryParse(request.Amount, out var amount))
-            return Results.BadRequest(new { message = "Enter a finite decimal amount." });
+            return Results.BadRequest(new { message = "Enter a finite decimal amount of at most 4096 characters." });
         if (!ExactDecimal.TryParse(participant.CurrentHp, out var previous)) return InvalidHp();
-        var updated = heal ? previous.Add(amount) : previous.Subtract(amount);
-        if (participant.CurrentHp != updated.ToString())
+        if (!GameNumberInput.TryAdjustHp(previous, amount, heal, out var canonical))
+            return Results.BadRequest(new { message = "The resulting HP needs too many digits to process." });
+        if (participant.CurrentHp != canonical)
         {
-            participant.CurrentHp = updated.ToString();
+            participant.CurrentHp = canonical;
             encounter.Revision++;
             try { await data.SaveChangesAsync(cancellationToken); }
             catch (DbUpdateConcurrencyException) { return Stale(); }
@@ -670,35 +699,6 @@ internal static class EncounterEndpoints
         };
     }
 
-    private static IEnumerable<EncounterParticipant> OrderForPrepare(IEnumerable<EncounterParticipant> items) =>
-        items.OrderBy(item => item.Initiative is null)
-            .ThenByDescending(item => item.Initiative is null ? BigInteger.Zero
-                : BigInteger.Parse(item.Initiative, CultureInfo.InvariantCulture))
-            .ThenBy(item => item.Position);
-
-    private static bool TryInitiative(string? input, out string? canonical)
-    {
-        canonical = null;
-        if (input is null || input.Trim().Length == 0) return true;
-        var trimmed = input.Trim();
-        if (trimmed.AsSpan().IndexOfAnyExceptInRange('0', '9') >= 0
-            && !(trimmed.Length > 1 && (trimmed[0] == '+' || trimmed[0] == '-')
-                && trimmed.AsSpan(1).IndexOfAnyExceptInRange('0', '9') < 0)) return false;
-        if (!BigInteger.TryParse(trimmed, NumberStyles.AllowLeadingSign,
-                CultureInfo.InvariantCulture, out var value)) return false;
-        canonical = value.ToString(CultureInfo.InvariantCulture);
-        return true;
-    }
-
-    private static bool TryHp(string? input, out string? canonical)
-    {
-        canonical = null;
-        if (string.IsNullOrWhiteSpace(input)) return true;
-        if (!ExactDecimal.TryParse(input, out var value)) return false;
-        canonical = value.ToString();
-        return true;
-    }
-
     private static IQueryable<Encounter> OwnedEncounter(
         CampaignDataContext data, Guid campaignId, Guid encounterId, string userId) =>
         data.Encounters.Where(item => item.Id == encounterId && item.CampaignId == campaignId
@@ -744,6 +744,7 @@ internal static class EncounterEndpoints
     });
 
     private sealed record EncounterNameRequest(string? Name);
+    private sealed record EncounterNameUpdateRequest(long Revision, string? Name);
     private sealed record AddParticipantRequest(long Revision, Guid? CharacterId, string? MobName,
         string? Initiative, string? CurrentHp, bool IsHeld = false);
     private sealed record InitiativeRequest(long Revision, string? Initiative);

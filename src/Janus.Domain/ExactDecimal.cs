@@ -29,7 +29,8 @@ public readonly record struct ExactDecimal : IComparable<ExactDecimal>
     public static bool TryParse(string? input, out ExactDecimal value)
     {
         value = default;
-        if (string.IsNullOrWhiteSpace(input)) return false;
+        if (input is null || input.Length > NumericInputLimits.MaxCharacters
+            || string.IsNullOrWhiteSpace(input)) return false;
         var text = input.Trim();
         var start = text[0] is '+' or '-' ? 1 : 0;
         if (start == text.Length) return false;

@@ -68,6 +68,16 @@ $encounter = (Expect (Send-Json "$base/participants" 'POST' `
     @{ revision = $encounter.revision; characterId = $pc.id; initiative = '18' } $admin $campaign) `
     200 'Add PC without HP').Content | ConvertFrom-Json
 $pcEntry = @($encounter.participants | Where-Object { $_.characterId -eq $pc.id })[0]
+$tooLong = '9' * 4097
+$null = Expect (Send-Json "$base/participants/$($pcEntry.id)/initiative" 'PATCH' `
+    @{ revision = $encounter.revision; initiative = $tooLong } $admin $campaign) `
+    400 'Reject oversized initiative'
+$null = Expect (Send-Json "$base/participants/$($pcEntry.id)/hp" 'PATCH' `
+    @{ revision = $encounter.revision; currentHp = $tooLong } $admin $campaign) `
+    400 'Reject oversized HP'
+$null = Expect (Send-Json "$base/participants/$($pcEntry.id)/hp" 'PATCH' `
+    @{ revision = $encounter.revision; currentHp = '.' + ('1' * 4095) } $admin $campaign) `
+    400 'Reject HP whose canonical form exceeds resource budget'
 $null = Expect (Send-Json "$base/participants/$($pcEntry.id)/damage" 'POST' `
     @{ revision = $encounter.revision; amount = '1' } $admin $campaign) 409 'Reject damage without HP'
 $encounter = (Expect (Send-Json "$base/participants" 'POST' `
@@ -88,6 +98,13 @@ $otherMob = @($encounter.participants | Where-Object { $_.kind -eq 'Mob' -and $_
 if ($otherMob.currentHp -ne $null) { throw 'Same-name mob inherited HP.' }
 
 $big = '999999999999999999999999.05'
+$maxHp = '9' * 4096
+$encounter = (Expect (Send-Json "$base/participants/$($pcEntry.id)/hp" 'PATCH' `
+    @{ revision = $encounter.revision; currentHp = $maxHp } $admin $campaign) `
+    200 'Accept HP at resource budget').Content | ConvertFrom-Json
+$null = Expect (Send-Json "$base/participants/$($pcEntry.id)/heal" 'POST' `
+    @{ revision = $encounter.revision; amount = '1' } $admin $campaign) `
+    400 'Reject HP result above resource budget'
 $encounter = (Expect (Send-Json "$base/participants/$($pcEntry.id)/hp" 'PATCH' `
     @{ revision = $encounter.revision; currentHp = $big } $admin $campaign) `
     200 'Set large fractional HP').Content | ConvertFrom-Json

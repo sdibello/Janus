@@ -141,9 +141,22 @@ builder.Services.Configure<OpenIddictServerOptions>(options =>
 
 var app = builder.Build();
 
+if (args.Contains("--migrate", StringComparer.Ordinal))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<IdentityDataContext>().Database.MigrateAsync();
+    return;
+}
+
 if (args.Contains("--setup-admin", StringComparer.Ordinal))
 {
     await AccountEndpoints.SetupAdministratorAsync(app);
+    return;
+}
+
+if (args.Contains("--show-local-message", StringComparer.Ordinal))
+{
+    await AccountEndpoints.ShowLocalMessageAsync(app, args);
     return;
 }
 
