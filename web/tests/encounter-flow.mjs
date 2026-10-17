@@ -16,7 +16,7 @@ const pcTypoName = `Browser PC typo ${suffix}`
 const npcName = `Browser NPC ${suffix}`
 const preparationName = `Initiative check ${suffix}`
 const mobName = `Browser mob ${suffix}`
-const secondMobName = `Late mob ${suffix}`
+const secondMobName = `Late mob with a much longer participant name ${suffix}`
 let encounterName = `Browser encounter ${suffix}`
 const browser = await chromium.launch({
   channel: process.env.JANUS_TEST_BROWSER_CHANNEL ?? 'chrome',
@@ -29,6 +29,41 @@ async function renameEncounter(page, submittedName, expectedName) {
   await detail.getByLabel('Encounter name').fill(submittedName)
   await detail.getByRole('button', { name: 'Save name' }).click()
   await detail.getByRole('heading', { name: expectedName, exact: true }).waitFor()
+}
+
+async function assertInactiveColumns(rows) {
+  const layouts = []
+  for (const row of rows) {
+    const summary = await row.locator('.fight-participant-summary').boundingBox()
+    const hp = await row.locator('.fight-hp-row').boundingBox()
+    const actions = await row.locator('.condition-actions').boundingBox()
+    const adjustment = await row.locator('.quick-hp-form').boundingBox()
+    const damage = await row.getByRole('button', { name: 'Damage', exact: true }).boundingBox()
+    const heal = await row.getByRole('button', { name: 'Heal', exact: true }).boundingBox()
+    assert.ok(summary && hp && actions && adjustment && damage && heal, 'All three columns and HP controls must be visible')
+    assert.ok(summary.x + summary.width <= hp.x + 1, 'Name and turns must precede HP without overlap')
+    assert.ok(hp.x + hp.width <= actions.x + 1, 'HP must precede participant actions without overlap')
+    assert.equal(await row.getByRole('button', { name: 'Set active', exact: true }).isEnabled(), true)
+    assert.equal(await row.getByRole('button', { name: 'Next', exact: true }).count(), 0)
+    layouts.push({ summary, hp, actions, adjustment, damage, heal })
+  }
+  for (const layout of layouts.slice(1)) {
+    for (const column of ['summary', 'hp', 'actions', 'adjustment', 'damage', 'heal']) {
+      assert.ok(Math.abs(layout[column].x - layouts[0][column].x) <= 1,
+        `${column} must align across inactive participants`)
+    }
+  }
+}
+
+async function assertActiveLayout(row) {
+  assert.equal(await row.locator('.fight-participant-summary').count(), 0)
+  const heading = await row.locator('.fight-tile-heading').boundingBox()
+  const hp = await row.locator('.fight-hp-row').boundingBox()
+  assert.ok(heading && hp, 'Active heading and HP controls must be visible')
+  assert.ok(hp.y >= heading.y + heading.height, 'The active HP row must remain below its heading')
+  assert.equal(await row.getByRole('button', { name: 'Set active', exact: true }).isDisabled(), true)
+  assert.equal(await row.getByRole('button', { name: 'Next', exact: true }).count(), 1)
+  assert.equal(await row.getByRole('button', { name: 'Skip', exact: true }).count(), 1)
 }
 
 try {
@@ -104,6 +139,13 @@ try {
   assert.equal(await prompt.locator('ol li').nth(2).textContent().then(text => text?.includes(mobName)), true)
   await prompt.getByRole('button', { name: 'Confirm and begin Fight' }).click()
   await preparedPc.locator('.active-label').waitFor()
+  await assertActiveLayout(preparedPc)
+  await assertInactiveColumns([preparedNpc, preparedMob])
+  for (const row of [preparedNpc, preparedMob]) {
+    assert.equal(await row.locator('.fight-current-hp-form input').inputValue(), '')
+    assert.equal(await row.getByRole('button', { name: 'Damage', exact: true }).isDisabled(), true)
+    assert.equal(await row.getByRole('button', { name: 'Heal', exact: true }).isDisabled(), true)
+  }
   await page.getByRole('button', { name: 'Back to campaign' }).click()
 
   await page.getByLabel('Encounter name').fill(encounterName)
@@ -170,7 +212,7 @@ try {
   await pc.getByText('HP: 10.5', { exact: true }).waitFor()
   assert.equal(await pc.getByText('Initiative:', { exact: false }).count(), 0)
   assert.equal(await mob.locator('.fight-tile-actions').count(), 0)
-  assert.equal(await mob.locator('.fight-tile-heading > :first-child').textContent(), 'MOB')
+  assert.equal(await mob.locator('.fight-participant-summary .participant-kind-icon').textContent(), 'MOB')
   await mob.getByRole('button', { name: `Edit current HP for ${mobName}` }).click()
   const mobCurrentHp = mob.getByRole('textbox', { name: `Current HP for ${mobName}` })
   await mobCurrentHp.fill('')
@@ -203,6 +245,8 @@ try {
   assert.equal(await page.getByRole('button', { name: 'Move down' }).count(), 0)
   await page.getByRole('button', { name: 'Next', exact: true }).click()
   await mob.locator('.active-label').waitFor()
+  await assertActiveLayout(mob)
+  await assertInactiveColumns([pc])
   await pc.getByText('Invisible · 1').waitFor()
   assert.equal(await pc.locator('.fight-tile-actions').count(), 0)
   await mob.getByRole('button', { name: `Manage statuses for ${mobName}` }).click()
@@ -258,6 +302,36 @@ try {
   await pc.locator('.active-label').waitFor()
 
   const lateMob = page.locator('.encounter-participants > li').filter({ hasText: secondMobName })
+  await assertInactiveColumns([mob, lateMob])
+  await lateMob.getByRole('button', { name: `Edit current HP for ${secondMobName}` }).click()
+  const lateCurrentHp = lateMob.getByRole('textbox', { name: `Current HP for ${secondMobName}` })
+  await lateCurrentHp.fill('4')
+  await assertInactiveColumns([mob, lateMob])
+  await lateMob.getByRole('button', { name: 'Save', exact: true }).click()
+  await lateMob.getByText('HP: 4', { exact: true }).waitFor()
+  await assertInactiveColumns([mob, lateMob])
+  await lateMob.getByRole('button', { name: `Edit current HP for ${secondMobName}` }).click()
+  await lateCurrentHp.fill('99')
+  await lateMob.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await lateMob.getByText('HP: 4', { exact: true }).waitFor()
+  await assertInactiveColumns([mob, lateMob])
+
+  await page.setViewportSize({ width: 640, height: 3200 })
+  await lateMob.getByRole('button', { name: `Edit current HP for ${secondMobName}` }).click()
+  for (const row of [mob, lateMob]) {
+    const summary = await row.locator('.fight-participant-summary').boundingBox()
+    const hp = await row.locator('.fight-hp-row').boundingBox()
+    const actions = await row.locator('.condition-actions').boundingBox()
+    assert.ok(summary && hp && actions, 'Stacked groups must remain visible')
+    assert.ok(hp.y >= summary.y + summary.height, 'HP must stack below name and turns')
+    assert.ok(actions.y >= hp.y + hp.height, 'Participant actions must stack below HP')
+  }
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth), false)
+  await lateMob.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await page.setViewportSize({ width: 1280, height: 3200 })
+  await assertInactiveColumns([mob, lateMob])
+  await assertActiveLayout(pc)
+
   const pcBounds = await pc.boundingBox()
   const lateBounds = await lateMob.boundingBox()
   assert.ok(pcBounds, 'PC must be visible for drag-and-drop')
@@ -365,7 +439,7 @@ try {
     await page.locator('.encounter-detail').getByText('Phase: Finished.', { exact: false }).waitFor()
     await page.locator('.encounter-participants > li').filter({ hasText: pcName })
       .locator('.dying-label').waitFor()
-    console.log('Campaign, encounter rename/duplication, Fight, HP, drag-and-drop, Skip, insertion, and finished reload passed.')
+    console.log('Campaign, encounter rename/duplication, Fight columns, HP, drag-and-drop, Skip, insertion, and finished reload passed.')
   }
 } finally {
   await browser.close()

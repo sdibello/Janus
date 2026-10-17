@@ -399,6 +399,15 @@ button:hover {
 .condition-choices { display: flex; flex-wrap: wrap; gap: 8px; }
 .fight-tile-meta { margin: 10px 0; color: var(--muted); }
 .fight-hp-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.fight-tile-heading > .fight-hp-row { margin-top: 0; }
+.inactive-fight-heading { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); }
+.fight-participant-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.fight-participant-summary strong { min-width: 0; overflow-wrap: anywhere; }
+.inactive-fight-heading > .fight-hp-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+.inactive-fight-heading .fight-current-hp-display { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.inactive-fight-heading .fight-current-hp-display span { min-width: 0; }
+.inactive-fight-heading .fight-hp-row > .hp-status { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
+.inactive-fight-heading > .condition-actions { min-width: 0; margin-left: 0; justify-content: flex-start; }
 .fight-current-hp-display { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); white-space: nowrap; }
 .fight-current-hp-display .hp-edit-button { padding: 4px 6px; border: 0; font-size: 16px; line-height: 1; }
 .fight-list .fight-current-hp-form { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; }
@@ -453,4 +462,5 @@ footer {
   .account-grid { grid-template-columns: 1fr; }
   .campaign-grid { grid-template-columns: 1fr; }
   .account-list li { align-items: flex-start; flex-direction: column; }
+  .inactive-fight-heading { grid-template-columns: minmax(0, 1fr); }
 }

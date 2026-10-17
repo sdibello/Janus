@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [004](../specs/004-initiative-and-turn-sequence.md), [007](../specs/007-hit-point-tracking.md), [008](../specs/008-encounter-conditions-and-layout.md)
 - Supersedes: The active-card Actions area and separate Damage and Heal inputs in [0085](0085-non-active-fight-card-actions.md)
-- Superseded by: None
+- Superseded by: [0093](0093-inactive-fight-hp-placement.md) for non-active HP row placement
 
 ## Context
 

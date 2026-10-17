@@ -156,6 +156,32 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     </form>
   }
 
+  function fightHpRow(participant: Participant) {
+    return <div className="fight-hp-row">
+      {participant.currentHp !== null && !editingHpIds.includes(participant.id)
+        ? <div className="fight-current-hp-display">
+          <span>HP: {participant.currentHp}</span>
+          <button type="button" className="hp-edit-button" disabled={busy}
+            aria-label={`Edit current HP for ${participant.name}`} title="Edit current HP"
+            onClick={() => setEditingHpIds((ids) => [...ids, participant.id])}>✎</button>
+        </div>
+        : <form className="fight-current-hp-form" key={`${participant.id}-fight-hp-${participant.currentHp}`}
+          onSubmit={(event) => void saveCurrentHp(event, participant.id)}>
+          <label htmlFor={`fight-hp-${participant.id}`}>HP:</label>
+          <input id={`fight-hp-${participant.id}`} name="currentHp"
+            aria-label={`Current HP for ${participant.name}`} defaultValue={participant.currentHp ?? ''}
+            placeholder="Not set" inputMode="decimal" />
+          <button type="submit" disabled={busy}>Save</button>
+          {participant.currentHp !== null && <button type="button" disabled={busy}
+            onClick={() => setEditingHpIds((ids) => ids.filter((id) => id !== participant.id))}>Cancel</button>}
+        </form>}
+      {fightAdjustment(participant)}
+      {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
+      {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
+      {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
+    </div>
+  }
+
   function kindBadge(participant: Participant) {
     return <span className={`participant-kind-icon ${participant.kind.toLowerCase()}`}
       title={participant.kind.toUpperCase()}>{participant.kind.toUpperCase()}</span>
@@ -328,6 +354,12 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           }}
           onDrop={dropOnList}>{activeParticipants.map((participant, index) => {
           const active = selected.phase === 'Fight' && selected.activeParticipantId === participant.id
+          const inactive = selected.phase === 'Fight' && !active
+          const summary = <>
+            {kindBadge(participant)}
+            <strong>{participant.name}</strong>
+            {selected.phase === 'Fight' && <span className="fight-turn-count">Turn: {participant.turnCount}</span>}
+          </>
           const marker = selected.phase === 'Fight' && draggedId
             ? dropIndex === index ? 'drop-before'
               : dropIndex === activeParticipants.length && index === activeParticipants.length - 1 ? 'drop-end' : ''
@@ -367,11 +399,10 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               </div>
               {prepareSelectedId === participant.id && hpEditor(participant)}
             </div> : <>
-              <div className="fight-tile-heading">
-                {kindBadge(participant)}
-                <strong>{participant.name}</strong>
-                {selected.phase === 'Fight' && <span className="fight-turn-count">Turn: {participant.turnCount}</span>}
+              <div className={`fight-tile-heading${inactive ? ' inactive-fight-heading' : ''}`}>
+                {inactive ? <div className="fight-participant-summary">{summary}</div> : summary}
                 {active && <span className="active-label">Active turn</span>}
+                {inactive && fightHpRow(participant)}
                 {selected.phase === 'Fight' && <div className="condition-actions">
                   {participant.conditions.map((condition) => <span className="condition-bubble" key={condition.kind}>
                     {condition.kind} · {condition.turnCount}
@@ -390,29 +421,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                     disabled={busy} onClick={() => setConditionParticipantId(participant.id)} title="Add a status">✦</button>
                 </div>}
               </div>
-              {selected.phase === 'Fight' ? <div className="fight-hp-row">
-                {participant.currentHp !== null && !editingHpIds.includes(participant.id)
-                  ? <div className="fight-current-hp-display">
-                    <span>HP: {participant.currentHp}</span>
-                    <button type="button" className="hp-edit-button" disabled={busy}
-                      aria-label={`Edit current HP for ${participant.name}`} title="Edit current HP"
-                      onClick={() => setEditingHpIds((ids) => [...ids, participant.id])}>✎</button>
-                  </div>
-                  : <form className="fight-current-hp-form" key={`${participant.id}-fight-hp-${participant.currentHp}`}
-                    onSubmit={(event) => void saveCurrentHp(event, participant.id)}>
-                    <label htmlFor={`fight-hp-${participant.id}`}>HP:</label>
-                    <input id={`fight-hp-${participant.id}`} name="currentHp"
-                      aria-label={`Current HP for ${participant.name}`} defaultValue={participant.currentHp ?? ''}
-                      placeholder="Not set" inputMode="decimal" />
-                    <button type="submit" disabled={busy}>Save</button>
-                    {participant.currentHp !== null && <button type="button" disabled={busy}
-                      onClick={() => setEditingHpIds((ids) => ids.filter((id) => id !== participant.id))}>Cancel</button>}
-                  </form>}
-                {fightAdjustment(participant)}
-                {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
-                {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
-                {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
-              </div> : <p className="fight-tile-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}
+              {selected.phase === 'Fight' ? active && fightHpRow(participant) : <p className="fight-tile-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}
                 {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
                 {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
                 {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
