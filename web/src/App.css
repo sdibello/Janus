@@ -316,6 +316,9 @@ button:hover {
 .encounter-list { display: block; }
 .encounter-list li + li { margin-top: 8px; }
 .encounter-list button { width: 100%; text-align: left; }
+.encounter-list-actions { display: flex; align-items: stretch; gap: 8px; }
+.encounter-list-actions > button:first-child { flex: 1; min-width: 0; width: auto; }
+.encounter-list-actions > .encounter-duplicate { flex: none; width: auto; white-space: nowrap; }
 .finished-group { margin-top: 20px; }
 .finished-group summary { cursor: pointer; font-weight: 700; }
 .encounter-detail { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }

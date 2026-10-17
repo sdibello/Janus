@@ -54,6 +54,7 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - R17: Finished encounters remain saved and viewable after navigation, logout, and subsequent login, with no automatic expiration as part of this workflow. Preserve their participant lists, including encounter-local mobs.
 - R18: Opening a finished encounter for viewing does not restart it or advance the sequence. Display the saved participants, final participant order, HP and status, Round counter, and individual Turn counters. No additional event history or turn-by-turn action log is required in this phase.
 - R19: The finished-encounter UI facilitates viewing only: no editing fields, add/remove controls, drag-and-drop ordering, Next, or restart controls. This is a UI requirement, not a requirement for immutable storage or a blanket prohibition on authorized backend corrections. It does not require building a correction API or administrative editor; ordinary authorization still applies.
+- R20: From the campaign's encounter list, the dungeon master can duplicate an encounter in any phase. The new encounter is named "Copy of [source name]," opens in Prepare for editing, and contains only the participant list: campaign character references and mob names. It starts fresh without copied initiative, ordering, HP, Hold state, conditions, counters, or encounter history.
 
 ## Acceptance criteria
 
@@ -76,6 +77,7 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - [ ] After ending an encounter and logging out and back in, the dungeon master can find it in its campaign and view its participants, including mobs.
 - [ ] Viewing a finished encounter leaves it ended and does not advance its sequence.
 - [ ] The finished-encounter view offers no participant, order, or encounter modification controls. Verification does not require the underlying record to be immutable.
+- [ ] Duplicating a Prepare, Fight, or Finished encounter from its campaign list opens a new Prepare encounter with the same participant membership, but no initiative, HP, Hold state, conditions, counters, or copied turn order.
 - [ ] Removing a campaign character referenced by a finished encounter is rejected; the character and encounter remain available.
 - [ ] A participant added to Hold during Prepare stays there after refresh, is shown above the active list, and remains there when Fight begins.
 - [ ] Holding and releasing a participant preserves its encounter identity and saved HP; Finished shows both lists.

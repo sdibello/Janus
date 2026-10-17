@@ -13,6 +13,7 @@ internal static class EncounterEndpoints
         encounters.MapGet("/", ListAsync);
         encounters.MapPost("/", CreateAsync);
         encounters.MapGet("/{encounterId:guid}", GetAsync);
+        encounters.MapPost("/{encounterId:guid}/duplicate", DuplicateAsync);
         encounters.MapPost("/{encounterId:guid}/participants", AddParticipantAsync);
         encounters.MapPost("/{encounterId:guid}/participants/add-all", AddAllParticipantsAsync);
         encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/conditions", AddConditionAsync);
@@ -78,6 +79,45 @@ internal static class EncounterEndpoints
             .AsNoTracking().SingleOrDefaultAsync(cancellationToken);
         return encounter is null ? Results.NotFound()
             : Results.Ok(await DetailAsync(data, encounter, cancellationToken));
+    }
+
+    private static async Task<IResult> DuplicateAsync(
+        Guid campaignId, Guid encounterId, HttpContext context, CampaignAccessService access,
+        CampaignDataContext data, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var source = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .AsNoTracking().SingleOrDefaultAsync(cancellationToken);
+        if (source is null) return Results.NotFound();
+
+        var characters = await data.Characters.AsNoTracking()
+            .Where(item => item.CampaignId == campaignId).ToDictionaryAsync(item => item.Id, cancellationToken);
+        var sourceParticipants = await data.Participants.AsNoTracking()
+            .Where(item => item.EncounterId == encounterId).ToListAsync(cancellationToken);
+        var duplicate = new Encounter
+        {
+            Id = Guid.NewGuid(), CampaignId = campaignId, Name = $"Copy of {source.Name}",
+            Phase = EncounterPhase.Prepare, Round = 1,
+        };
+        data.Encounters.Add(duplicate);
+        var orderedParticipants = sourceParticipants
+            .OrderBy(item => item.CharacterId is { } characterId ? characters[characterId].Name : item.MobName ?? "",
+                StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.CharacterId)
+            .ThenBy(item => item.Id);
+        var position = 0;
+        foreach (var sourceParticipant in orderedParticipants)
+        {
+            data.Participants.Add(new EncounterParticipant
+            {
+                Id = Guid.NewGuid(), EncounterId = duplicate.Id, CharacterId = sourceParticipant.CharacterId,
+                MobName = sourceParticipant.MobName, Position = position++,
+            });
+        }
+        await data.SaveChangesAsync(cancellationToken);
+        return Results.Created($"/campaigns/{campaignId}/encounters/{duplicate.Id}",
+            new { duplicate.Id, duplicate.Name, duplicate.Phase, duplicate.Round, duplicate.Revision });
     }
 
     private static async Task<IResult> AddParticipantAsync(

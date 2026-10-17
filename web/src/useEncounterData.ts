@@ -115,5 +115,21 @@ export default function useEncounterData(campaignId: string, selectedId: string 
     } finally { setBusy(false) }
   }
 
-  return { api, encounters, selected, setSelected, busy, message, setMessage, mutate, createEncounter }
+  async function duplicateEncounter(encounterId: string) {
+    setBusy(true)
+    setMessage('')
+    try {
+      const response = await fetch(`${api}/${encounterId}/duplicate`, { method: 'POST' })
+      if (!response.ok) throw new Error(await responseMessage(response))
+      const created = await response.json() as EncounterSummary
+      setEncounters((previous) => [...previous, created]
+        .sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id)))
+      onSelectId(created.id)
+      setMessage('Encounter duplicated in Prepare.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not duplicate the encounter.')
+    } finally { setBusy(false) }
+  }
+
+  return { api, encounters, selected, setSelected, busy, message, setMessage, mutate, createEncounter, duplicateEncounter }
 }

@@ -299,7 +299,31 @@ try {
     assert.equal(await page.locator('.encounter-participants > li').count(), 3)
     await page.setViewportSize({ width: 640, height: 900 })
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth), false)
-    console.log('Campaign, Fight, HP, drag-and-drop, Skip, insertion, and finished reload passed.')
+
+    const duplicateDetailResponse = page.waitForResponse(response =>
+      response.request().method() === 'GET' &&
+      /\/campaigns\/[^/]+\/encounters\/[^/]+$/.test(new URL(response.url()).pathname))
+    await page.getByRole('button', { name: `Duplicate ${encounterName}` }).click()
+    const duplicateDetail = await duplicateDetailResponse
+    const copied = await duplicateDetail.json()
+    await page.locator('.encounter-detail').getByRole('heading', { name: `Copy of ${encounterName}` }).waitFor()
+    await page.locator('.encounter-detail').getByText('Phase: Prepare.', { exact: false }).waitFor()
+    assert.equal(copied.phase, 'Prepare')
+    assert.equal(copied.round, 1)
+    assert.equal(copied.activeParticipantId, null)
+    assert.equal(copied.participants.length, 3)
+    assert.equal(copied.participants.every((participant, index) =>
+      participant.initiative === null && participant.currentHp === null && participant.status === null &&
+      participant.position === index && !participant.isHeld && participant.turnCount === 0 &&
+      participant.conditions.length === 0), true)
+    await page.getByRole('button', { name: 'Back to campaign' }).click()
+    await page.locator('.finished-group summary').click()
+    await page.locator('.encounter-list-actions').filter({ hasText: encounterName })
+      .getByRole('button', { name: new RegExp(`^${encounterName} Finished$`) }).click()
+    await page.locator('.encounter-detail').getByText('Phase: Finished.', { exact: false }).waitFor()
+    await page.locator('.encounter-participants > li').filter({ hasText: pcName })
+      .locator('.dying-label').waitFor()
+    console.log('Campaign, Fight, HP, drag-and-drop, Skip, insertion, finished reload, and encounter duplication passed.')
   }
 } finally {
   await browser.close()

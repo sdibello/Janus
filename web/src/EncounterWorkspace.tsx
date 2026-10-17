@@ -6,7 +6,8 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   campaignId: string; characters: Character[]; selectedId: string | null
   onSelectId: (id: string | null) => void
 }) {
-  const { api, encounters, selected, setSelected, busy, message, setMessage, mutate, createEncounter } =
+  const { api, encounters, selected, setSelected, busy, message, setMessage, mutate, createEncounter,
+    duplicateEncounter } =
     useEncounterData(campaignId, selectedId, characters, onSelectId)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
@@ -201,10 +202,15 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
         const items = encounters.filter((encounter) => encounter.phase === phase)
         if (items.length === 0) return null
         const list = <ul className="encounter-list">{items.map((encounter) => <li key={encounter.id}>
-        <button type="button" className={selectedId === encounter.id ? 'selected' : ''}
-          disabled={busy} onClick={() => { setSelected(null); onSelectId(encounter.id) }}>
-          {encounter.name} <small>{encounter.phase}</small>
-        </button>
+        <div className="encounter-list-actions">
+          <button type="button" className={selectedId === encounter.id ? 'selected' : ''}
+            disabled={busy} onClick={() => { setSelected(null); onSelectId(encounter.id) }}>
+            {encounter.name} <small>{encounter.phase}</small>
+          </button>
+          <button type="button" className="encounter-duplicate"
+            aria-label={`Duplicate ${encounter.name}`} disabled={busy}
+            onClick={() => void duplicateEncounter(encounter.id)}>Duplicate</button>
+        </div>
       </li>)}</ul>
         return phase === 'Finished' ? <details key={phase} className="encounter-group finished-group">
           <summary>Finished ({items.length})</summary>{list}</details>
