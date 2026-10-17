@@ -10,6 +10,7 @@
     "test:browser-session": "node tests/browser-session.mjs",
     "test:encounter-flow": "node tests/encounter-flow.mjs",
     "test:encounter-reopen": "node tests/encounter-reopen.mjs",
+    "test:hold-sidebar": "node tests/hold-sidebar.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

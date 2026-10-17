@@ -41,7 +41,7 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 
 ### Participant view and access
 
-- R13b: Each encounter has a saved Hold list shown above its active participant list. A PC, NPC, or mob may be added directly to Hold during Prepare or Fight. During Prepare, the DM can move a participant between lists and remove a held participant. During Fight, the DM uses a Hold button on an active participant and drags a held participant to a drop slot in the active list. Holding does not remove encounter membership or alter campaign character data. A finished encounter displays both lists without editing controls. See [decision 0084](../decisions/0084-encounter-hold-list.md).
+- R13b: Each encounter has a saved Hold list. Prepare and Finished show it above active participants; Fight uses the sidebar or stacked layout in decision 0094. A PC, NPC, or mob may be added directly to Hold during Prepare or Fight. During Prepare, the DM can move a participant between lists and remove a held participant. During Fight, the DM uses a Hold button or drags an active participant into Hold, and drags a held name to a drop slot in the active list. Selecting a held name releases it at the end of the active list. Holding does not remove encounter membership or alter campaign character data. A finished encounter displays both lists without editing controls. See [decision 0084](../decisions/0084-encounter-hold-list.md).
 
 - R13: The encounter view clearly identifies each participant as a PC, NPC, or mob. Duplicate participant names are allowed; individual entries are distinguished by identity and position in the encounter. Participant maintenance controls apply only to unfinished encounters.
 - R13a: Opening a Prepare, Fight, or Finished encounter switches to a focused encounter screen, hiding campaign editing and Local services while retaining a compact session display. Back to campaign returns to campaign management without changing encounter state.
@@ -81,7 +81,7 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - [ ] Duplicating a Prepare, Fight, or Finished encounter from its campaign list opens a new Prepare encounter with the same participant membership, but no initiative, HP, Hold state, conditions, counters, or copied turn order.
 - [ ] An encounter can be renamed in Prepare, Fight, or Finished; saving trims surrounding whitespace and updates the campaign list, while Cancel leaves the saved name unchanged and other encounter state remains unchanged.
 - [ ] Removing a campaign character referenced by a finished encounter is rejected; the character and encounter remain available.
-- [ ] A participant added to Hold during Prepare stays there after refresh, is shown above the active list, and remains there when Fight begins.
+- [ ] A participant added to Hold during Prepare stays there after refresh, is shown above the active list in Prepare, and remains held when Fight begins, using the compact Fight Hold layout.
 - [ ] Holding and releasing a participant preserves its encounter identity and saved HP; Finished shows both lists.
 
 ## Validation

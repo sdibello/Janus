@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [003](../specs/003-encounters-and-participants.md), [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md)
 - Supersedes: The all-participants initiative and Round rules in those specs for held participants
-- Superseded by: None
+- Superseded by: [0094](0094-fight-hold-sidebar.md) for Fight Hold placement and presentation on the experiment branch
 
 ## Context
 

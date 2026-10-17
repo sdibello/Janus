@@ -101,3 +101,4 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0091](0091-duplicate-encounters-from-campaign-list.md) | Accepted | Duplicate any encounter from the campaign list as a fresh Prepare encounter with participant membership only. |
 | [0092](0092-rename-encounters-in-any-phase.md) | Accepted | Allow encounter-name edits in every phase while keeping Finished encounter state otherwise read-only. |
 | [0093](0093-inactive-fight-hp-placement.md) | Accepted | Align non-active Fight cards into name/turn, HP, and action columns; retain the active card layout. |
+| [0094](0094-fight-hold-sidebar.md) | Accepted for experiment | Keep Fight participant width and add a 25% Hold sidebar with draggable name tiles; stack below on smaller displays. |

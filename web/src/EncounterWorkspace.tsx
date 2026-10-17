@@ -11,6 +11,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     useEncounterData(campaignId, selectedId, characters, onSelectId)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
+  const [holdDropReady, setHoldDropReady] = useState(false)
   const [initiativeOpen, setInitiativeOpen] = useState(false)
   const [initiativeStep, setInitiativeStep] = useState(0)
   const [prepareSelectedId, setPrepareSelectedId] = useState<string | null>(null)
@@ -115,8 +116,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     const sourceId = draggedId ?? event.dataTransfer.getData('text/plain')
     const sourceIndex = activeParticipants.findIndex((participant) => participant.id === sourceId)
     const insertionIndex = insertionIndexAt(event.currentTarget, event.clientY)
-    setDropIndex(null)
-    setDraggedId(null)
+    endParticipantDrag()
     if (sourceIndex < 0) {
       if (heldParticipants.some((participant) => participant.id === sourceId))
         void mutate(`${api}/${selected.id}/participants/${sourceId}/activate`, 'POST',
@@ -221,7 +221,79 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     </div>
   }
 
-  const holdHelp = `Held participants wait outside the turn order and do not affect Round or Turn counts.${selected?.phase === 'Fight' ? ' Drag one into the turn order to release them.' : ''}`
+  function startParticipantDrag(event: DragEvent<HTMLLIElement>, participantId: string) {
+    setDraggedId(participantId)
+    setDropIndex(null)
+    setHoldDropReady(false)
+    event.dataTransfer.setData('text/plain', participantId)
+    event.dataTransfer.effectAllowed = 'move'
+  }
+
+  function endParticipantDrag() {
+    setDraggedId(null)
+    setDropIndex(null)
+    setHoldDropReady(false)
+  }
+
+  function holdPanel() {
+    if (!selected) return null
+    return <section className={`held-section${selected.phase === 'Fight' ? ' fight-hold-sidebar' : ''}${holdDropReady ? ' drop-ready' : ''}`}
+      aria-label="Hold list"
+      onDragOver={(event) => {
+        if (selected.phase !== 'Fight' || busy || !activeParticipants.some((item) => item.id === draggedId)) return
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'move'
+        setHoldDropReady(true)
+        setDropIndex(null)
+      }}
+      onDragLeave={(event) => {
+        if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget))
+          setHoldDropReady(false)
+      }}
+      onDrop={(event) => {
+        if (selected.phase !== 'Fight' || busy) return
+        event.preventDefault()
+        const sourceId = draggedId ?? event.dataTransfer.getData('text/plain')
+        endParticipantDrag()
+        if (activeParticipants.some((item) => item.id === sourceId))
+          void mutate(`${api}/${selected.id}/participants/${sourceId}/hold`, 'POST',
+            { revision: selected.revision }, 'Participant moved to Hold.')
+      }}>
+      <div className="encounter-section-heading">
+        <h5>Hold ({heldParticipants.length})</h5>
+        <span className="section-help" role="img" tabIndex={0} title={holdHelp}
+          aria-label={holdHelp}>?</span>
+        {heldParticipants.length === 0 && <span className="hold-empty">No participants on Hold.</span>}
+      </div>
+      {heldParticipants.length > 0 && <ul className="held-list">{heldParticipants.map((participant) => <li key={participant.id}
+          draggable={selected.phase === 'Fight' && !busy}
+          onDragStart={(event) => startParticipantDrag(event, participant.id)}
+          onDragEnd={endParticipantDrag}>
+          {selected.phase === 'Fight' ? <button type="button" className="held-name" disabled={busy}
+            aria-label={`Release ${participant.name} to turn order`}
+            onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/activate`, 'POST',
+              { revision: selected.revision, targetIndex: activeParticipants.length }, 'Participant moved to the active list.')}>
+            {participant.name}
+          </button> : <div className="held-row">{kindBadge(participant)}<strong>{participant.name}</strong>
+            <span className="held-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}</span>
+            {selected.phase === 'Prepare' && <>
+              <button type="button" disabled={busy}
+                onClick={() => setPrepareSelectedId((id) => id === participant.id ? null : participant.id)}>
+                {prepareSelectedId === participant.id ? 'Close HP' : 'Edit HP'}</button>
+              <button type="button" disabled={busy} onClick={() => void mutate(
+                `${api}/${selected.id}/participants/${participant.id}/activate`, 'POST',
+                { revision: selected.revision, targetIndex: activeParticipants.length }, 'Participant moved to active.')}>Move to active</button>
+              <button type="button" disabled={busy} onClick={() => void mutate(
+                `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
+                { revision: selected.revision }, 'Participant removed.')}>Remove</button>
+            </>}
+          </div>}
+          {selected.phase === 'Prepare' && prepareSelectedId === participant.id && hpEditor(participant)}
+        </li>)}</ul>}
+    </section>
+  }
+
+  const holdHelp = `Held participants wait outside the turn order and do not affect Round or Turn counts.${selected?.phase === 'Fight' ? ' Drag a participant here to hold them. Drag a name into the turn order to release them, or select the name to release at the end.' : ''}`
   const turnOrderHelp = 'Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.'
 
   return <div className="encounter-workspace">
@@ -275,40 +347,9 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
       <p>Phase: {selected.phase}. {activeParticipants.length} active, {heldParticipants.length} held.
         {selected.phase !== 'Prepare' && <> Round {selected.round}.</>}</p>
       {selected.phase === 'Prepare' && addParticipantPanel(false)}
-      <section className="held-section" aria-label="Hold list">
-        <div className="encounter-section-heading">
-          <h5>Hold ({heldParticipants.length})</h5>
-          <span className="section-help" role="img" tabIndex={0} title={holdHelp}
-            aria-label={holdHelp}>?</span>
-          {heldParticipants.length === 0 && <span className="hold-empty">No participants on Hold.</span>}
-        </div>
-        {heldParticipants.length > 0 && <ul className="held-list">{heldParticipants.map((participant) => <li key={participant.id}
-            draggable={selected.phase === 'Fight' && !busy}
-            onDragStart={(event) => {
-              setDraggedId(participant.id)
-              setDropIndex(null)
-              event.dataTransfer.setData('text/plain', participant.id)
-              event.dataTransfer.effectAllowed = 'move'
-            }}
-            onDragEnd={() => { setDraggedId(null); setDropIndex(null) }}>
-            <div className="held-row">{kindBadge(participant)}<strong>{participant.name}</strong>
-              <span className="held-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}</span>
-              {selected.phase === 'Prepare' && <>
-                <button type="button" disabled={busy}
-                  onClick={() => setPrepareSelectedId((id) => id === participant.id ? null : participant.id)}>
-                  {prepareSelectedId === participant.id ? 'Close HP' : 'Edit HP'}</button>
-                <button type="button" disabled={busy} onClick={() => void mutate(
-                  `${api}/${selected.id}/participants/${participant.id}/activate`, 'POST',
-                  { revision: selected.revision, targetIndex: activeParticipants.length }, 'Participant moved to active.')}>Move to active</button>
-                <button type="button" disabled={busy} onClick={() => void mutate(
-                  `${api}/${selected.id}/participants/${participant.id}/remove`, 'POST',
-                  { revision: selected.revision }, 'Participant removed.')}>Remove</button>
-              </>}
-            </div>
-            {selected.phase === 'Prepare' && prepareSelectedId === participant.id && hpEditor(participant)}
-          </li>)}</ul>}
-      </section>
-      <section className={selected.phase === 'Prepare' ? 'prepare-active-section' : undefined}
+      {selected.phase !== 'Fight' && holdPanel()}
+      <div className={selected.phase === 'Fight' ? 'fight-board' : undefined}>
+      <section className={selected.phase === 'Prepare' ? 'prepare-active-section' : selected.phase === 'Fight' ? 'fight-turn-order' : undefined}
         aria-label={selected.phase === 'Prepare' ? 'Active participants' : undefined}>
       <div className="encounter-section-heading turn-order-heading">
         <h5>{selected.phase === 'Prepare' ? `Active (${activeParticipants.length})` : selected.phase === 'Fight' ? 'Turn order' : 'Final order'}</h5>
@@ -333,7 +374,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           if (selected.phase !== 'Fight' || !draggedId || busy) return
           event.preventDefault()
           const sourceId = draggedId
-          setDraggedId(null)
+          endParticipantDrag()
           void mutate(`${api}/${selected.id}/participants/${sourceId}/activate`, 'POST',
             { revision: selected.revision, targetIndex: 0 }, 'Participant moved to the active list.')
         }}>
@@ -375,13 +416,8 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
                 moveToIndex(participant.id, index + (event.key === 'ArrowUp' ? -1 : 1))
               }
             }}
-            onDragStart={(event) => {
-              setDraggedId(participant.id)
-              setDropIndex(null)
-              event.dataTransfer.setData('text/plain', participant.id)
-              event.dataTransfer.effectAllowed = 'move'
-            }}
-            onDragEnd={() => { setDraggedId(null); setDropIndex(null) }}>
+            onDragStart={(event) => startParticipantDrag(event, participant.id)}
+            onDragEnd={endParticipantDrag}>
             {selected.phase === 'Prepare' ? <div className={`prepare-row ${prepareSelectedId === participant.id ? 'selected' : ''}`}>
               <div className="prepare-row-main">
                 <button type="button" className="prepare-row-select" aria-expanded={prepareSelectedId === participant.id}
@@ -436,6 +472,8 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           </li>
         })}</ol>}
       </section>
+      {selected.phase === 'Fight' && holdPanel()}
+      </div>
       {selected.phase === 'Fight' && addParticipantOpen && <AddParticipantDialog
         onClose={() => setAddParticipantOpen(false)}>
         {addParticipantPanel(true)}

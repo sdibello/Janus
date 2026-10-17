@@ -4,7 +4,7 @@
 - Status: Accepted
 - Related specs: [003](../specs/003-encounters-and-participants.md), [008](../specs/008-encounter-conditions-and-layout.md)
 - Supersedes: The always-visible Fight add form in [0083](0083-encounter-conditions-and-layout.md)
-- Superseded by: None
+- Superseded by: [0094](0094-fight-hold-sidebar.md) for the Fight Hold section on the experiment branch
 
 ## Context
 

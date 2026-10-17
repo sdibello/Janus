@@ -342,6 +342,21 @@ button:hover {
 .held-list li[draggable='true'] { cursor: grab; }
 .held-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .held-row .held-meta { color: var(--muted); margin-right: auto; }
+.fight-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 24px; }
+.fight-turn-order { min-width: 0; }
+.fight-board .turn-order-heading { margin-top: 0; }
+.fight-hold-sidebar { min-width: 0; margin-top: 0; align-self: start; min-height: 180px; border: 2px dashed var(--border); }
+.fight-hold-sidebar.drop-ready { border-color: #245c4c; background: #e5f4e8; }
+.fight-hold-sidebar .encounter-section-heading { flex-wrap: wrap; }
+.fight-hold-sidebar .hold-empty { flex-basis: 100%; }
+.fight-hold-sidebar .held-list { display: grid; gap: 8px; margin-top: 12px; }
+.fight-hold-sidebar .held-list > li { padding: 0; border: 0; }
+.held-name { width: 100%; padding: 8px 10px; text-align: left; overflow-wrap: anywhere; cursor: grab; }
+.held-name:disabled { cursor: default; }
+@media (min-width: 1600px) {
+  main:has(.fight-board) { width: min(calc(4480px / 3 + 24px), calc(100% - 64px)); }
+  .fight-board { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
+}
 .prepare-active-section .encounter-participants { list-style: none; padding: 0; margin: 12px 0 0; }
 .prepare-active-section .encounter-participants > li { padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 0; }
 .prepare-active-section .prepare-row { padding: 0; border: 0; background: transparent; }
