@@ -84,7 +84,8 @@ export default function useEncounterData(campaignId: string, selectedId: string 
       setSelected(updated)
       setEncounters((previous) => previous.map((item) => item.id === updated.id
         ? { id: updated.id, name: updated.name, phase: updated.phase,
-          round: updated.round, revision: updated.revision } : item))
+          round: updated.round, revision: updated.revision } : item)
+        .sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id)))
       setMessage(success)
       return true
     } catch (error) {

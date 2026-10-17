@@ -53,8 +53,9 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - R16: The campaign provides a way to list and open its finished encounters. Ending an encounter does not remove it from the campaign or make it inaccessible.
 - R17: Finished encounters remain saved and viewable after navigation, logout, and subsequent login, with no automatic expiration as part of this workflow. Preserve their participant lists, including encounter-local mobs.
 - R18: Opening a finished encounter for viewing does not restart it or advance the sequence. Display the saved participants, final participant order, HP and status, Round counter, and individual Turn counters. No additional event history or turn-by-turn action log is required in this phase.
-- R19: The finished-encounter UI facilitates viewing only: no editing fields, add/remove controls, drag-and-drop ordering, Next, or restart controls. This is a UI requirement, not a requirement for immutable storage or a blanket prohibition on authorized backend corrections. It does not require building a correction API or administrative editor; ordinary authorization still applies.
+- R19: The finished-encounter UI facilitates viewing only: no participant editing fields, add/remove controls, drag-and-drop ordering, Next, or restart controls. The encounter name may be edited as described in R21; that metadata edit does not make other Finished encounter state editable.
 - R20: From the campaign's encounter list, the dungeon master can duplicate an encounter in any phase. The new encounter is named "Copy of [source name]," opens in Prepare for editing, and contains only the participant list: campaign character references and mob names. It starts fresh without copied initiative, ordering, HP, Hold state, conditions, counters, or encounter history.
+- R21: The dungeon master can edit an encounter's name in Prepare, Fight, or Finished from the encounter screen. The name editor shows Save and Cancel, rejects a blank or whitespace-only name, and trims leading and trailing whitespace when saved. Renaming does not change phase, participants, initiative, order, HP, Hold state, counters, conditions, or history.
 
 ## Acceptance criteria
 
@@ -76,8 +77,9 @@ Every encounter belongs to a campaign. Included are mob additions during play an
 - [ ] During Fight, the dungeon master can add a PC or NPC from the campaign as well as a mob at any time.
 - [ ] After ending an encounter and logging out and back in, the dungeon master can find it in its campaign and view its participants, including mobs.
 - [ ] Viewing a finished encounter leaves it ended and does not advance its sequence.
-- [ ] The finished-encounter view offers no participant, order, or encounter modification controls. Verification does not require the underlying record to be immutable.
+- [ ] The finished-encounter view offers no participant or order modification controls; only the encounter-name metadata can be edited.
 - [ ] Duplicating a Prepare, Fight, or Finished encounter from its campaign list opens a new Prepare encounter with the same participant membership, but no initiative, HP, Hold state, conditions, counters, or copied turn order.
+- [ ] An encounter can be renamed in Prepare, Fight, or Finished; saving trims surrounding whitespace and updates the campaign list, while Cancel leaves the saved name unchanged and other encounter state remains unchanged.
 - [ ] Removing a campaign character referenced by a finished encounter is rejected; the character and encounter remain available.
 - [ ] A participant added to Hold during Prepare stays there after refresh, is shown above the active list, and remains there when Fight begins.
 - [ ] Holding and releasing a participant preserves its encounter identity and saved HP; Finished shows both lists.

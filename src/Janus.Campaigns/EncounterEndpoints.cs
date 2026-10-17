@@ -14,6 +14,7 @@ internal static class EncounterEndpoints
         encounters.MapPost("/", CreateAsync);
         encounters.MapGet("/{encounterId:guid}", GetAsync);
         encounters.MapPost("/{encounterId:guid}/duplicate", DuplicateAsync);
+        encounters.MapPatch("/{encounterId:guid}/name", ChangeNameAsync);
         encounters.MapPost("/{encounterId:guid}/participants", AddParticipantAsync);
         encounters.MapPost("/{encounterId:guid}/participants/add-all", AddAllParticipantsAsync);
         encounters.MapPost("/{encounterId:guid}/participants/{participantId:guid}/conditions", AddConditionAsync);
@@ -118,6 +119,29 @@ internal static class EncounterEndpoints
         await data.SaveChangesAsync(cancellationToken);
         return Results.Created($"/campaigns/{campaignId}/encounters/{duplicate.Id}",
             new { duplicate.Id, duplicate.Name, duplicate.Phase, duplicate.Round, duplicate.Revision });
+    }
+
+    private static async Task<IResult> ChangeNameAsync(
+        Guid campaignId, Guid encounterId, EncounterNameUpdateRequest request, HttpContext context,
+        CampaignAccessService access, CampaignDataContext data, CancellationToken cancellationToken)
+    {
+        var session = await access.CheckAsync(context, cancellationToken);
+        if (session.Profile is null) return session.Failure();
+        var encounter = await OwnedEncounter(data, campaignId, encounterId, session.Profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (encounter is null) return Results.NotFound();
+        if (request.Revision != encounter.Revision) return Stale();
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Results.BadRequest(new { message = "Encounter name is required." });
+        var name = request.Name.Trim();
+        if (encounter.Name != name)
+        {
+            encounter.Name = name;
+            encounter.Revision++;
+            try { await data.SaveChangesAsync(cancellationToken); }
+            catch (DbUpdateConcurrencyException) { return Stale(); }
+        }
+        return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
     }
 
     private static async Task<IResult> AddParticipantAsync(
@@ -720,6 +744,7 @@ internal static class EncounterEndpoints
     });
 
     private sealed record EncounterNameRequest(string? Name);
+    private sealed record EncounterNameUpdateRequest(long Revision, string? Name);
     private sealed record AddParticipantRequest(long Revision, Guid? CharacterId, string? MobName,
         string? Initiative, string? CurrentHp, bool IsHeld = false);
     private sealed record InitiativeRequest(long Revision, string? Initiative);

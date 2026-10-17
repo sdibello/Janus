@@ -17,6 +17,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [editingHpIds, setEditingHpIds] = useState<string[]>([])
   const [conditionParticipantId, setConditionParticipantId] = useState<string | null>(null)
   const [addParticipantOpen, setAddParticipantOpen] = useState(false)
+  const [editingName, setEditingName] = useState(false)
   async function addParticipant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected) return
@@ -80,6 +81,15 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     const saved = await mutate(`${api}/${selected.id}/participants/${participantId}/hp`, 'PATCH',
       { revision: selected.revision, currentHp }, 'HP saved.')
     if (saved) setEditingHpIds((ids) => ids.filter((id) => id !== participantId))
+  }
+
+  async function saveEncounterName(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selected) return
+    const name = new FormData(event.currentTarget).get('name')
+    const saved = await mutate(`${api}/${selected.id}/name`, 'PATCH',
+      { revision: selected.revision, name }, 'Encounter name updated.')
+    if (saved) setEditingName(false)
   }
 
   function moveToIndex(participantId: string, targetIndex: number) {
@@ -204,7 +214,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
         const list = <ul className="encounter-list">{items.map((encounter) => <li key={encounter.id}>
         <div className="encounter-list-actions">
           <button type="button" className={selectedId === encounter.id ? 'selected' : ''}
-            disabled={busy} onClick={() => { setSelected(null); onSelectId(encounter.id) }}>
+            disabled={busy} onClick={() => { setEditingName(false); setSelected(null); onSelectId(encounter.id) }}>
             {encounter.name} <small>{encounter.phase}</small>
           </button>
           <button type="button" className="encounter-duplicate"
@@ -221,9 +231,20 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     {selectedId && !selected && <p>Loading encounter…</p>}
     {selectedId && selected && <div className="encounter-detail">
       <div className="encounter-heading">
-        <h2>{selected.name}</h2>
-        {selected.phase === 'Prepare' && <button type="button" disabled={busy || activeParticipants.length === 0}
-          onClick={() => { setMessage(''); setInitiativeStep(0); setInitiativeOpen(true) }}>Begin Fight</button>}
+        {editingName ? <form className="encounter-rename-form" onSubmit={(event) => void saveEncounterName(event)}>
+          <label>Encounter name<input name="name" defaultValue={selected.name} required /></label>
+          <button type="submit" disabled={busy}>Save name</button>
+          <button type="button" disabled={busy} onClick={() => setEditingName(false)}>Cancel</button>
+        </form> : <>
+          <h2>{selected.name}</h2>
+          <div className="encounter-heading-actions">
+            <button type="button" disabled={busy} onClick={() => { setMessage(''); setEditingName(true) }}>
+              Edit name
+            </button>
+            {selected.phase === 'Prepare' && <button type="button" disabled={busy || activeParticipants.length === 0}
+              onClick={() => { setMessage(''); setInitiativeStep(0); setInitiativeOpen(true) }}>Begin Fight</button>}
+          </div>
+        </>}
       </div>
       <p>Phase: {selected.phase}. {activeParticipants.length} active, {heldParticipants.length} held.
         {selected.phase !== 'Prepare' && <> Round {selected.round}.</>}</p>
