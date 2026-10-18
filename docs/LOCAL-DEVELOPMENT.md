@@ -22,6 +22,8 @@ npm ci --prefix web
 
 The migration commands create `janus.db` in the operating system's local application data directory under `Janus`. Identity data and campaign data share the file but have separate migration histories; apply the identity migration first. The identity host stores data-protection keys and local OpenID Connect signing/encryption certificates in `keys/`. The campaign host stores its data-protection keys in `campaign-keys/` and protected session tickets in SQLite. Nothing from that directory belongs in source control. Keep its private keys accessible only to the local user.
 
+See [database backups and recovery](BACKUPS.md) for a nightly Linux/Compose backup job, AWS S3 and Azure Blob Storage setup, retention, and restore drills. Back up the complete data directory with both hosts stopped before applying migrations; copying only a live `janus.db` can miss WAL data and leaves out the keys.
+
 The `AlphaRoundProgress` campaign migration stores which participants have acted in the current Round. Existing Fight encounters have no historical per-participant completion record, so they begin with every participant marked incomplete for their current Round after this upgrade. Their saved Round, individual Turn counters, order, and HP remain unchanged.
 
 The `EncounterConditions` campaign migration adds saved Invisible, Grappled, and Prone statuses. Apply the campaign migration after pulling this change before starting the Campaigns host. A status starts at zero turns and counts only that participant's Next actions while applied; Skip does not increase it.
