@@ -253,8 +253,6 @@ internal static class EncounterEndpoints
         return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
     }
 
-    private static readonly HashSet<string> AllowedConditions = ["Invisible", "Grappled", "Prone"];
-
     private static async Task<IResult> AddConditionAsync(
         Guid campaignId, Guid encounterId, Guid participantId, ConditionRequest request,
         HttpContext context, CampaignAccessService access, CampaignDataContext data,
@@ -267,8 +265,8 @@ internal static class EncounterEndpoints
         if (encounter is null) return Results.NotFound();
         if (encounter.Phase != EncounterPhase.Fight) return FightOnly();
         if (request.Revision != encounter.Revision) return Stale();
-        if (request.Kind is null || !AllowedConditions.Contains(request.Kind))
-            return Results.BadRequest(new { message = "Choose Invisible, Grappled, or Prone." });
+        if (request.Kind is null || !ConditionCatalog.Contains(request.Kind))
+            return Results.BadRequest(new { message = "Choose a supported status from the Statuses box." });
         var participant = await data.Participants.SingleOrDefaultAsync(item => item.Id == participantId
             && item.EncounterId == encounterId, cancellationToken);
         if (participant is null) return Results.NotFound();
@@ -454,10 +452,11 @@ internal static class EncounterEndpoints
             return Results.BadRequest(new { message = "Order must contain every participant exactly once." });
         if (encounter.ActiveParticipantId is not { } activeId || !oldOrder.Contains(activeId))
             return InvalidFight();
-        if (oldOrder.SequenceEqual(request.OrderedIds))
+        if (oldOrder.SequenceEqual(request.OrderedIds)
+            && (!request.MakeActive || activeId == request.OrderedIds[0]))
             return Results.Ok(await DetailAsync(data, encounter, cancellationToken));
         await StagePositionsAsync(data, participants, cancellationToken);
-        EncounterStateTransitions.Reorder(participants, request.OrderedIds);
+        EncounterStateTransitions.Reorder(encounter, participants, request.OrderedIds, request.MakeActive);
         encounter.Revision++;
         try
         {
@@ -524,10 +523,11 @@ internal static class EncounterEndpoints
                 .Select(id => byId[id]).ToList();
         }
         if (request.TargetIndex < 0 || request.TargetIndex > active.Count
-            || (encounter.Phase == EncounterPhase.Fight && active.Count > 0 && request.TargetIndex == 0))
+            || (request.MakeActive && request.TargetIndex != 0)
+            || (encounter.Phase == EncounterPhase.Fight && active.Count > 0 && request.TargetIndex == 0 && !request.MakeActive))
             return Results.BadRequest(new { message = "Choose a valid position in the active list." });
         await StagePositionsAsync(data, participants, cancellationToken);
-        EncounterStateTransitions.Release(encounter, participants, participant, request.TargetIndex);
+        EncounterStateTransitions.Release(encounter, participants, participant, request.TargetIndex, request.MakeActive);
         encounter.Revision++;
         try
         {
@@ -749,8 +749,8 @@ internal static class EncounterEndpoints
         string? Initiative, string? CurrentHp, bool IsHeld = false);
     private sealed record InitiativeRequest(long Revision, string? Initiative);
     private sealed record RevisionRequest(long Revision);
-    private sealed record ReorderRequest(long Revision, Guid[]? OrderedIds);
-    private sealed record ActivateRequest(long Revision, int TargetIndex);
+    private sealed record ReorderRequest(long Revision, Guid[]? OrderedIds, bool MakeActive = false);
+    private sealed record ActivateRequest(long Revision, int TargetIndex, bool MakeActive = false);
     private sealed record SetActiveRequest(long Revision, Guid ParticipantId);
     private sealed record HpRequest(long Revision, string? CurrentHp);
     private sealed record HpAmountRequest(long Revision, string? Amount);

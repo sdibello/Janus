@@ -18,28 +18,28 @@ Adding PCs, NPCs, and mobs while running is covered by specs 003 and 004. New en
 
 ## Requirements
 
-- R1: An active encounter displays all active PCs, NPCs, and individual mobs in a single column of tiles, starting with the active participant and continuing cyclically in saved order. The Hold list appears above this column. The active tile is highlighted and labeled. Long lists may scroll, but participants must remain accessible.
-- R14: A held participant may be dragged into an indicated active-list slot during Fight. In a nonempty list, slots start after the active tile and the current active participant remains active. In an empty list, the released participant becomes active. Release does not change Round or individual Turn counters; the released participant joins the current Round as incomplete. See [decision 0084](../decisions/0084-encounter-hold-list.md).
-- R2: An authorized user can drag a participant across PC, NPC, and mob categories. During the drag, an arrow and line identify the exact insertion slot between displayed tiles or after the final tile. No slot appears before the active-first tile. Dropping commits the new order and preserves the relative order of all other entries.
+- R1: An active encounter displays all active PCs, NPCs, and individual mobs in a single column of tiles, starting with the active participant and continuing cyclically in saved order. The Hold list uses the right-hand sidebar or stacked layout in [decision 0094](../decisions/0094-fight-hold-sidebar.md). The active tile is highlighted and labeled. Long lists may scroll, but participants must remain accessible.
+- R14: A held participant may be dragged into an indicated active-list slot during Fight. In a nonempty list, dropping into the new top slot makes the released participant active; other slots keep the current active participant. In an empty list, the released participant becomes active. Release does not change Round or individual Turn counters; the released participant joins the current Round as incomplete. See [decision 0084](../decisions/0084-encounter-hold-list.md).
+- R2: An authorized user can drag a participant across PC, NPC, and mob categories. During the drag, an arrow and line identify the exact insertion slot between displayed tiles or after the final tile. A top slot appears above the active tile; dropping there also makes the moved participant active. Dropping commits the new order and preserves the relative order of all other entries.
 - R3: Initiative constructs the order when the DM confirms Fight after the lightbox review. Display recorded initiative during Fight. Next, Skip, manual reordering, and adding a participant must not sort by initiative. New participants can be inserted without initiative entry; show no initiative value unless one was entered. Recorded values remain informational and do not control Fight order.
-- R4: Reordering changes only the encounter's sequence. It does not change participant identity, category, initiative values, campaign records, or another encounter's order. Same-name mobs remain individually addressable.
-- R5: Adding or reordering participants leaves the current participant highlighted. A reorder changes saved order only; it does not advance the turn or change Round, individual Turn counters, or current-Round completion. The active participant remains first in the displayed cyclic order after the reorder.
+- R4: Ordinary reordering changes only the encounter's sequence; the top slot also makes the moved participant active. Neither changes participant identity, category, initiative values, campaign records, or another encounter's order. Same-name mobs remain individually addressable.
+- R5: Adding participants and reordering to an ordinary slot leaves the current participant highlighted; a top-slot drop explicitly activates the moved participant. An ordinary reorder changes saved order only; it does not advance the turn or change Round, individual Turn counters, or current-Round completion. The active participant remains first in the displayed cyclic order after the reorder.
 - R13: During Fight, newly added PCs, NPCs, and mobs are inserted immediately before the active participant. Adding an entry alone does not change the active highlight. The new entry can then be reordered like any other participant.
-- R11: The dungeon master can explicitly set any participant in the active list as active using a control available during Fight. Exactly one participant is active when that list is nonempty. Selecting a participant does not reorder the list or change Round or individual Turn counters.
+- R11: The dungeon master can explicitly make any participant active by dropping it above the current active participant, or pressing Alt+Home on its focused tile; there is no Set active button. Exactly one participant is active when that list is nonempty. This top move saves order and active selection atomically without changing Round, individual Turn counters, HP, or completion flags.
 - R12: Round increments after every participant in the current Round has used Next or Skip once. Each Next increments only the active participant's individual Turn counter; Skip does not. Newly added participants join the current Round. Drag-and-drop reordering, insertion, and manual active selection do not themselves change either counter.
 - R6: Next and Skip advance to the next participant in the current cyclic order, move the former active participant to the bottom of the active-first sequence, and save the resulting order. An already completed participant's repeated action does not finish the Round early. The DM can select any participant active when an exception is needed.
 - R8: A manual reorder changes the relative cyclic order until another manual reorder; ordinary Next and Skip rotations preserve that relative cyclic order. A canceled drag or a drop in the original position leaves the sequence, active participant, and both counter types unchanged.
-- R9: Remove Move up/down buttons from participant cards. Provide a keyboard-accessible alternative: focus a Fight tile and use Alt+ArrowUp or Alt+ArrowDown to move it one slot with the same active-preserving behavior as drag and drop. Explain the shortcut near the list and keep the moved entry identifiable after a move.
+- R9: Remove Move up/down buttons from participant cards. Provide a keyboard-accessible alternative: focus a Fight tile and use Alt+ArrowUp or Alt+ArrowDown to move it one slot with the same behavior as drag and drop: crossing into the top slot makes it active, and other moves preserve active selection. Explain the shortcut near the list and keep the moved entry identifiable after a move.
 - R10: Reordering requires permission to maintain the encounter, enforced on direct requests as well as in the UI. Reorder requests against an ended encounter do not change its stopped sequence.
 
 ## Acceptance criteria
 
-Order examples below name the **saved** order. The visible tile list starts at the active participant and may be a cyclic rotation of it after Set active or drag-and-drop.
+Order examples below name the **saved** order. The visible tile list starts at the active participant and may be a cyclic rotation of it after active-preserving drag-and-drop.
 
 - [ ] The encounter shows active PCs, NPCs, and mobs in one ordered sequence and held entries in a list above it. A nonempty active list has exactly one active participant.
 - [ ] Given initial order A (18), B (12), C (5) with A active, dragging C between A and B saves and displays A, C, B despite C's lower initiative; A stays active.
 - [ ] During a drag, an arrow marks the slot between the two tiles where the entry will land, or the slot after the final tile. The marker clears after drop or cancel; no whole-tile drop outline appears.
-- [ ] Given A, B, C with A active, reordering leaves A active and both counters unchanged.
+- [ ] Given A, B, C with A active, ordinary drop slots leave A active and both counters unchanged; dropping B above A saves B, A, C and makes B active without changing counters.
 - [ ] The next cycle keeps the relative A, C, B sequence without re-sorting by initiative, while Next and Skip save each active-to-bottom rotation.
 - [ ] Initiative values remain displayed after reordering and do not change the manually selected order.
 - [ ] Given A, B, C with B active, the displayed list begins B, C, A. Moving A between B and C saves B, A, C and keeps B active.
@@ -49,14 +49,14 @@ Order examples below name the **saved** order. The visible tile list starts at t
 - [ ] Given a single participant A, reordering/no-op behavior leaves A active.
 - [ ] The dungeon master can manually set any participant, including an unconscious participant, as active. The selected entry becomes the only active entry while Round and all individual Turn counters remain unchanged.
 - [ ] Adding a mob immediately before the active participant leaves that participant highlighted; a subsequent reorder also leaves that participant active.
-- [ ] Moving a non-active or active participant leaves the active participant unchanged, without a prompt, and leaves counters unchanged.
+- [ ] Ordinary drop slots preserve the active participant. A top drop makes the moved participant active, without a prompt. Both leave counters unchanged.
 - [ ] Manually selecting any participant and inserting a mob immediately before the active participant leave both counter types unchanged.
 - [ ] Round increments once after every currently active participant has used Next or Skip in the Round; held participants do not count. Only Next increments the active participant's individual Turn counter.
-- [ ] Dragging a held participant into the displayed drop slot adds it there and leaves the current active participant and counters unchanged.
+- [ ] Dragging a held participant to an ordinary slot keeps the current active participant; releasing at the top makes the released participant active. Both keep counters unchanged.
 - [ ] Drag-and-drop reordering, whether moving the active or another participant, never resets or changes either counter type.
 - [ ] Two mobs with the same name can be reordered independently without losing, duplicating, or changing either participant.
 - [ ] Canceling a drag or dropping in the same position has no effect on order, active participant, or counter.
-- [ ] No participant card shows Move up/down buttons. Focusing a Fight tile and pressing Alt+ArrowUp or Alt+ArrowDown moves it one slot without changing the active participant; Set active remains a separate explicit action.
+- [ ] No participant card shows Move up/down buttons. Focusing a Fight tile and pressing Alt+ArrowUp or Alt+ArrowDown moves it one slot while ordinary slots preserve the active participant; moving to the top explicitly makes it active.
 - [ ] Single-participant behavior remains as defined in spec 004: Next increments that participant's individual Turn and Round, while Skip increments only Round; the participant remains active.
 - [ ] Unauthorized or ended-encounter reorder requests do not change the sequence.
 - [ ] Reordering leaves campaign character information and other encounters unchanged.
@@ -70,3 +70,5 @@ The Fight UI supports drag-and-drop and Alt+ArrowUp/Down keyboard reordering wit
 ## Open questions
 
 None from the completed review. Decision 0025 confirms initial and final counters; spec 004 requires consistent restoration of completed changes.
+
+The top-drop activation and compact row rules in [decision 0097](../decisions/0097-top-drop-activation-and-inline-fight-controls.md) supersede earlier blanket active-preservation statements for the top insertion slot only. Test failed saves, ordinary slots, top slots, and held release at the top separately.

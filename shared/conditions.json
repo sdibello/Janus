@@ -1,0 +1,296 @@
+[
+  {
+    "kind": "AbilityDamaged",
+    "label": "Ability damaged",
+    "summary": "Ability scores are temporarily reduced; recalculate affected modifiers. Zero scores can incapacitate or kill.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#abilityDamaged",
+    "core": true
+  },
+  {
+    "kind": "AbilityDrained",
+    "label": "Ability drained",
+    "summary": "Ability scores are permanently reduced; restoration usually requires magic. Recalculate affected modifiers.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#abilityDrained",
+    "core": true
+  },
+  {
+    "kind": "Blinded",
+    "label": "Blinded",
+    "summary": "Cannot see; half movement, −2 AC, no Dexterity bonus to AC, and 50% miss chance. Sight-based checks fail.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "BlownAway",
+    "label": "Blown away",
+    "summary": "Wind knocks ground creatures prone and rolls them backward; flyers are blown away. Resolve distance and damage.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#blownAway",
+    "core": true
+  },
+  {
+    "kind": "Checked",
+    "label": "Checked",
+    "summary": "Wind prevents forward movement; a flying creature can also be driven backward.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#checked",
+    "core": true
+  },
+  {
+    "kind": "Confused",
+    "label": "Confused",
+    "summary": "Determine behavior each turn using the confusion table; attacks can redirect the next turn’s behavior.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#confused",
+    "core": true
+  },
+  {
+    "kind": "Cowering",
+    "label": "Cowering",
+    "summary": "Frozen by fear: no actions, −2 AC, and no Dexterity bonus to AC.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#cowering",
+    "core": true
+  },
+  {
+    "kind": "Dazed",
+    "label": "Dazed",
+    "summary": "Cannot take actions; this condition alone does not reduce AC.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#dazed",
+    "core": true
+  },
+  {
+    "kind": "Dazzled",
+    "label": "Dazzled",
+    "summary": "Apply −1 to attacks and to Search and Spot checks.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Dead",
+    "label": "Dead",
+    "summary": "Cannot act or recover through ordinary healing; returning to life requires an appropriate effect.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#dead",
+    "core": true
+  },
+  {
+    "kind": "Deafened",
+    "label": "Deafened",
+    "summary": "Cannot hear; Listen checks fail, initiative takes −4, and verbal spells have a 20% failure chance.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#deafened",
+    "core": true
+  },
+  {
+    "kind": "Dehydrated",
+    "label": "Dehydrated",
+    "summary": "Thirst can cause nonlethal damage and fatigue. Recovery requires water; resolve the exposure rules.",
+    "source": "https://www.d20srd.org/srd/environment.htm#starvationAndThirst",
+    "core": false
+  },
+  {
+    "kind": "Disabled",
+    "label": "Disabled",
+    "summary": "Half movement; choose one move or standard action, not both. Strenuous actions can cost 1 HP.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#disabled",
+    "core": true
+  },
+  {
+    "kind": "Diseased",
+    "label": "Diseased",
+    "summary": "Use the particular disease’s saves, incubation, damage, and recovery rules; there is no universal penalty.",
+    "source": "https://www.d20srd.org/srd/specialAbilities.htm#disease",
+    "core": false
+  },
+  {
+    "kind": "Dying",
+    "label": "Dying",
+    "summary": "Unconscious and unable to act; resolve stabilization and round-end HP loss unless already stable.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#dying",
+    "core": true
+  },
+  {
+    "kind": "EnergyDrained",
+    "label": "Energy drained",
+    "summary": "Each negative level reduces attacks, saves, checks, effective level, and HP; spellcasters also lose spell capacity.",
+    "source": "https://www.d20srd.org/srd/specialAbilities.htm#energyDrainAndNegativeLevels",
+    "core": true
+  },
+  {
+    "kind": "Entangled",
+    "label": "Entangled",
+    "summary": "Half movement; no running or charging, −2 attacks, −4 Dexterity. Casting requires a concentration check.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Exhausted",
+    "label": "Exhausted",
+    "summary": "Half movement and −6 to Strength and Dexterity; sufficient rest reduces this to fatigue.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#exhausted",
+    "core": true
+  },
+  {
+    "kind": "Fascinated",
+    "label": "Fascinated",
+    "summary": "Attend to the source instead of acting; reactive checks take −4. Threats can end the effect.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#fascinated",
+    "core": true
+  },
+  {
+    "kind": "Fatigued",
+    "label": "Fatigued",
+    "summary": "Cannot run or charge; Strength and Dexterity take −2. Further fatigue can cause exhaustion.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#fatigued",
+    "core": true
+  },
+  {
+    "kind": "FlatFooted",
+    "label": "Flat-footed",
+    "summary": "Dexterity bonus to AC is unavailable, and attacks of opportunity are normally unavailable.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Frightened",
+    "label": "Frightened",
+    "summary": "Flee if possible; attacks, saves, skill checks, and ability checks take −2.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Grappled",
+    "label": "Grappled",
+    "summary": "Grappling restricts actions and threatened squares; lose Dexterity to AC against opponents outside the grapple.",
+    "source": "https://www.d20srd.org/srd/combat/specialAttacks.htm#grapple",
+    "core": true
+  },
+  {
+    "kind": "Helpless",
+    "label": "Helpless",
+    "summary": "Treat Dexterity as 0; melee attackers gain +4. Coup de grace may be possible.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Incorporeal",
+    "label": "Incorporeal",
+    "summary": "Nonmagical attacks generally cannot harm you; many magical attacks have a 50% failure chance. Check exceptions.",
+    "source": "https://www.d20srd.org/srd/specialAbilities.htm#incorporeality",
+    "core": true
+  },
+  {
+    "kind": "Invisible",
+    "label": "Invisible",
+    "summary": "Unseen; attacks against sighted foes gain +2 and ignore their Dexterity bonus to AC. Concealment applies.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "KnockedDown",
+    "label": "Knocked down",
+    "summary": "Wind makes ground creatures prone; flying creatures are pushed backward instead.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#knockedDown",
+    "core": true
+  },
+  {
+    "kind": "Nauseated",
+    "label": "Nauseated",
+    "summary": "Only one move action per turn; no attacking, casting, or concentrating.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#nauseated",
+    "core": true
+  },
+  {
+    "kind": "Panicked",
+    "label": "Panicked",
+    "summary": "Drop held items and flee; saves and checks take −2. If escape is impossible, cower.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#panicked",
+    "core": true
+  },
+  {
+    "kind": "Paralyzed",
+    "label": "Paralyzed",
+    "summary": "No physical actions; effective Strength and Dexterity are 0. Purely mental actions remain possible.",
+    "source": "https://www.d20srd.org/srd/specialAbilities.htm#paralysis",
+    "core": true
+  },
+  {
+    "kind": "Petrified",
+    "label": "Petrified",
+    "summary": "Transformed to stone and unconscious. Damage or missing pieces can matter when restored.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#petrified",
+    "core": true
+  },
+  {
+    "kind": "Pinned",
+    "label": "Pinned",
+    "summary": "Immobilized in a grapple, but not automatically helpless. Resolve the restricted grapple actions.",
+    "source": "https://www.d20srd.org/srd/combat/specialAttacks.htm#grapple",
+    "core": true
+  },
+  {
+    "kind": "Poisoned",
+    "label": "Poisoned",
+    "summary": "Resolve the specific poison’s saving throws and initial/secondary effects; penalties vary by poison.",
+    "source": "https://www.d20srd.org/srd/specialAbilities.htm#poison",
+    "core": false
+  },
+  {
+    "kind": "Prone",
+    "label": "Prone",
+    "summary": "−4 melee attacks; AC −4 against melee and +4 against ranged. Standing uses a move action and can provoke.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Rebuked",
+    "label": "Rebuked",
+    "summary": "Rebuked undead cower, and attacks against them gain +2 while the rebuke lasts.",
+    "source": "https://www.d20srd.org/srd/combat/specialAttacks.htm#turnOrRebukeUndead",
+    "core": false
+  },
+  {
+    "kind": "Shaken",
+    "label": "Shaken",
+    "summary": "Apply −2 to attacks, saves, skill checks, and ability checks.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Sickened",
+    "label": "Sickened",
+    "summary": "Apply −2 to attacks, weapon damage, saves, skill checks, and ability checks.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#sickened",
+    "core": true
+  },
+  {
+    "kind": "Stable",
+    "label": "Stable",
+    "summary": "No longer losing HP each round from dying; usually still unconscious. Resolve ongoing recovery separately.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#stable",
+    "core": true
+  },
+  {
+    "kind": "Staggered",
+    "label": "Staggered",
+    "summary": "Choose one move or standard action per round, not both; no full-round actions.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#staggered",
+    "core": true
+  },
+  {
+    "kind": "Stunned",
+    "label": "Stunned",
+    "summary": "Drop held objects and take no actions; AC takes −2 and loses its Dexterity bonus.",
+    "source": "https://www.d20srd.org/srd/combat/combatModifiers.htm",
+    "core": true
+  },
+  {
+    "kind": "Turned",
+    "label": "Turned",
+    "summary": "Turned undead flee for 10 rounds; when unable to flee, they cower.",
+    "source": "https://www.d20srd.org/srd/combat/specialAttacks.htm#turnOrRebukeUndead",
+    "core": true
+  },
+  {
+    "kind": "Unconscious",
+    "label": "Unconscious",
+    "summary": "Cannot act and is helpless; resolve the cause and recovery requirements.",
+    "source": "https://www.d20srd.org/srd/conditionSummary.htm#unconscious",
+    "core": true
+  }
+]

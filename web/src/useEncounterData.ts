@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { campaignApi } from './runtime'
+import type { ConditionKind } from './conditions'
+
+export type { ConditionKind } from './conditions'
 
 export type Character = { id: string; name: string; kind: 'Pc' | 'Npc' }
 export type EncounterSummary = { id: string; name: string; phase: 'Prepare' | 'Fight' | 'Finished'; round: number; revision: number }
-export type ConditionKind = 'Invisible' | 'Grappled' | 'Prone'
 export type Participant = {
   id: string
   characterId: string | null

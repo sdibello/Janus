@@ -5,6 +5,7 @@
 - Related spec: [005: Manual encounter ordering](../specs/005-manual-encounter-order.md)
 - Supersedes: [0019: Advance active selection using the pre-reorder list](0019-active-after-reorder.md) and the reorder-active clause in [0079](0079-alpha-encounter-workflow.md)
 - Updated by: [0081](0081-active-card-actions-and-hp-save-layout.md) for keyboard controls
+- Updated by: [0097](0097-top-drop-activation-and-inline-fight-controls.md) for activation through a new top insertion slot
 
 ## Context
 
