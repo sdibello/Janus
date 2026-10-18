@@ -34,9 +34,9 @@ try {
   await pc.locator('.dying-label').waitFor()
   assert.equal(await page.locator('.encounter-participants > li').count(), 3)
   if (expectedPhase === 'Fight') {
-    await pc.locator('.active-label').waitFor()
+    await pc.and(page.locator('.fight-list > li.active')).waitFor()
     await pc.getByText('Turn: 1', { exact: true }).waitFor()
-    assert.equal(await pc.locator('.fight-tile-heading .fight-hp-row').count(), 0)
+    assert.equal(await pc.locator('.fight-tile-heading .fight-hp-row').count(), 1)
     assert.equal(await page.locator('.inactive-fight-heading').count(), 2)
     assert.equal(await page.locator('.inactive-fight-heading > .fight-hp-row').count(), 2)
     assert.equal(await page.locator('.encounter-detail').getByRole('button', { name: 'Next' }).count(), 1)

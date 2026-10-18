@@ -48,6 +48,24 @@ EncounterStateTransitions.Release(encounter, ordered, held, targetIndex: 1);
 Check(!held.IsHeld && held.Position == 1 && encounter.ActiveParticipantId == first.Id,
     "Release changed the active participant or insertion position.");
 
+// A top drop saves both the new order and active selection without advancing a turn.
+var beforeDrop = participants.ToDictionary(item => item.Id,
+    item => (item.TurnCount, item.CompletedThisRound, item.CurrentHp));
+var beforeDropRound = encounter.Round;
+EncounterStateTransitions.Reorder(encounter, [first, held, second], [second.Id, first.Id, held.Id], makeActive: true);
+Check(encounter.ActiveParticipantId == second.Id && second.Position == 0 && first.Position == 1 && held.Position == 2,
+    "A top drop did not move and activate the chosen participant together.");
+EncounterStateTransitions.Reorder(encounter, [second, first, held], [second.Id, held.Id, first.Id]);
+Check(encounter.ActiveParticipantId == second.Id, "An ordinary reorder changed the active participant.");
+Check(encounter.Round == beforeDropRound && participants.All(item =>
+    beforeDrop[item.Id] == (item.TurnCount, item.CompletedThisRound, item.CurrentHp)),
+    "Reordering or top activation changed HP, turns, or Round completion.");
+ordered = participants.OrderBy(item => item.Position).ToList();
+EncounterStateTransitions.Release(encounter, ordered, third, targetIndex: 0, makeActive: true);
+Check(encounter.ActiveParticipantId == third.Id && !third.IsHeld && third.Position == 0
+    && encounter.Round == beforeDropRound && third.TurnCount == beforeDrop[third.Id].TurnCount,
+    "Releasing a held participant at the top did not activate it without advancing counters.");
+
 var max = NumericInputLimits.MaxCharacters;
 Check(ExactDecimal.TryParse(new string('9', max), out var large)
     && large.ToString().Length == max, "A value at the input budget was rejected.");
@@ -179,4 +197,28 @@ await using (var staleWriter = new CampaignDataContext(options))
     Check(rejected, "SQLite accepted a stale encounter revision.");
 }
 
-Console.WriteLine("Encounter transitions, SQLite persistence, stale revisions, and numeric limits passed.");
+Check(ConditionCatalog.All.Count == 42 && ConditionCatalog.All.Count(item => item.Core) == 38,
+    "The D&D 3.5 catalog does not contain 38 core conditions and four project-reference tags.");
+Check(ConditionCatalog.All.Select(item => item.Kind).Distinct().Count() == ConditionCatalog.All.Count
+    && ConditionCatalog.All.All(item => ConditionCatalog.Contains(item.Kind)
+        && !string.IsNullOrWhiteSpace(item.Label) && !string.IsNullOrWhiteSpace(item.Summary)
+        && Uri.TryCreate(item.Source, UriKind.Absolute, out _)),
+    "Condition definitions have missing metadata, duplicate IDs, or unsupported kinds.");
+Check(ConditionCatalog.Contains("Invisible") && ConditionCatalog.Contains("Grappled")
+    && ConditionCatalog.Contains("Prone") && ConditionCatalog.Contains("Blinded")
+    && ConditionCatalog.Contains("Stable") && !ConditionCatalog.Contains("Unsupported")
+    && !ConditionCatalog.Contains(null), "Condition validation lost compatibility or accepted an unknown status.");
+await using (var data = new CampaignDataContext(options))
+{
+    data.Conditions.AddRange(ConditionCatalog.All.Select(item => new ParticipantCondition
+        { ParticipantId = pcId, Kind = item.Kind, AppliedAtTurnCount = 3 }));
+    await data.SaveChangesAsync();
+}
+await using (var data = new CampaignDataContext(options))
+{
+    var savedConditions = await data.Conditions.AsNoTracking().Where(item => item.ParticipantId == pcId).ToArrayAsync();
+    Check(savedConditions.Length == ConditionCatalog.All.Count && savedConditions.All(item => item.AppliedAtTurnCount == 3),
+        "The expanded condition catalog did not survive a SQLite reload.");
+}
+
+Console.WriteLine("Encounter transitions, SQLite persistence, condition catalog, stale revisions, and numeric limits passed.");

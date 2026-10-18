@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="../../shared/conditions.json" LogicalName="Janus.Domain.conditions.json" />
+  </ItemGroup>
+
 </Project>

@@ -1,7 +1,5 @@
 import { useEffect, useRef, type FormEvent, type ReactNode } from 'react'
-import type { ConditionKind, Participant } from './useEncounterData'
-
-const conditionKinds: ConditionKind[] = ['Invisible', 'Grappled', 'Prone']
+import type { Participant } from './useEncounterData'
 
 function DialogShell({ titleId, className, onClose, children }: {
   titleId: string; className?: string; onClose: () => void; children: ReactNode
@@ -63,20 +61,5 @@ export function InitiativeDialog({ participants, step, setStep, message, busy, o
           onClick={onConfirm}>Confirm and begin Fight</button>
       </div>
     </>}
-  </DialogShell>
-}
-
-export function ConditionDialog({ participant, busy, onAdd, onClose }: {
-  participant: Participant; busy: boolean; onAdd: (kind: ConditionKind) => void; onClose: () => void
-}) {
-  return <DialogShell titleId="condition-title" onClose={onClose}>
-    <h3 id="condition-title">Statuses for {participant.name}</h3>
-    <p>Add a status to this participant. Its count starts at 0 and increases only when they use Next.</p>
-    <div className="condition-choices">{conditionKinds.map((kind) => {
-      const applied = participant.conditions.some((condition) => condition.kind === kind)
-      return <button type="button" key={kind} disabled={busy || applied}
-        onClick={() => onAdd(kind)}>{kind}{applied ? ' ✓' : ''}</button>
-    })}</div>
-    <div className="dialog-actions"><button type="button" onClick={onClose}>Done</button></div>
   </DialogShell>
 }

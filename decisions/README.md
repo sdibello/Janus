@@ -101,4 +101,9 @@ When a decision changes, add a new record and mark the old one Superseded with a
 | [0091](0091-duplicate-encounters-from-campaign-list.md) | Accepted | Duplicate any encounter from the campaign list as a fresh Prepare encounter with participant membership only. |
 | [0092](0092-rename-encounters-in-any-phase.md) | Accepted | Allow encounter-name edits in every phase while keeping Finished encounter state otherwise read-only. |
 | [0093](0093-inactive-fight-hp-placement.md) | Accepted | Align non-active Fight cards into name/turn, HP, and action columns; retain the active card layout. |
-| [0094](0094-fight-hold-sidebar.md) | Accepted for experiment | Keep Fight participant width and add a 25% Hold sidebar with draggable name tiles; stack below on smaller displays. |
+| [0094](0094-fight-hold-sidebar.md) | Accepted; experiment merged | Keep Fight participant width and add a 25% Hold sidebar with draggable name tiles; stack below on smaller displays. |
+| [0095](0095-draggable-status-palette.md) | Accepted | Apply statuses by dragging from a shared box beneath Hold; remove Fight-row Hold and status-picker buttons. |
+| [0096](0096-compact-adjustment-and-activation-controls.md) | Accepted | Size HP adjustments for four characters; show a Set active icon only on non-active Fight participants. |
+| [0097](0097-top-drop-activation-and-inline-fight-controls.md) | Accepted | Activate by dropping at the top; align compact HP/turn controls with every name and truncate long names. |
+| [0098](0098-fight-name-space-and-status-alignment.md) | Accepted | Widen Fight names, put adjustment directly before Damage, and group colored statuses at the right without an Active turn bubble. |
+| [0099](0099-dnd35-condition-catalog-and-active-summary.md) | Accepted | Share 42 D&D 3.5 statuses and add an active-only second row for turn actions and sourced effect summaries. |

@@ -1,7 +1,8 @@
 # 0094: Put Fight Hold in a separate sidebar
 
 - Date: 2026-10-17
-- Status: Accepted for experiment on `experiment/fight-hold-sidebar`
+- Status: Accepted; experiment merged into `refactor/encounter-structure-and-numeric-limits`
+- Superseded by: [0095](0095-draggable-status-palette.md) for retaining a per-row Fight Hold button
 - Related specs: [003](../specs/003-encounters-and-participants.md), [004](../specs/004-initiative-and-turn-sequence.md), [005](../specs/005-manual-encounter-order.md), [008](../specs/008-encounter-conditions-and-layout.md)
 - Supersedes: Fight Hold placement and presentation in [0084](0084-encounter-hold-list.md) and [0087](0087-fight-section-headers-and-add-dialog.md)
 
@@ -27,4 +28,4 @@ Keep HP, conditions, Round, individual Turn counts, and existing active-selectio
 
 Fight uses more horizontal space on wide displays. This is a presentation and interaction change with no database migration or new dependency. Browser tests with fixture responses verify the UI; account-backed persistence and backend Hold rules remain covered separately.
 
-The prior layout is saved on `refactor/encounter-structure-and-numeric-limits` at `912003f`. Switch back to that branch to compare or decline the experiment.
+The prior layout is preserved at `912003f`. The experiment was accepted and merged into `refactor/encounter-structure-and-numeric-limits` at `6f45f91`; switching to that branch now includes the sidebar.

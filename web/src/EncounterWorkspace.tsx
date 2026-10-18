@@ -1,6 +1,9 @@
 import { useState, type DragEvent, type FormEvent } from 'react'
-import { AddParticipantDialog, ConditionDialog, InitiativeDialog } from './EncounterDialogs'
+import { AddParticipantDialog, InitiativeDialog } from './EncounterDialogs'
+import { conditionDefinitions, conditionDefinition, conditionLabel } from './conditions'
 import useEncounterData, { type Character, type ConditionKind, type Participant } from './useEncounterData'
+
+const conditionDragType = 'application/x-janus-condition'
 
 function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: {
   campaignId: string; characters: Character[]; selectedId: string | null
@@ -16,7 +19,10 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const [initiativeStep, setInitiativeStep] = useState(0)
   const [prepareSelectedId, setPrepareSelectedId] = useState<string | null>(null)
   const [editingHpIds, setEditingHpIds] = useState<string[]>([])
-  const [conditionParticipantId, setConditionParticipantId] = useState<string | null>(null)
+  const [draggedCondition, setDraggedCondition] = useState<ConditionKind | null>(null)
+  const [conditionDropId, setConditionDropId] = useState<string | null>(null)
+  const [selectedCondition, setSelectedCondition] = useState<ConditionKind | null>(null)
+  const [conditionFilter, setConditionFilter] = useState('')
   const [addParticipantOpen, setAddParticipantOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
   async function addParticipant(event: FormEvent<HTMLFormElement>) {
@@ -48,7 +54,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   async function setCondition(participant: Participant, kind: ConditionKind, add: boolean) {
     if (!selected) return
     const base = `${api}/${selected.id}/participants/${participant.id}/conditions`
-    await mutate(add ? base : `${base}/${kind}`, 'POST',
+    return await mutate(add ? base : `${base}/${kind}`, 'POST',
       { revision: selected.revision, kind }, add ? `${kind} applied.` : `${kind} removed.`)
   }
 
@@ -101,17 +107,23 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     order.splice(oldIndex, 1)
     order.splice(targetIndex, 0, participantId)
     void mutate(`${api}/${selected.id}/reorder`, 'POST',
-      { revision: selected.revision, orderedIds: order }, 'Turn order changed.')
+      { revision: selected.revision, orderedIds: order, makeActive: targetIndex === 0 },
+      targetIndex === 0 ? 'Participant moved to the top and made active.' : 'Turn order changed.')
   }
 
   function insertionIndexAt(list: HTMLOListElement, clientY: number): number {
     const tiles = Array.from(list.children)
     const index = tiles.findIndex((tile) => clientY < tile.getBoundingClientRect().top + tile.getBoundingClientRect().height / 2)
-    return index < 0 ? tiles.length : Math.max(1, index)
+    return index < 0 ? tiles.length : Math.max(0, index)
   }
 
   function dropOnList(event: DragEvent<HTMLOListElement>) {
     if (!selected || selected.phase !== 'Fight' || busy) return
+    if (draggedCondition || event.dataTransfer.types.includes(conditionDragType)) {
+      event.preventDefault()
+      endConditionDrag()
+      return
+    }
     event.preventDefault()
     const sourceId = draggedId ?? event.dataTransfer.getData('text/plain')
     const sourceIndex = activeParticipants.findIndex((participant) => participant.id === sourceId)
@@ -120,7 +132,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     if (sourceIndex < 0) {
       if (heldParticipants.some((participant) => participant.id === sourceId))
         void mutate(`${api}/${selected.id}/participants/${sourceId}/activate`, 'POST',
-          { revision: selected.revision, targetIndex: insertionIndex }, 'Participant moved to the active list.')
+          { revision: selected.revision, targetIndex: insertionIndex, makeActive: insertionIndex === 0 }, 'Participant moved to the active list.')
       return
     }
     moveToIndex(sourceId, insertionIndex > sourceIndex ? insertionIndex - 1 : insertionIndex)
@@ -130,7 +142,6 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   const heldParticipants = selected?.participants.filter((participant) => participant.isHeld) ?? []
   const available = characters.filter((character) =>
     !selected?.participants.some((participant) => participant.characterId === character.id))
-  const conditionParticipant = selected?.participants.find((participant) => participant.id === conditionParticipantId)
   function hpEditor(participant: Participant) {
     if (!selected || selected.phase !== 'Prepare') return null
     return <div className="hp-controls">
@@ -146,18 +157,11 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     </div>
   }
 
-  function fightAdjustment(participant: Participant) {
-    if (!selected) return null
-    return <form className="quick-hp-form" onSubmit={(event) => void adjustHp(event, participant.id)}>
-      <input name="amount" required inputMode="decimal"
-        aria-label={`HP adjustment for ${participant.name}`} />
-      <button type="submit" value="damage" disabled={busy || participant.currentHp === null}>Damage</button>
-      <button type="submit" value="heal" disabled={busy || participant.currentHp === null}>Heal</button>
-    </form>
-  }
-
   function fightHpRow(participant: Participant) {
+    const adjustmentFormId = `adjust-hp-${participant.id}`
     return <div className="fight-hp-row">
+      <form id={adjustmentFormId} className="quick-hp-form"
+        onSubmit={(event) => void adjustHp(event, participant.id)} />
       {participant.currentHp !== null && !editingHpIds.includes(participant.id)
         ? <div className="fight-current-hp-display">
           <span>HP: {participant.currentHp}</span>
@@ -175,10 +179,12 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           {participant.currentHp !== null && <button type="button" disabled={busy}
             onClick={() => setEditingHpIds((ids) => ids.filter((id) => id !== participant.id))}>Cancel</button>}
         </form>}
-      {fightAdjustment(participant)}
-      {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
-      {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
-      {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
+      <input form={adjustmentFormId} className="hp-adjustment-input" name="amount" required inputMode="decimal" size={4}
+        aria-label={`HP adjustment for ${participant.name}`} />
+      <button form={adjustmentFormId} className="hp-adjust-button" type="submit" value="damage"
+        disabled={busy || participant.currentHp === null}>Damage</button>
+      <button form={adjustmentFormId} className="hp-adjust-button" type="submit" value="heal"
+        disabled={busy || participant.currentHp === null}>Heal</button>
     </div>
   }
 
@@ -222,6 +228,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   }
 
   function startParticipantDrag(event: DragEvent<HTMLLIElement>, participantId: string) {
+    endConditionDrag()
     setDraggedId(participantId)
     setDropIndex(null)
     setHoldDropReady(false)
@@ -233,6 +240,56 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
     setDraggedId(null)
     setDropIndex(null)
     setHoldDropReady(false)
+  }
+
+  function endConditionDrag() {
+    setDraggedCondition(null)
+    setConditionDropId(null)
+  }
+
+  async function applyCondition(participant: Participant, kind: ConditionKind) {
+    if (!selected || selected.phase !== 'Fight' || busy) return
+    if (participant.conditions.some((condition) => condition.kind === kind)) return
+    if (await setCondition(participant, kind, true)) setSelectedCondition(null)
+  }
+
+  function statusPanel() {
+    return <section className="status-palette" aria-label="Statuses">
+      <h5>Statuses</h5>
+      <p id="status-palette-help">Drag a status onto a participant, or select one and press Enter on a participant.</p>
+      <label className="status-filter">Filter statuses<input type="search" value={conditionFilter}
+        onChange={(event) => setConditionFilter(event.currentTarget.value)} /></label>
+      <div className="status-palette-list">{conditionDefinitions.filter((definition) =>
+        definition.label.toLowerCase().includes(conditionFilter.trim().toLowerCase()))
+        .map(({ kind, label, summary }) => <button type="button" key={kind} title={summary}
+        draggable={!busy} disabled={busy} aria-pressed={selectedCondition === kind}
+        onClick={() => setSelectedCondition((current) => current === kind ? null : kind)}
+        onDragStart={(event) => {
+          endParticipantDrag()
+          setSelectedCondition(null)
+          setDraggedCondition(kind)
+          event.dataTransfer.setData(conditionDragType, kind)
+          event.dataTransfer.effectAllowed = 'copy'
+        }} onDragEnd={endConditionDrag}>{label}</button>)}</div>
+    </section>
+  }
+
+  function activeConditionSummary(participant: Participant) {
+    const kinds = [...new Set([...participant.conditions.map((condition) => condition.kind),
+      ...(participant.status && participant.status !== 'AliveAdjacent' ? [participant.status] : [])])]
+    return <section className="active-condition-summary" aria-label={`Status effects for ${participant.name}`} aria-live="polite">
+      {kinds.length === 0 && !participant.status ? <p>No statuses applied.</p> : <>
+        <ul>{kinds.map((kind) => {
+          const definition = conditionDefinition(kind)
+          return <li key={kind}><strong>{definition
+            ? <a href={definition.source} target="_blank" rel="noreferrer">{definition.label}</a>
+            : kind}:</strong> {definition?.summary ?? 'Check the effect that applied this status.'}</li>
+        })}
+        {participant.status === 'AliveAdjacent' && <li><strong>alive adjacent:</strong> Janus house status at HP −10 or below.
+          This participant stays in the turn order; resolve the outcome manually.</li>}</ul>
+        <p className="condition-reminder">D&amp;D 3.5 reminders; resolve effects manually.</p>
+      </>}
+    </section>
   }
 
   function holdPanel() {
@@ -270,6 +327,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           onDragStart={(event) => startParticipantDrag(event, participant.id)}
           onDragEnd={endParticipantDrag}>
           {selected.phase === 'Fight' ? <button type="button" className="held-name" disabled={busy}
+            title={participant.name}
             aria-label={`Release ${participant.name} to turn order`}
             onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/activate`, 'POST',
               { revision: selected.revision, targetIndex: activeParticipants.length }, 'Participant moved to the active list.')}>
@@ -294,7 +352,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
   }
 
   const holdHelp = `Held participants wait outside the turn order and do not affect Round or Turn counts.${selected?.phase === 'Fight' ? ' Drag a participant here to hold them. Drag a name into the turn order to release them, or select the name to release at the end.' : ''}`
-  const turnOrderHelp = 'Drag a participant to the arrow between tiles or at the end. For keyboard reordering, focus a tile and press Alt+Up or Alt+Down. Reordering keeps the current active participant.'
+  const turnOrderHelp = 'Drop above the active participant to move someone to the top and make them active. Other slots keep the current active participant. Focus a tile and use Alt+Up/Down to move it, Alt+Home to make it active at the top, or Alt+H to hold it.'
 
   return <div className="encounter-workspace">
     {message && <p className="account-message" role="status">{message}</p>}
@@ -382,7 +440,7 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           : 'Add a PC, NPC, or mob to prepare the order.'}</div> :
         <ol className={`encounter-participants ${selected.phase === 'Fight' ? 'fight-list' : ''}`}
           onDragOver={(event) => {
-            if (selected.phase === 'Fight' && !busy && draggedId) {
+            if (selected.phase === 'Fight' && !busy && draggedId && !draggedCondition) {
               event.preventDefault()
               event.dataTransfer.dropEffect = 'move'
               setDropIndex(insertionIndexAt(event.currentTarget, event.clientY))
@@ -398,23 +456,63 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
           const inactive = selected.phase === 'Fight' && !active
           const summary = <>
             {kindBadge(participant)}
-            <strong>{participant.name}</strong>
+            <strong title={participant.name}>{participant.name}</strong>
             {selected.phase === 'Fight' && <span className="fight-turn-count">Turn: {participant.turnCount}</span>}
           </>
           const marker = selected.phase === 'Fight' && draggedId
             ? dropIndex === index ? 'drop-before'
               : dropIndex === activeParticipants.length && index === activeParticipants.length - 1 ? 'drop-end' : ''
             : ''
-          return <li key={participant.id} className={`${active ? 'active' : ''} ${marker} ${participant.status === 'Disabled' ? 'disabled-hp' : participant.status === 'Dying' ? 'dying' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
+          return <li key={participant.id} className={`${active ? 'active' : ''} ${conditionDropId === participant.id ? 'condition-drop-ready' : ''} ${marker} ${participant.status === 'Disabled' ? 'disabled-hp' : participant.status === 'Dying' ? 'dying' : participant.status === 'AliveAdjacent' ? 'alive-adjacent' : ''}`}
+            aria-current={active ? 'true' : undefined}
+            aria-label={active ? `Active participant: ${participant.name}` : undefined}
             draggable={selected.phase === 'Fight' && !busy}
             tabIndex={selected.phase === 'Fight' ? 0 : undefined}
-            aria-keyshortcuts={selected.phase === 'Fight' ? 'Alt+ArrowUp Alt+ArrowDown' : undefined}
+            aria-keyshortcuts={selected.phase === 'Fight' ? 'Alt+ArrowUp Alt+ArrowDown Alt+Home Alt+H' : undefined}
             onKeyDown={(event) => {
-              if (event.target !== event.currentTarget || !event.altKey || busy) return
+              if (event.target !== event.currentTarget || busy || selected.phase !== 'Fight') return
+              if (event.key === 'Escape') { setSelectedCondition(null); return }
+              if (selectedCondition && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                void applyCondition(participant, selectedCondition)
+                return
+              }
+              if (!event.altKey) return
+              if (event.key === 'Home') {
+                event.preventDefault()
+                moveToIndex(participant.id, 0)
+                return
+              }
+              if (event.key.toLowerCase() === 'h') {
+                event.preventDefault()
+                void mutate(`${api}/${selected.id}/participants/${participant.id}/hold`, 'POST',
+                  { revision: selected.revision }, 'Participant moved to Hold.')
+                return
+              }
               if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 event.preventDefault()
                 moveToIndex(participant.id, index + (event.key === 'ArrowUp' ? -1 : 1))
               }
+            }}
+            aria-describedby={selected.phase === 'Fight' && selectedCondition ? 'status-palette-help' : undefined}
+            onDragOver={(event) => {
+              if (selected.phase !== 'Fight' || !draggedCondition || busy) return
+              event.preventDefault()
+              event.stopPropagation()
+              event.dataTransfer.dropEffect = 'copy'
+              setConditionDropId(participant.conditions.some((condition) => condition.kind === draggedCondition) ? null : participant.id)
+            }}
+            onDragLeave={(event) => {
+              if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget))
+                setConditionDropId((id) => id === participant.id ? null : id)
+            }}
+            onDrop={(event) => {
+              if (selected.phase !== 'Fight' || !draggedCondition || busy) return
+              event.preventDefault()
+              event.stopPropagation()
+              const kind = draggedCondition
+              endConditionDrag()
+              void applyCondition(participant, kind)
             }}
             onDragStart={(event) => startParticipantDrag(event, participant.id)}
             onDragEnd={endParticipantDrag}>
@@ -435,44 +533,45 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               </div>
               {prepareSelectedId === participant.id && hpEditor(participant)}
             </div> : <>
-              <div className={`fight-tile-heading${inactive ? ' inactive-fight-heading' : ''}`}>
-                {inactive ? <div className="fight-participant-summary">{summary}</div> : summary}
-                {active && <span className="active-label">Active turn</span>}
-                {inactive && fightHpRow(participant)}
+              <div className={`fight-tile-heading${selected.phase === 'Fight' ? ' fight-row-heading' : ''}${inactive ? ' inactive-fight-heading' : ''}`}>
+                {selected.phase === 'Fight' ? <div className="fight-participant-summary">{summary}
+                </div> : summary}
+                {selected.phase === 'Fight' && fightHpRow(participant)}
                 {selected.phase === 'Fight' && <div className="condition-actions">
+
+                  {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
+                  {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
+                  {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
                   {participant.conditions.map((condition) => <span className="condition-bubble" key={condition.kind}>
-                    {condition.kind} · {condition.turnCount}
-                    <button type="button" aria-label={`Remove ${condition.kind} from ${participant.name}`}
+                    {conditionLabel(condition.kind)} · {condition.turnCount}
+                    <button type="button" aria-label={`Remove ${conditionLabel(condition.kind)} from ${participant.name}`}
                       disabled={busy} onClick={() => void setCondition(participant, condition.kind, false)}>×</button>
                   </span>)}
-                  <button type="button" disabled={busy || active}
-                    onClick={() => void mutate(`${api}/${selected.id}/active`, 'POST',
-                      { revision: selected.revision, participantId: participant.id }, 'Active participant changed.')}>
-                    Set active
-                  </button>
-                  <button type="button" disabled={busy}
-                    onClick={() => void mutate(`${api}/${selected.id}/participants/${participant.id}/hold`, 'POST',
-                      { revision: selected.revision }, 'Participant moved to Hold.')}>Hold</button>
-                  <button type="button" className="condition-picker" aria-label={`Manage statuses for ${participant.name}`}
-                    disabled={busy} onClick={() => setConditionParticipantId(participant.id)} title="Add a status">✦</button>
                 </div>}
               </div>
-              {selected.phase === 'Fight' ? active && fightHpRow(participant) : <p className="fight-tile-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}
+              {active && <div className="active-turn-row">
+                <div className="active-turn-controls" role="group" aria-label={`Turn actions for ${participant.name}`}>
+                  <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/next`, 'POST',
+                    { revision: selected.revision }, 'Turn completed.')}>Next</button>
+                  <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
+                    { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
+                </div>
+                {activeConditionSummary(participant)}
+              </div>}
+              {selected.phase !== 'Fight' && <p className="fight-tile-meta">Turns completed: {participant.turnCount} · HP: {participant.currentHp ?? 'Not set'}
                 {participant.status === 'Disabled' && <span className="hp-status disabled-label">Disabled</span>}
                 {participant.status === 'Dying' && <span className="hp-status dying-label">Dying</span>}
                 {participant.status === 'AliveAdjacent' && <span className="hp-status alive-adjacent-label">alive adjacent</span>}
               </p>}
-              {active && <div className="active-turn-controls" role="group" aria-label={`Turn actions for ${participant.name}`}>
-                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/next`, 'POST',
-                  { revision: selected.revision }, 'Turn completed.')}>Next</button>
-                <button type="button" disabled={busy} onClick={() => void mutate(`${api}/${selected.id}/skip`, 'POST',
-                  { revision: selected.revision }, 'Turn skipped.')}>Skip</button>
-              </div>}
+
             </>}
           </li>
         })}</ol>}
       </section>
-      {selected.phase === 'Fight' && holdPanel()}
+      {selected.phase === 'Fight' && <aside className="fight-sidebar" aria-label="Battle tools">
+        {holdPanel()}
+        {statusPanel()}
+      </aside>}
       </div>
       {selected.phase === 'Fight' && addParticipantOpen && <AddParticipantDialog
         onClose={() => setAddParticipantOpen(false)}>
@@ -487,10 +586,6 @@ function EncounterWorkspace({ campaignId, characters, selectedId, onSelectId }: 
               if (saved) setInitiativeOpen(false)
             })
         }} />}
-      {selected.phase === 'Fight' && conditionParticipant &&
-        <ConditionDialog participant={conditionParticipant}
-          busy={busy} onClose={() => setConditionParticipantId(null)}
-          onAdd={(kind) => void setCondition(conditionParticipant, kind, true)} />}
     </div>}
   </div>
 }

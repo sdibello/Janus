@@ -45,10 +45,12 @@ internal static class EncounterStateTransitions
         }
     }
 
-    public static void Reorder(IReadOnlyList<EncounterParticipant> participants, IReadOnlyList<Guid> orderedIds)
+    public static void Reorder(Encounter encounter, IReadOnlyList<EncounterParticipant> participants,
+        IReadOnlyList<Guid> orderedIds, bool makeActive = false)
     {
         var byId = participants.ToDictionary(item => item.Id);
         SetPositions(orderedIds.Select(id => byId[id]).ToArray());
+        if (makeActive) encounter.ActiveParticipantId = orderedIds[0];
     }
 
     public static void Hold(Encounter encounter, IReadOnlyList<EncounterParticipant> participants,
@@ -67,7 +69,7 @@ internal static class EncounterStateTransitions
     }
 
     public static void Release(Encounter encounter, IReadOnlyList<EncounterParticipant> participants,
-        EncounterParticipant participant, int targetIndex)
+        EncounterParticipant participant, int targetIndex, bool makeActive = false)
     {
         var active = participants.Where(item => !item.IsHeld).ToList();
         if (encounter.Phase == EncounterPhase.Fight && encounter.ActiveParticipantId is { } activeId)
@@ -81,7 +83,7 @@ internal static class EncounterStateTransitions
         participant.CompletedThisRound = false;
         active.Insert(targetIndex, participant);
         SetPositions(active.Concat(held).ToArray());
-        if (encounter.Phase == EncounterPhase.Fight && encounter.ActiveParticipantId is null)
+        if (encounter.Phase == EncounterPhase.Fight && (encounter.ActiveParticipantId is null || makeActive))
             encounter.ActiveParticipantId = participant.Id;
     }
 

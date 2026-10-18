@@ -3,6 +3,7 @@
 - Date: 2026-09-28
 - Status: Accepted
 - Related spec: [008](../specs/008-encounter-conditions-and-layout.md)
+- Superseded by: [0095](0095-draggable-status-palette.md) for the status-application UI
 
 ## Context
 

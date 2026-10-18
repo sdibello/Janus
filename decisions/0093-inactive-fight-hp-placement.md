@@ -4,6 +4,8 @@
 - Status: Accepted
 - Related specs: [007](../specs/007-hit-point-tracking.md), [008](../specs/008-encounter-conditions-and-layout.md)
 - Supersedes: The non-active HP row placement in [0086](0086-compact-unified-fight-cards.md)
+- Superseded by: [0095](0095-draggable-status-palette.md) for per-row Hold and status-picker controls
+- Superseded by: [0097](0097-top-drop-activation-and-inline-fight-controls.md) for the active row and HP control order
 
 ## Context
 
